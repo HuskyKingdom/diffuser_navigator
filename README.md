@@ -23,3 +23,14 @@ Experimental Repo of Diffuser Navigator.
     <br />
   </p>
 </div>
+
+
+## Training
+
+Experimental:
+
+```
+python run.py \
+  --exp-config vlnce_baselines/config/r2r_baselines/test_set_inference.yaml \
+  --run-type train
+```
