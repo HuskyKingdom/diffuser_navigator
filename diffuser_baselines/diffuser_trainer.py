@@ -289,8 +289,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         p = self.config.IL.DAGGER.p
         # in Python 0.0 ** 0.0 == 1.0, but we want 0.0
         beta = 0.0 if p == 0.0 else p ** data_it
-        print(f"p {p}, beta {beta}")
-        assert 1==2
+
         ensure_unique_episodes = beta == 1.0
 
         def hook_builder(tgt_tensor):
@@ -513,6 +512,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
             purge_step=0,
         ) as writer:
             for dagger_it in range(self.config.IL.DAGGER.iterations):
+
+                # get dataset ---
                 step_id = 0
                 if not self.config.IL.DAGGER.preload_lmdb_features:
                     self._update_dataset(
@@ -523,6 +524,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     with torch.cuda.device(self.device):
                         torch.cuda.empty_cache()
                 gc.collect()
+                # get dataset ---
+                assert 1==2
 
                 dataset = IWTrajectoryDataset(
                     self.lmdb_features_dir,
