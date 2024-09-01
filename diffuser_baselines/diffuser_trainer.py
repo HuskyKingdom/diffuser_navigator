@@ -525,6 +525,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         torch.cuda.empty_cache()
                 gc.collect()
                 # get dataset ---
+                
                 assert 1==2
 
                 dataset = IWTrajectoryDataset(
