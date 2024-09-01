@@ -239,7 +239,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
         )
         super().__init__(config)
 
-        assert 1==2
 
     def _make_dirs(self) -> None:
         self._make_ckpt_dir()
@@ -290,7 +289,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
         p = self.config.IL.DAGGER.p
         # in Python 0.0 ** 0.0 == 1.0, but we want 0.0
         beta = 0.0 if p == 0.0 else p ** data_it
-
+        print(f"p {p}, beta {beta}")
+        assert 1==2
         ensure_unique_episodes = beta == 1.0
 
         def hook_builder(tgt_tensor):
