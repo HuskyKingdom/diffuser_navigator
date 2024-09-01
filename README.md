@@ -31,6 +31,6 @@ Experimental:
 
 ```
 python run.py \
-  --exp-config vlnce_baselines/config/r2r_baselines/test_set_inference.yaml \
+  --exp-config diffuser_baselines/config/diffuser.yaml \
   --run-type train
 ```

@@ -239,6 +239,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
         )
         super().__init__(config)
 
+        assert 1==2
+
     def _make_dirs(self) -> None:
         self._make_ckpt_dir()
         os.makedirs(self.lmdb_features_dir, exist_ok=True)
