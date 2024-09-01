@@ -20,7 +20,7 @@ IL:
   RECOLLECT_TRAINER:
     gt_file:
       data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}_gt.json.gz
-    preload_trajectories_file:
+    preload_lmdb_features:
       True
 
   DAGGER:
