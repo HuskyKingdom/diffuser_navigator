@@ -20,6 +20,8 @@ IL:
   RECOLLECT_TRAINER:
     gt_file:
       data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}_gt.json.gz
+    preload_trajectories_file:
+      True
 
   DAGGER:
     iterations: 1
@@ -33,3 +35,5 @@ MODEL:
 
   INSTRUCTION_ENCODER:
     bidirectional: True
+
+

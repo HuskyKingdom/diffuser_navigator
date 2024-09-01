@@ -506,27 +506,28 @@ class DiffuserTrainer(BaseVLNCETrainer):
             action_space=action_space,
         )
 
+        # get dataset ---
+        step_id = 0
+        if not self.config.IL.DAGGER.preload_lmdb_features:
+            self._update_dataset(
+                dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
+            )
+        
+        assert 1==2
+        # get dataset ---
+
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
             flush_secs=self.flush_secs,
             purge_step=0,
         ) as writer:
             for dagger_it in range(self.config.IL.DAGGER.iterations):
-
-                # get dataset ---
-                step_id = 0
-                if not self.config.IL.DAGGER.preload_lmdb_features:
-                    self._update_dataset(
-                        dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
-                    )
-
+                    
                 if torch.cuda.is_available():
                     with torch.cuda.device(self.device):
                         torch.cuda.empty_cache()
                 gc.collect()
-                # get dataset ---
                 
-                assert 1==2
 
                 dataset = IWTrajectoryDataset(
                     self.lmdb_features_dir,
