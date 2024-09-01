@@ -11,6 +11,7 @@ from habitat_baselines.common.baseline_registry import baseline_registry
 
 import habitat_extensions  # noqa: F401
 import vlnce_baselines  # noqa: F401
+import diffuser_baselines
 from vlnce_baselines.config.default import get_config
 from vlnce_baselines.nonlearning_agents import (
     evaluate_agent,
