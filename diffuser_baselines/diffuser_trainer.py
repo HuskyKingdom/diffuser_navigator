@@ -164,7 +164,7 @@ class TrajectoryDataset(torch.utils.data.Dataset):
                 
                 trajectory = msgpack_numpy.unpackb(data, raw=False)
 
-                print(trajectory)
+                print(f"trajectory {trajectory.len}")
                 assert 1==2
                 return trajectory
 
