@@ -141,6 +141,8 @@ class TrajectoryDataset(torch.utils.data.Dataset):
         ) as lmdb_env:
             self.length = lmdb_env.stat()["entries"]
 
+        print(f"length {self.length}")
+
     def __len__(self):
         return self.length
     
@@ -154,6 +156,7 @@ class TrajectoryDataset(torch.utils.data.Dataset):
         ) as lmdb_env:
             
             with lmdb_env.begin(buffers=True) as txn:
+
                 data = txn.get(str(index).encode())
                 
                 if data is None:
@@ -161,6 +164,7 @@ class TrajectoryDataset(torch.utils.data.Dataset):
 
                 
                 trajectory = msgpack_numpy.unpackb(data, raw=False)
+
                 print(trajectory)
                 assert 1==2
                 return trajectory
