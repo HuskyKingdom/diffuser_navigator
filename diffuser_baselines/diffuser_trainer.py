@@ -153,9 +153,7 @@ class TrajectoryDataset(torch.utils.data.Dataset):
         map_size=self.map_size,
         readonly=True,
         lock=False,
-        ) as lmdb_env:
-            
-            with lmdb_env.begin(buffers=True) as txn:
+        ) as lmdb_env, lmdb_env.begin(buffers=True) as txn:
 
                 data = txn.get(str(index).encode())
                 
