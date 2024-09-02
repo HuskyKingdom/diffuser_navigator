@@ -164,7 +164,6 @@ class TrajectoryDataset(torch.utils.data.Dataset):
 
                 print(f"trajectory {trajectory[1]}")
                 print(f"trajectory {trajectory[2]}")
-                assert 1==2
                 return trajectory
 
 
@@ -575,6 +574,9 @@ class DiffuserTrainer(BaseVLNCETrainer):
                 diffusion_dataset = TrajectoryDataset(self.lmdb_features_dir,self.config.IL.DAGGER.lmdb_map_size,self.config.IL.batch_size)
 
                 x = diffusion_dataset.__getitem__("1")
+                x = diffusion_dataset.__getitem__("2")
+
+                assert 1==2
                     
                 if torch.cuda.is_available():
                     with torch.cuda.device(self.device):
