@@ -132,10 +132,11 @@ class TrajectoryDataset(torch.utils.data.Dataset):
         super().__init__()
         self.lmdb_features_dir = lmdb_features_dir
         self.batch_size = batch_size
+        self.map_size = map_size
 
         with lmdb.open(
-            self.lmdb_features_dir+"/data",
-            map_size=int(map_size),
+            self.lmdb_features_dir,
+            map_size=int(self.map_size),
             readonly=True,
             lock=False,
         ) as lmdb_env:
@@ -149,7 +150,7 @@ class TrajectoryDataset(torch.utils.data.Dataset):
 
         with lmdb.open(
         self.lmdb_features_dir,
-        map_size=int(1e9),
+        map_size=self.map_size,
         readonly=True,
         lock=False,
         ) as lmdb_env:
