@@ -23,6 +23,7 @@ from diffuser_baselines.common.base_il_trainer import BaseVLNCETrainer
 from vlnce_baselines.common.env_utils import construct_envs
 from vlnce_baselines.common.utils import extract_instruction_tokens
 
+
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=FutureWarning)
     import tensorflow as tf  # noqa: F401
@@ -119,6 +120,51 @@ def _block_shuffle(lst, block_size):
     random.shuffle(blocks)
 
     return [ele for block in blocks for ele in block]
+
+
+
+class TrajectoryDataset(torch.utils.data.Dataset):
+    def __init__(self, lmdb_features_dir, batch_size):
+        """
+        trajectories: list of episodes, where each episode is a list of timesteps.
+        max_timestep: maximum number of timesteps to consider in each episode.
+        """
+        super().__init__()
+        self.lmdb_features_dir = lmdb_features_dir
+        self.batch_size = batch_size
+
+        with lmdb.open(
+            self.lmdb_features_dir,
+            map_size=int(self.lmdb_map_size),
+            readonly=True,
+            lock=False,
+        ) as lmdb_env:
+            self.length = lmdb_env.stat()["entries"]
+
+    def __len__(self):
+        return self.length
+    
+    def __getitem__(self, index):
+
+        with lmdb.open(
+        self.lmdb_features_dir,
+        map_size=int(1e9),
+        readonly=True,
+        lock=False,
+        ) as lmdb_env:
+            
+            with lmdb_env.begin(buffers=True) as txn:
+                data = txn.get(str(index).encode())
+                
+                if data is None:
+                    raise IndexError(f"Index {index} out of range in database")
+
+                
+                trajectory = msgpack_numpy.unpackb(data, raw=False)
+                print(trajectory)
+                assert 1==2
+                return trajectory
+
 
 
 class IWTrajectoryDataset(torch.utils.data.IterableDataset):
@@ -522,9 +568,11 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
                     )
                     assert 1==2
-                
-                assert 1==2
                 # get dataset ---
+                    
+                diffusion_dataset = TrajectoryDataset(self.lmdb_features_dir,self.config.IL.batch_size)
+
+                x = diffusion_dataset.__getitem__("1")
                     
                 if torch.cuda.is_available():
                     with torch.cuda.device(self.device):
