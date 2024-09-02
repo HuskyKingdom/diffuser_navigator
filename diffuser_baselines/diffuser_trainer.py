@@ -124,7 +124,7 @@ def _block_shuffle(lst, block_size):
 
 
 class TrajectoryDataset(torch.utils.data.Dataset):
-    def __init__(self, lmdb_features_dir, batch_size):
+    def __init__(self, lmdb_features_dir, map_size, batch_size):
         """
         trajectories: list of episodes, where each episode is a list of timesteps.
         max_timestep: maximum number of timesteps to consider in each episode.
@@ -135,7 +135,7 @@ class TrajectoryDataset(torch.utils.data.Dataset):
 
         with lmdb.open(
             self.lmdb_features_dir,
-            map_size=int(self.lmdb_map_size),
+            map_size=int(map_size),
             readonly=True,
             lock=False,
         ) as lmdb_env:
@@ -570,7 +570,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     assert 1==2
                 # get dataset ---
                     
-                diffusion_dataset = TrajectoryDataset(self.lmdb_features_dir,self.config.IL.batch_size)
+                diffusion_dataset = TrajectoryDataset(self.lmdb_features_dir,self.config.IL.DAGGER.lmdb_map_size,self.config.IL.batch_size)
 
                 x = diffusion_dataset.__getitem__("1")
                     
