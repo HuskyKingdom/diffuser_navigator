@@ -141,7 +141,7 @@ class TrajectoryDataset(torch.utils.data.Dataset):
         ) as lmdb_env:
             self.length = lmdb_env.stat()["entries"]
 
-        print(f"length {self.lmdb_features_dir}")
+        print(f"length {lmdb_env.stat()}")
 
     def __len__(self):
         return self.length
