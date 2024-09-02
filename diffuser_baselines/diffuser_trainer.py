@@ -167,7 +167,7 @@ class TrajectoryDataset(torch.utils.data.Dataset):
                 # print(f"""r {trajectory[0]["rgb_features"].shape}""")
                 # print(f"""d {trajectory[0]["depth_features"].shape}""")
 
-                print(f"actions {trajectory[2]}")
+                print(f"actions {len(trajectory[2])}")
                 return trajectory
 
 
