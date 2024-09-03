@@ -45,10 +45,7 @@ def collate_fn(batch):
     )
     """
 
-    print(batch)
-    print(type(batch))
 
-    assert 1==2
 
 
     def _pad_helper(t, max_len, fill_val=0):
@@ -62,6 +59,11 @@ def collate_fn(batch):
         return torch.cat([t, pad], dim=0)
 
     transposed = list(zip(*batch))
+
+    print(transposed)
+    print(type(transposed))
+
+    assert 1==2
 
     observations_batch = list(transposed[0])
     prev_actions_batch = list(transposed[1])
