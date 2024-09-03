@@ -585,7 +585,10 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     num_workers=1,
                 )
 
-   
+                for batch in diter:
+                    print("11")
+                    break
+
 
                 assert 1==2
                     
