@@ -162,7 +162,8 @@ class TrajectoryDataset(torch.utils.data.Dataset):
                 
                 trajectory = msgpack_numpy.unpackb(data, raw=False)
                 print(f"""trajectory {trajectory[0]["instruction"].shape}""")
-                print(f"""trajectory {trajectory[1].shape}""")
+                print(f"""trajectory {trajectory[2].shape}""")
+                print(f"""trajectory {trajectory[0]["instruction"]}""")
 
     
                 return trajectory
