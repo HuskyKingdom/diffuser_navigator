@@ -37,18 +37,18 @@ class ObservationsDict(dict):
         return self
 
 
-def collate_fn(batch):
-    """Each sample in batch: (
-        obs,
-        prev_actions,
-        oracle_actions,
-    )
+def collate_fn(batch):    # return a batch of trainable tokens
+    """
+    [
+    {instruction:(len_seq,200); progress:(len_seq,1); rgb_features:(len_seq,2048,4,4); depth_features:(len_seq,128,4,4)},
+    prev_actions:(len_seq),
+    gt_actions:(len_seq),
+    ]
     """
 
     # num of feature timestep prediction
     F = 5
 
-    # return a batch of trainable tokens
 
     collected_data = {
         'instruction': [],
@@ -63,17 +63,17 @@ def collate_fn(batch):
         # randomly sample timestep t
         t = random.randint(0, len_seq - F - 1)
         
-        collected_data['instruction'].append(sample[0]['instruction'][t:t+F+1])
+        collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t:t+F+1]))
         collected_data['rgb_features'].append(sample[0]['rgb_features'][t:t+F+1])
         collected_data['depth_features'].append(sample[0]['depth_features'][t:t+F+1])
-        collected_data['gt_actions'].append(sample[2][t:t+F+1])
+        collected_data['gt_actions'].append(torch.tensor(sample[2][t:t+F+1]))
     
-    # Convert lists to tensors or numpy arrays as needed, depending on your data format
+
+    # Stack the lists into batched tensors
     collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
     collected_data['rgb_features'] = torch.stack(collected_data['rgb_features'], dim=0)
     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
-
 
     assert 1==2
 
