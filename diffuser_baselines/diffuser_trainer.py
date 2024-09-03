@@ -45,16 +45,44 @@ def collate_fn(batch):
     )
     """
 
+    # num of feature timestep prediction
+    F = 5
 
+    # return a batch of trainable tokens
 
+    collected_data = {
+        'instruction': [],
+        'rgb_features': [],
+        'depth_features': [],
+        'gt_actions': []
+    }
+    
+    for sample in batch:
+        len_seq = sample['instruction'].shape[0]
+        
+        # randomly sample timestep t
+        t = random.randint(0, len_seq - F - 1)
+        
+        collected_data['instruction'].append(sample[0]['instruction'][t:t+F+1])
+        collected_data['rgb_features'].append(sample[0]['rgb_features'][t:t+F+1])
+        collected_data['depth_features'].append(sample[0]['depth_features'][t:t+F+1])
+        collected_data['gt_actions'].append(sample[2][t:t+F+1])
+    
+    # Convert lists to tensors or numpy arrays as needed, depending on your data format
+    collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
+    collected_data['rgb_features'] = torch.stack(collected_data['rgb_features'], dim=0)
+    collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
+    collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
 
-
-
-    print(batch[5])
 
     assert 1==2
 
-    return None
+    print(f"collected data format {collected_data['rgb_features'].shape}")
+    
+    return collected_data
+
+    
+
 
 
 def _block_shuffle(lst, block_size):
