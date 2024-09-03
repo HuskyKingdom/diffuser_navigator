@@ -42,13 +42,9 @@ def collate_fn(batch):
         obs,
         prev_actions,
         oracle_actions,
-        inflec_weight,
     )
     """
 
-    print(batch)
-
-    assert 1==2
 
     def _pad_helper(t, max_len, fill_val=0):
         pad_amount = max_len - t.size(0)
@@ -65,7 +61,6 @@ def collate_fn(batch):
     observations_batch = list(transposed[0])
     prev_actions_batch = list(transposed[1])
     corrected_actions_batch = list(transposed[2])
-    weights_batch = list(transposed[3])
     B = len(prev_actions_batch)
 
     new_observations_batch = defaultdict(list)
@@ -90,7 +85,6 @@ def collate_fn(batch):
         corrected_actions_batch[bid] = _pad_helper(
             corrected_actions_batch[bid], max_traj_len
         )
-        weights_batch[bid] = _pad_helper(weights_batch[bid], max_traj_len)
 
     for sensor in observations_batch:
         observations_batch[sensor] = torch.stack(
@@ -102,20 +96,13 @@ def collate_fn(batch):
 
     prev_actions_batch = torch.stack(prev_actions_batch, dim=1)
     corrected_actions_batch = torch.stack(corrected_actions_batch, dim=1)
-    weights_batch = torch.stack(weights_batch, dim=1)
-    not_done_masks = torch.ones_like(
-        corrected_actions_batch, dtype=torch.uint8
-    )
-    not_done_masks[0] = 0
 
     observations_batch = ObservationsDict(observations_batch)
 
     return (
         observations_batch,
         prev_actions_batch.view(-1, 1),
-        not_done_masks.view(-1, 1),
         corrected_actions_batch,
-        weights_batch,
     )
 
 
@@ -586,7 +573,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                 )
 
                 for batch in diter:
-                    print("11")
+                    print(batch)
                     break
 
 
