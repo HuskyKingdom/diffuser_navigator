@@ -161,13 +161,9 @@ class TrajectoryDataset(torch.utils.data.Dataset):
 
                 
                 trajectory = msgpack_numpy.unpackb(data, raw=False)
+                print(f"trajectory {trajectory[0]["instruction"].shape}")
 
-                # print(f"""instruction {trajectory[0]["instruction"].shape}""")
-                # print(f"""p {trajectory[0]["progress"].shape}""")
-                # print(f"""r {trajectory[0]["rgb_features"].shape}""")
-                # print(f"""d {trajectory[0]["depth_features"].shape}""")
-
-                print(f"actions {len(trajectory[2])}")
+    
                 return trajectory
 
 
@@ -577,8 +573,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     
                 diffusion_dataset = TrajectoryDataset(self.lmdb_features_dir,self.config.IL.DAGGER.lmdb_map_size,self.config.IL.batch_size)
 
-                x = diffusion_dataset.__getitem__("1")
-                x = diffusion_dataset.__getitem__("2")
+                x = diffusion_dataset.__getitem__("10")
+                x = diffusion_dataset.__getitem__("22")
 
                 assert 1==2
                     
