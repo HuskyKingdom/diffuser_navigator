@@ -48,69 +48,13 @@ def collate_fn(batch):
 
 
 
-    def _pad_helper(t, max_len, fill_val=0):
-        pad_amount = max_len - t.size(0)
-        if pad_amount == 0:
-            return t
 
-        pad = torch.full_like(t[0:1], fill_val).expand(
-            pad_amount, *t.size()[1:]
-        )
-        return torch.cat([t, pad], dim=0)
 
-    transposed = list(zip(*batch))
-
-    print(transposed)
-    print(type(transposed))
+    print(batch[5])
 
     assert 1==2
 
-    observations_batch = list(transposed[0])
-    prev_actions_batch = list(transposed[1])
-    corrected_actions_batch = list(transposed[2])
-    B = len(prev_actions_batch)
-
-    new_observations_batch = defaultdict(list)
-    for sensor in observations_batch[0]:
-        for bid in range(B):
-            new_observations_batch[sensor].append(
-                observations_batch[bid][sensor]
-            )
-
-    observations_batch = new_observations_batch
-
-    max_traj_len = max(ele.size(0) for ele in prev_actions_batch)
-    for bid in range(B):
-        for sensor in observations_batch:
-            observations_batch[sensor][bid] = _pad_helper(
-                observations_batch[sensor][bid], max_traj_len, fill_val=1.0
-            )
-
-        prev_actions_batch[bid] = _pad_helper(
-            prev_actions_batch[bid], max_traj_len
-        )
-        corrected_actions_batch[bid] = _pad_helper(
-            corrected_actions_batch[bid], max_traj_len
-        )
-
-    for sensor in observations_batch:
-        observations_batch[sensor] = torch.stack(
-            observations_batch[sensor], dim=1
-        )
-        observations_batch[sensor] = observations_batch[sensor].view(
-            -1, *observations_batch[sensor].size()[2:]
-        )
-
-    prev_actions_batch = torch.stack(prev_actions_batch, dim=1)
-    corrected_actions_batch = torch.stack(corrected_actions_batch, dim=1)
-
-    observations_batch = ObservationsDict(observations_batch)
-
-    return (
-        observations_batch,
-        prev_actions_batch.view(-1, 1),
-        corrected_actions_batch,
-    )
+    return None
 
 
 def _block_shuffle(lst, block_size):
