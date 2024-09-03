@@ -37,7 +37,8 @@ class ObservationsDict(dict):
         return self
 
 
-def collate_fn(batch):    # return a batch of trainable tokens
+
+def collate_fn(batch):    
     """
     [
     {instruction:(len_seq,200); progress:(len_seq,1); rgb_features:(len_seq,2048,4,4); depth_features:(len_seq,128,4,4)},
@@ -48,7 +49,6 @@ def collate_fn(batch):    # return a batch of trainable tokens
 
     # num of feature timestep prediction
     F = 5
-
 
     collected_data = {
         'instruction': [],
@@ -63,22 +63,23 @@ def collate_fn(batch):    # return a batch of trainable tokens
         # randomly sample timestep t
         t = random.randint(0, len_seq - F - 1)
         
-        collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t:t+F+1]))
-        collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t:t+F+1]))
-        collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t:t+F+1]))
+        # Append the single timestep t data for instruction, rgb_features, and depth_features
+        collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t]))
+        collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t]))
+        collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t]))
+        
+        # Append the range t:t+F+1 for gt_actions
         collected_data['gt_actions'].append(torch.tensor(sample[2][t:t+F+1]))
     
-
     # Stack the lists into batched tensors
     collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
     collected_data['rgb_features'] = torch.stack(collected_data['rgb_features'], dim=0)
     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
 
-    print(f"collected data format {collected_data['rgb_features'].shape}")
-    assert 1==2
+    print(collected_data['rgb_features'].shape)
 
-    
+    assert 1==2
     
     return collected_data
 
