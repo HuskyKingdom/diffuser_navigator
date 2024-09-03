@@ -46,6 +46,10 @@ def collate_fn(batch):
     )
     """
 
+    print(batch)
+
+    assert 1==2
+
     def _pad_helper(t, max_len, fill_val=0):
         pad_amount = max_len - t.size(0)
         if pad_amount == 0:
@@ -161,10 +165,6 @@ class TrajectoryDataset(torch.utils.data.Dataset):
 
                 
                 trajectory = msgpack_numpy.unpackb(data, raw=False)
-                print(f"""trajectory {trajectory[0]["instruction"].shape}""")
-                print(f"""trajectory {trajectory[2].shape}""")
-                print(f"""trajectory {trajectory[0]["instruction"]}""")
-
     
                 return trajectory
 
@@ -575,8 +575,17 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     
                 diffusion_dataset = TrajectoryDataset(self.lmdb_features_dir,self.config.IL.DAGGER.lmdb_map_size,self.config.IL.batch_size)
 
-                x = diffusion_dataset.__getitem__("10")
-                x = diffusion_dataset.__getitem__("22")
+                diter = torch.utils.data.DataLoader(
+                    diffusion_dataset,
+                    batch_size=self.config.IL.batch_size,
+                    shuffle=False,
+                    collate_fn=collate_fn,
+                    pin_memory=False,
+                    drop_last=True,  # drop last batch if smaller
+                    num_workers=1,
+                )
+
+   
 
                 assert 1==2
                     
