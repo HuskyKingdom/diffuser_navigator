@@ -64,8 +64,8 @@ def collate_fn(batch):    # return a batch of trainable tokens
         t = random.randint(0, len_seq - F - 1)
         
         collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t:t+F+1]))
-        collected_data['rgb_features'].append(sample[0]['rgb_features'][t:t+F+1])
-        collected_data['depth_features'].append(sample[0]['depth_features'][t:t+F+1])
+        collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t:t+F+1]))
+        collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t:t+F+1]))
         collected_data['gt_actions'].append(torch.tensor(sample[2][t:t+F+1]))
     
     print(collected_data['rgb_features'][0])
