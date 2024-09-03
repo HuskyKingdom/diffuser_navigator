@@ -77,7 +77,7 @@ def collate_fn(batch):
     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
 
-    print(collected_data['rgb_features'].shape)
+    print(collected_data['gt_actions'].shape)
 
     assert 1==2
     
