@@ -68,7 +68,6 @@ def collate_fn(batch):    # return a batch of trainable tokens
         collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t:t+F+1]))
         collected_data['gt_actions'].append(torch.tensor(sample[2][t:t+F+1]))
     
-    print(collected_data['rgb_features'][0])
 
     # Stack the lists into batched tensors
     collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
@@ -76,9 +75,10 @@ def collate_fn(batch):    # return a batch of trainable tokens
     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
 
+    print(f"collected data format {collected_data['rgb_features'].shape}")
     assert 1==2
 
-    print(f"collected data format {collected_data['rgb_features'].shape}")
+    
     
     return collected_data
 
