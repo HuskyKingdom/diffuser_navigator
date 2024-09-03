@@ -58,7 +58,7 @@ def collate_fn(batch):
     }
     
     for sample in batch:
-        len_seq = sample['instruction'].shape[0]
+        len_seq = sample[0]['instruction'].shape[0]
         
         # randomly sample timestep t
         t = random.randint(0, len_seq - F - 1)
