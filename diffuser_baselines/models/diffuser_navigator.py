@@ -223,8 +223,8 @@ class DiffusionNavigator(nn.Module):
 
         
 
-        features = self.cross_attention(query=action_features,
-            value=context_features,
+        features = self.cross_attention(query=action_features.transpose(0, 1),
+            value=context_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,
             diff_ts=time_embeddings)
