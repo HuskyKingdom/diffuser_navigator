@@ -56,6 +56,12 @@ class DiffusionNavigator(nn.Module):
         self.rgb_linear = nn.Linear(16,embedding_dim)
         self.depth_linear = nn.Linear(16,embedding_dim)
         self.action_encoder = nn.Embedding(num_actions, embedding_dim)
+        self.time_emb = nn.Sequential(
+            SinusoidalPosEmb(embedding_dim),
+            nn.Linear(embedding_dim, embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, embedding_dim)
+        )
 
         for param in self.action_encoder.parameters(): # freeze action representations
             param.requires_grad = False
@@ -175,7 +181,12 @@ class DiffusionNavigator(nn.Module):
         
         context_features = self.vision_language_attention(tokens[1],tokens[0])
 
+        print(f"timesteps {timesteps}")
+        assert 1==2
+        time_embeddings = self.time_emb(timesteps.unsqueeze(-1).float())
+
         print(f" context features  {context_features.shape}")
+
 
         # Optionally add time embeddings
         time_embeddings = self.time_emb(timesteps.unsqueeze(-1).float())
