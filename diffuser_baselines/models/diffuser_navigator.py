@@ -110,7 +110,7 @@ class DiffusionNavigator(nn.Module):
         # # noising oracle_action_tokens
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
 
-        # print(f"noising_timesteps min: {self.noise_scheduler.config.num_train_timesteps}")
+        print(f"noising_timesteps min: {self.noise_scheduler.config.num_train_timesteps}")
         # noising_timesteps = torch.randint(
         #     0,
         #     self.noise_scheduler.config.num_train_timesteps,
