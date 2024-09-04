@@ -5,13 +5,30 @@ from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from habitat_baselines.common.baseline_registry import baseline_registry
 
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule
+from habitat_baselines.rl.ppo.policy import Policy
 
 
 
 @baseline_registry.register_policy
+class DiffusionPolicy(Policy):
+    def __init__(
+        self,
+        num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
+    ) -> None:
+        
+        self.navigator = DiffusionNavigator(num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
+
+    def act(observations):
+
+        pass
+
+
+
+
 class DiffusionNavigator(nn.Module):
 
     def __init__(self, num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps):
+        
         super(DiffusionNavigator, self).__init__()
 
 
