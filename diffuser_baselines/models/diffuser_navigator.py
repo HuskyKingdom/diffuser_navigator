@@ -221,9 +221,7 @@ class DiffusionNavigator(nn.Module):
         )
 
 
-        print(f" contex features  {context_features.shape,action_features.shape,obs_features.shape}")
-
-        assert 1==2
+        
 
         features = self.cross_attention(query=action_features,
             value=context_features,
@@ -235,8 +233,7 @@ class DiffusionNavigator(nn.Module):
 
 
 
-        print(f" contex features  {tokens[1].shape,tokens[0].shape}")
-        print(f" contex features  {context_features.shape}")
+        print(f" contex features  {features.shape}")
 
         assert 1==2
         # Optionally add time embeddings
