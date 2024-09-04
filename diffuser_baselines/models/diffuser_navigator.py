@@ -207,9 +207,7 @@ class DiffusionNavigator(nn.Module):
             value_pos=None,
             diff_ts=time_embeddings)[-1] # takes last layer
         
-        print(f" obs features  {obs_features.shape}")
         
-        assert 1==2
         
         context_features = self.vision_language_attention(obs_features,tokens[0]) # rgb attend instr.
 
