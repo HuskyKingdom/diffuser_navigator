@@ -17,7 +17,6 @@ class DiffusionPolicy(Policy):
         num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
     ) -> None:
         
-        super(DiffusionPolicy, self).__init__(None,None)
         self.navigator = DiffusionNavigator(num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
 
     def act(observations):
