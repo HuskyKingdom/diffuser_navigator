@@ -629,26 +629,13 @@ class DiffuserTrainer(BaseVLNCETrainer):
     def _update_agent(
         self,
         observations,
-        prev_actions,
-        not_done_masks,
-        corrected_actions,
-        weights,
         step_grad: bool = True,
         loss_accumulation_scalar: int = 1,
     ):
-        T, N = corrected_actions.size()
+        
 
-        recurrent_hidden_states = torch.zeros(
-            N,
-            self.policy.net.num_recurrent_layers,
-            self.config.MODEL.STATE_ENCODER.hidden_size,
-            device=self.device,
-        )
-
-        AuxLosses.clear()
-
-        distribution = self.policy.build_distribution(
-            observations, recurrent_hidden_states, prev_actions, not_done_masks
+        distribution = self.policy.build_logits(
+            observations
         )
 
         logits = distribution.logits

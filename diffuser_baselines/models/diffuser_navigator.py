@@ -22,6 +22,10 @@ class DiffusionPolicy(Policy):
 
         pass
     
+
+    def build_logits(self,observations):
+
+        out = self.navigator(observations)
     
     @classmethod
     def from_config(
@@ -62,23 +66,32 @@ class DiffusionNavigator(nn.Module):
 
         self.n_steps = diffusion_timesteps
 
+
+    def forward(self, observations, run_inference=False):
+
+        bs = observations["instruction"].size(0)
+
+        
+        # Tokenlize
+        # instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
+        rgb_tokens = self.rgb_linear(observations["rgb_features"])  # (bs, num_patches, embedding_dim)
+        rgb_tokens = torch.mean(rgb_tokens, dim=(2, 3))
+
+
+        depth_tokens = self.depth_linear(observations["depth_features"]) # (bs, num_patches, embedding_dim)
+        depth_tokens = torch.mean(depth_tokens, dim=(2, 3))
+
+        # # Concatenate instruction, rgb, and depth tokens
+        # tokens = torch.cat([instr_tokens.unsqueeze(1), rgb_tokens, depth_tokens], dim=1)  # (bs, num_tokens, embedding_dim)
+
+        print(f"tensor {rgb_tokens.shape}")
+
         assert 1==2
-
-    def forward(self, instruction, rgb_features, depth_features, gt_actions=None, run_inference=False):
-        bs = instruction.size(0)
-        
-        # Encode instruction
-        instr_tokens = self.instruction_encoder(instruction)  # (bs, embedding_dim)
-        
-        # Apply 1x1 convolutions to map features to embedding dimension
-        rgb_tokens = self.rgb_linear(rgb_features).view(bs, -1, self.embedding_dim)  # (bs, num_patches, embedding_dim)
-        depth_tokens = self.depth_linear(depth_features).view(bs, -1, self.embedding_dim)  # (bs, num_patches, embedding_dim)
-
-        # Concatenate instruction, rgb, and depth tokens
-        tokens = torch.cat([instr_tokens.unsqueeze(1), rgb_tokens, depth_tokens], dim=1)  # (bs, num_tokens, embedding_dim)
 
         # Cross-attention between instruction and visual features
         tokens = tokens.transpose(0, 1)  # Required for multihead attention
+
+
         tokens, _ = self.cross_attention(tokens, tokens, tokens)
         tokens, _ = self.self_attention(tokens, tokens, tokens)
         tokens = tokens.transpose(0, 1)  # Back to (bs, num_tokens, embedding_dim)
