@@ -37,7 +37,7 @@ class InstructionEncoder(nn.Module):
         Returns:
             embeddings tensor of size [num_words x embedding_dim]
         """
-        with gzip.open(self.config.embedding_file, "rt") as f:
+        with gzip.open(self.config.MODEL.INSTRUCTION_ENCODER.embedding_file, "rt") as f:
             embeddings = torch.tensor(json.load(f))
         return embeddings
 
