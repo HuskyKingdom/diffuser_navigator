@@ -117,7 +117,7 @@ class DiffusionNavigator(nn.Module):
         ).long()
 
         print(f"alphas_cumprod shape: {self.noise_scheduler.alphas_cumprod.shape}")
-        print(f"noising_timesteps min: {noising_timesteps.min()}, max: {noising_timesteps.max()}")
+        print(f"noising_timesteps min: {noising_timesteps}")
 
         print(f"oracle_action_tokens {oracle_action_tokens.shape} ; noise {noise.shape} ; noising_timesteps {noising_timesteps.shape}")
 
