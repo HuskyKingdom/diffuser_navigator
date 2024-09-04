@@ -38,7 +38,6 @@ class ObservationsDict(dict):
         return self
 
 
-
 def collate_fn(batch):    
     """
     [
@@ -61,37 +60,34 @@ def collate_fn(batch):
     for sample in batch:
         len_seq = sample[0]['instruction'].shape[0]
         
-        # randomly sample timestep t
-        t = random.randint(0, len_seq - F - 1)
+        # randomly sample timestep t in the range [0, len_seq-1]
+        t = random.randint(0, len_seq - 1)
         
-        # Append the single timestep t data for instruction, rgb_features, and depth_features
+        # Handle instruction, rgb_features, depth_features
         collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t]))
         collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t]))
         collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t]))
         
-        # Append the range t:t+F+1 for gt_actions
-        collected_data['gt_actions'].append(torch.tensor(sample[2][t:t+F+1]))
+        # Handle gt_actions by selecting from t to t+F, padding with -1 if out of bounds
+        if t + F < len_seq:
+            gt_action_segment = sample[2][t:t+F+1]
+        else:
+            gt_action_segment = sample[2][t:] 
+            padding_size = (t + F + 1) - len_seq 
+            gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, -1)])
+
+        collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
     
-    # Stack the lists into batched tensors
+    # Stack into batched tensors
     collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
     collected_data['rgb_features'] = torch.stack(collected_data['rgb_features'], dim=0)
     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
 
-
-    collected_data['gt_actions'] = collected_data['gt_actions'].float()
-    collected_data['gt_actions'] = Fuc.softmax(collected_data['gt_actions'], dim=-1)
-
-
-
-
-
-    print(collected_data['gt_actions'].shape)
-
-    assert 1==2
+    print(f"traj {collected_data['gt_actions'] }")
+    assert 1==0
     
     return collected_data
-
     
 
 
