@@ -524,7 +524,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         self._initialize_policy(
             self.config,
             self.config.IL.load_from_ckpt,
-            4 + 1  # added 1 more for -1 padding
+            4 + 1,  # added 1 more for -1 padding
         )
 
         with TensorboardWriter(
