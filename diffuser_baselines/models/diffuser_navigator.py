@@ -21,6 +21,15 @@ class DiffusionPolicy(Policy):
     def act(observations):
 
         pass
+    
+    
+    @classmethod
+    def from_config(
+        cls, num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
+    ):
+        return cls(
+            num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
+        )
 
 
 
@@ -28,7 +37,7 @@ class DiffusionPolicy(Policy):
 class DiffusionNavigator(nn.Module):
 
     def __init__(self, num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps):
-        
+
         super(DiffusionNavigator, self).__init__()
 
 
