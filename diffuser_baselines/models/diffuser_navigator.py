@@ -121,6 +121,8 @@ class DiffusionNavigator(nn.Module):
             noising_timesteps
         )
 
+        assert 1==2
+
         # predict noise
         tokens = (instr_tokens,space_tokens)
         pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps)
