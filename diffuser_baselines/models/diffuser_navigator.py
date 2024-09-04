@@ -221,7 +221,7 @@ class DiffusionNavigator(nn.Module):
         )
 
 
-        print(f" contex features  {context_features.shape,action_features.shape}")
+        print(f" contex features  {context_features.shape,action_features.shape,obs_features.shape}")
 
         assert 1==2
 
