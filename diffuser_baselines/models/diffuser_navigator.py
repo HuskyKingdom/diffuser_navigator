@@ -203,8 +203,8 @@ class DiffusionNavigator(nn.Module):
 
         obs_features = self.cross_attention(query=tokens[1].transpose(0, 1),
             value=tokens[2].transpose(0, 1),
-            query_pos=rgb_position,
-            value_pos=depth_position,
+            query_pos=None,
+            value_pos=None,
             diff_ts=time_embeddings)
         
         print(f" obs features  {obs_features.shape}")
