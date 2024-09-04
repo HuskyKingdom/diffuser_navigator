@@ -209,12 +209,12 @@ class DiffusionNavigator(nn.Module):
         
         
         
-        context_features = self.vision_language_attention(obs_features,tokens[0]) # rgb attend instr.
+        context_features = self.vision_language_attention(obs_features,tokens[0].transpose(0, 1)) # rgb attend instr.
 
 
         action_features, _ = self.traj_lang_attention[0](
-                seq1=noisy_actions, seq1_key_padding_mask=None,
-                seq2=tokens[0], seq2_key_padding_mask=None,
+                seq1=noisy_actions.transpose(0, 1), seq1_key_padding_mask=None,
+                seq2=tokens[0].transpose(0, 1), seq2_key_padding_mask=None,
                 seq1_pos=None, seq2_pos=None,
                 seq1_sem_pos=None, seq2_sem_pos=None
         )
