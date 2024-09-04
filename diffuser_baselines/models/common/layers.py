@@ -338,6 +338,9 @@ class RelativeCrossAttentionLayer(nn.Module):
             adaln_query = self.adaln(query, diff_ts)
         else:
             adaln_query = query
+
+        print(f"q {query.shape}")
+        assert 1==2
         attn_output, _ = self.multihead_attn(
             query=adaln_query,
             key=value,
@@ -403,8 +406,6 @@ class FFWRelativeCrossAttentionModule(nn.Module):
                 query, value, diff_ts, query_pos, value_pos
             )
             query = self.ffw_layers[i](query, diff_ts)
-            print(f"q {query.shape}")
-            assert 1==2
             output.append(query)
         return output
 
