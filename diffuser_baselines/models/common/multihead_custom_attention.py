@@ -238,6 +238,7 @@ def multi_head_attention_forward(query,  # type: Tensor
     qkv_same = torch.equal(query, key) and torch.equal(key, value)
     kv_same = torch.equal(key, value)
 
+    print(f"q {query.shape}")
     tgt_len, bsz, embed_dim = query.size()
     assert embed_dim == embed_dim_to_check
     assert list(query.size()) == [tgt_len, bsz, embed_dim]
