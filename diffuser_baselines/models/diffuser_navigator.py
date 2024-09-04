@@ -207,7 +207,7 @@ class DiffusionNavigator(nn.Module):
             value_pos=None,
             diff_ts=time_embeddings)[-1] # takes last layer
         
-        
+        print(f" contex features  {obs_features.shape,tokens[0].transpose(0, 1).shape}")
         
         context_features = self.vision_language_attention(obs_features,tokens[0].transpose(0, 1)) # rgb attend instr.
 
