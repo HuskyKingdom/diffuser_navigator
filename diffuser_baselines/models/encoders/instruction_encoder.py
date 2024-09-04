@@ -49,6 +49,7 @@ class InstructionEncoder(nn.Module):
             hidden_state: [batch_size x hidden_size]
         """
 
-        out = self.embedding_layer(observations)
+        input = observations.long()
+        out = self.embedding_layer(input)
         
         return out
