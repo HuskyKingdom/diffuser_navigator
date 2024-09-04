@@ -227,7 +227,7 @@ class DiffusionNavigator(nn.Module):
             value=context_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,
-            diff_ts=time_embeddings)
+            diff_ts=time_embeddings)[-1]
         
 
 
