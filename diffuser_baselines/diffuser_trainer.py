@@ -3,7 +3,8 @@ import os
 import random
 import warnings
 from collections import defaultdict
-
+from gym import Space
+from habitat import Config
 import lmdb
 import msgpack_numpy
 import numpy as np
@@ -38,6 +39,7 @@ class ObservationsDict(dict):
         return self
 
 
+# make input into batched tensors & -1 pad on the oracle actions
 def collate_fn(batch):    
     """
     [
@@ -84,9 +86,7 @@ def collate_fn(batch):
     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
 
-    print(f"traj {collected_data['gt_actions'] }")
-    assert 1==0
-    
+
     return collected_data
     
 
@@ -524,11 +524,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
         self._initialize_policy(
             self.config,
             self.config.IL.load_from_ckpt,
-            observation_space=observation_space,
-            action_space=action_space,
+            4 + 1  # added 1 more for -1 padding
         )
-
-
 
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
@@ -558,35 +555,12 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     num_workers=1,
                 )
 
-                for batch in diter:
-                    print(batch)
-                    break
-
-
-                assert 1==2
                     
                 if torch.cuda.is_available():
                     with torch.cuda.device(self.device):
                         torch.cuda.empty_cache()
                 gc.collect()
-                
 
-                dataset = IWTrajectoryDataset(
-                    self.lmdb_features_dir,
-                    self.config.IL.use_iw,
-                    inflection_weight_coef=self.config.IL.inflection_weight_coef,
-                    lmdb_map_size=self.config.IL.DAGGER.lmdb_map_size,
-                    batch_size=self.config.IL.batch_size,
-                )
-                diter = torch.utils.data.DataLoader(
-                    dataset,
-                    batch_size=self.config.IL.batch_size,
-                    shuffle=False,
-                    collate_fn=collate_fn,
-                    pin_memory=False,
-                    drop_last=True,  # drop last batch if smaller
-                    num_workers=3,
-                )
 
                 AuxLosses.activate()
                 for epoch in tqdm.trange(
@@ -594,25 +568,19 @@ class DiffuserTrainer(BaseVLNCETrainer):
                 ):
                     for batch in tqdm.tqdm(
                         diter,
-                        total=dataset.length // dataset.batch_size,
+                        total=diffusion_dataset.length // diffusion_dataset.batch_size,
                         leave=False,
                         dynamic_ncols=True,
                     ):
-                        (
-                            observations_batch,
-                            prev_actions_batch,
-                            not_done_masks,
-                            corrected_actions_batch,
-                            weights_batch,
-                        ) = batch
+             
 
-                        observations_batch = {
+                        batch = {
                             k: v.to(
                                 device=self.device,
                                 dtype=torch.float32,
                                 non_blocking=True,
                             )
-                            for k, v in observations_batch.items()
+                            for k, v in batch.items()
                         }
 
                         loss, action_loss, aux_loss = self._update_agent(
@@ -657,3 +625,92 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth"
                     )
                 AuxLosses.deactivate()
+
+    def _update_agent(
+        self,
+        observations,
+        prev_actions,
+        not_done_masks,
+        corrected_actions,
+        weights,
+        step_grad: bool = True,
+        loss_accumulation_scalar: int = 1,
+    ):
+        T, N = corrected_actions.size()
+
+        recurrent_hidden_states = torch.zeros(
+            N,
+            self.policy.net.num_recurrent_layers,
+            self.config.MODEL.STATE_ENCODER.hidden_size,
+            device=self.device,
+        )
+
+        AuxLosses.clear()
+
+        distribution = self.policy.build_distribution(
+            observations, recurrent_hidden_states, prev_actions, not_done_masks
+        )
+
+        logits = distribution.logits
+        logits = logits.view(T, N, -1)
+
+        action_loss = F.cross_entropy(
+            logits.permute(0, 2, 1), corrected_actions, reduction="none"
+        )
+        action_loss = ((weights * action_loss).sum(0) / weights.sum(0)).mean()
+
+        aux_mask = (weights > 0).view(-1)
+        aux_loss = AuxLosses.reduce(aux_mask)
+
+        loss = action_loss + aux_loss
+        loss = loss / loss_accumulation_scalar
+        loss.backward()
+
+        if step_grad:
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+
+        if isinstance(aux_loss, torch.Tensor):
+            aux_loss = aux_loss.item()
+        return loss.item(), action_loss.item(), aux_loss
+
+
+    def _initialize_policy(
+        self,
+        config: Config,
+        load_from_ckpt: bool,
+        num_actions: int,
+    ) -> None:
+        
+        policy = baseline_registry.get_policy(self.config.MODEL.policy_name)
+
+        self.policy = policy(
+            action_space=num_actions,
+            embedding_dim = config.DIFFUSER.embedding_dim,
+            num_attention_heads= config.DIFFUSER.num_attention_heads,
+            num_layers = config.DIFFUSER.num_layers,
+            diffusion_timesteps = config.DIFFUSER.diffusion_timesteps
+        )
+        self.policy.to(self.device)
+
+        self.optimizer = torch.optim.Adam(
+            self.policy.parameters(), lr=self.config.IL.lr
+        )
+
+
+        if load_from_ckpt:
+            ckpt_path = config.IL.ckpt_to_load
+            ckpt_dict = self.load_checkpoint(ckpt_path, map_location="cpu")
+            self.policy.load_state_dict(ckpt_dict["state_dict"])
+            if config.IL.is_requeue:
+                self.optimizer.load_state_dict(ckpt_dict["optim_state"])
+                self.start_epoch = ckpt_dict["epoch"] + 1
+                self.step_id = ckpt_dict["step_id"]
+            logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
+
+        params = sum(param.numel() for param in self.policy.parameters())
+        params_t = sum(
+            p.numel() for p in self.policy.parameters() if p.requires_grad
+        )
+        logger.info(f"Agent parameters: {params}. Trainable: {params_t}")
+        logger.info("Finished setting up policy.")

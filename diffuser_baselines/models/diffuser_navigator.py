@@ -2,34 +2,31 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
+from habitat_baselines.common.baseline_registry import baseline_registry
 
+from models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule
+
+
+
+@baseline_registry.register_policy
 class DiffusionNavigator(nn.Module):
 
-    def __init__(self, embedding_dim=256, num_attention_heads=8, num_actions=6, diffusion_timesteps=100):
+    def __init__(self, num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps):
         super(DiffusionNavigator, self).__init__()
+
+
         self.embedding_dim = embedding_dim
         self.num_actions = num_actions
 
-        # Encoder for instructions
+        # Encoders
         self.instruction_encoder = nn.Linear(200, embedding_dim)
-
-        # Linear layers to map rgb and depth features to the same embedding dimension
         self.rgb_linear = nn.Conv2d(2048, embedding_dim, kernel_size=1)
         self.depth_linear = nn.Conv2d(128, embedding_dim, kernel_size=1)
-
-        # Encoder for gt_actions (Discrete actions)
         self.action_encoder = nn.Embedding(num_actions, embedding_dim)
 
-        # Time embedding
-        self.time_emb = nn.Sequential(
-            nn.Linear(embedding_dim, embedding_dim),
-            nn.ReLU(),
-            nn.Linear(embedding_dim, embedding_dim)
-        )
-
         # Attention layers
-        self.cross_attention = nn.MultiheadAttention(embedding_dim, num_attention_heads)
-        self.self_attention = nn.MultiheadAttention(embedding_dim, num_attention_heads)
+        self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        self.self_attention = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
         # Diffusion schedulers
         self.noise_scheduler = DDPMScheduler(
@@ -38,14 +35,9 @@ class DiffusionNavigator(nn.Module):
             prediction_type="sample"  # We need to predict samples directly
         )
 
-        # Prediction head for actions
-        self.action_predictor = nn.Sequential(
-            nn.Linear(embedding_dim, embedding_dim),
-            nn.ReLU(),
-            nn.Linear(embedding_dim, num_actions)  # Predict logits for actions
-        )
-
         self.n_steps = diffusion_timesteps
+
+        assert 1==2
 
     def forward(self, instruction, rgb_features, depth_features, gt_actions=None, run_inference=False):
         bs = instruction.size(0)
