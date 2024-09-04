@@ -209,7 +209,7 @@ class DiffusionNavigator(nn.Module):
         
         print(f" contex features  {obs_features.shape,tokens[0].transpose(0, 1).shape}")
         
-        context_features = self.vision_language_attention(obs_features,tokens[0].transpose(0, 1)) # rgb attend instr.
+        context_features = self.vision_language_attention(obs_features.transpose(0, 1),tokens[0]) # rgb attend instr.
 
 
         action_features, _ = self.traj_lang_attention[0](
