@@ -81,6 +81,15 @@ class DiffusionNavigator(nn.Module):
             for _ in range(1)
             for _ in range(1)
         ])
+        self.traj_lang_attention = nn.ModuleList([
+            ParallelAttention(
+                num_layers=1,
+                d_model=embedding_dim, n_heads=num_attention_heads,
+                self_attention1=False, self_attention2=False,
+                cross_attention1=True, cross_attention2=False,
+                rotary_pe=False, apply_ffn=False
+            )
+        ])
 
         self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.self_attention = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
@@ -105,7 +114,7 @@ class DiffusionNavigator(nn.Module):
         depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, 128, em)
         oracle_action_tokens = self.action_encoder(observations["gt_actions"].long())
 
-        space_tokens =  torch.cat((rgb_tokens, depth_tokens), dim=1) # naively concat
+        
 
         # noising oracle_action_tokens
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
@@ -124,7 +133,7 @@ class DiffusionNavigator(nn.Module):
 
 
         # predict noise
-        tokens = (instr_tokens,space_tokens)
+        tokens = (instr_tokens,rgb_tokens,depth_tokens)
         pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps)
 
 
@@ -179,16 +188,48 @@ class DiffusionNavigator(nn.Module):
         return feats
 
 
-    def predict_noise(self, tokens, noisy_actions, timesteps): # tokens in form (instr_tokens,space_tokens)
+    def predict_noise(self, tokens, noisy_actions, timesteps): # tokens in form (instr_tokens,rgb,depth)
 
-        
-        context_features = self.vision_language_attention(tokens[1],tokens[0])
 
-        
         time_embeddings = self.time_emb(timesteps.unsqueeze(-1).float()).squeeze(1)
+        
+        # positional encoding
+        rgb_position = torch.arange(tokens[1].shape[1], device='cuda').unsqueeze(0).expand(tokens[1].shape[0], tokens[1].shape[1])
+        depth_position = torch.arange(tokens[2].shape[1], device='cuda').unsqueeze(0).expand(tokens[2].shape[0], tokens[2].shape[1])
+
+        obs_features = self.cross_attention(query=tokens[1],
+            value=tokens[2],
+            query_pos=rgb_position,
+            value_pos=depth_position,
+            diff_ts=time_embeddings)
+        
+        context_features = self.vision_language_attention(obs_features,tokens[0]) # rgb attend instr.
+
+
+        action_features, _ = self.traj_lang_attention[0](
+                seq1=noisy_actions, seq1_key_padding_mask=None,
+                seq2=tokens[0], seq2_key_padding_mask=None,
+                seq1_pos=None, seq2_pos=None,
+                seq1_sem_pos=None, seq2_sem_pos=None
+        )
+
+
+        print(f" contex features  {context_features.shape,action_features.shape}")
+
+        assert 1==2
+
+        features = self.cross_attention(query=action_features,
+            value=context_features,
+            query_pos=None,
+            value_pos=None,
+            diff_ts=time_embeddings)
+        
+
+
+
 
         print(f" contex features  {tokens[1].shape,tokens[0].shape}")
-        print(f" contex features  {time_embeddings.shape}")
+        print(f" contex features  {context_features.shape}")
 
         assert 1==2
         # Optionally add time embeddings
