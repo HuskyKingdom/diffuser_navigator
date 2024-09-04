@@ -289,6 +289,8 @@ class AdaLN(nn.Module):
         """
         scale, shift = self.modulation(t).chunk(2, dim=-1)  # (B, C), (B, C)
         x = x * (1 + scale.unsqueeze(0)) + shift.unsqueeze(0)
+
+        x = x.squeeze(0)
         return x
 
 
@@ -339,8 +341,6 @@ class RelativeCrossAttentionLayer(nn.Module):
         else:
             adaln_query = query
 
-        print(f"q {adaln_query.shape}")
-        assert 1==2
         attn_output, _ = self.multihead_attn(
             query=adaln_query,
             key=value,

@@ -197,15 +197,17 @@ class DiffusionNavigator(nn.Module):
         rgb_position = torch.arange(tokens[1].shape[1], device='cuda').unsqueeze(0).expand(tokens[1].shape[0], tokens[1].shape[1])
         depth_position = torch.arange(tokens[2].shape[1], device='cuda').unsqueeze(0).expand(tokens[2].shape[0], tokens[2].shape[1])
 
-        print(f" contex features  {tokens[1].shape,rgb_position.shape}")
-
+        
+        
         
 
-        obs_features = self.cross_attention(query=tokens[1],
-            value=tokens[2],
+        obs_features = self.cross_attention(query=tokens[1].transpose(0, 1),
+            value=tokens[2].transpose(0, 1),
             query_pos=rgb_position,
             value_pos=depth_position,
             diff_ts=time_embeddings)
+        
+        print(f" obs features  {obs_features.shape}")
         
         assert 1==2
         
