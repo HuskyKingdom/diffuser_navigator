@@ -4,9 +4,10 @@ import torch.nn.functional as F
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from habitat_baselines.common.baseline_registry import baseline_registry
 
-from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule
+from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule,ParallelAttention
 from habitat_baselines.rl.ppo.policy import Policy
 from diffuser_baselines.models.encoders.instruction_encoder import InstructionEncoder
+from diffuser_baselines.models.common.position_encodings import RotaryPositionEncoding,SinusoidalPosEmb
 
 
 @baseline_registry.register_policy
@@ -56,7 +57,25 @@ class DiffusionNavigator(nn.Module):
         self.depth_linear = nn.Linear(16,embedding_dim)
         self.action_encoder = nn.Embedding(num_actions, embedding_dim)
 
+        for param in self.action_encoder.parameters(): # freeze action representations
+            param.requires_grad = False
+
+        # positional embeddings
+        self.pe_layer = RotaryPositionEncoding(embedding_dim)
+
         # Attention layers
+        layer = ParallelAttention(
+            num_layers=num_layers,
+            d_model=embedding_dim, n_heads=num_attention_heads,
+            self_attention1=False, self_attention2=False,
+            cross_attention1=True, cross_attention2=False
+        )
+        self.vl_attention = nn.ModuleList([
+            layer
+            for _ in range(1)
+            for _ in range(1)
+        ])
+
         self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.self_attention = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
@@ -76,23 +95,32 @@ class DiffusionNavigator(nn.Module):
         
         # tokenlize
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
-        rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, num_patches, embedding_dim)
-        depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, num_patches, embedding_dim)
+        rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, 2048, em)
+        depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, 128, em)
         oracle_action_tokens = self.action_encoder(observations["gt_actions"].long())
 
+        space_tokens =  torch.cat((rgb_tokens, depth_tokens), dim=1) # naively concat
 
         # noising oracle_action_tokens
-        noise = torch.randn(observations["gt_actions"].shape, device=observations["gt_actions"].device)
+        noise = torch.randn(oracle_action_tokens, device=oracle_action_tokens.device)
         noising_timesteps = torch.randint(
             0,
             self.noise_scheduler.config.num_train_timesteps,
             (len(noise),), device=noise.device
         ).long()
 
+        noised_orc_action_tokens = self.noise_scheduler.add_noise(
+            oracle_action_tokens, noise,
+            timesteps
+        )
 
-        print(f"noising timesteps {oracle_action_tokens.shape}")
+        # predict noise
+        tokens = (instr_tokens,space_tokens)
+        pred = self.predict_noise(tokens,noised_orc_action_tokens,timesteps)
 
-        assert 1==2
+
+
+
 
 
         context_features = self.cross_attention()
@@ -131,7 +159,24 @@ class DiffusionNavigator(nn.Module):
         noisy_actions = noisy_actions % self.num_actions  # Ensure within valid action range
         return noisy_actions
 
-    def predict_noise(self, tokens, noisy_actions, timesteps):
+
+    def vision_language_attention(self, feats, instr_feats):
+        feats, _ = self.vl_attention[0](
+            seq1=feats, seq1_key_padding_mask=None,
+            seq2=instr_feats, seq2_key_padding_mask=None,
+            seq1_pos=None, seq2_pos=None,
+            seq1_sem_pos=None, seq2_sem_pos=None
+        )
+        return feats
+
+
+    def predict_noise(self, tokens, noisy_actions, timesteps): # tokens in form (instr_tokens,space_tokens)
+
+        
+        context_features = self.vl_attention(tokens[1],tokens[0])
+
+        print(f" context features  {context_features.shape}")
+
         # Optionally add time embeddings
         time_embeddings = self.time_emb(timesteps.unsqueeze(-1).float())
         noisy_actions = noisy_actions + time_embeddings
