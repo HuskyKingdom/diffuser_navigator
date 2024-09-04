@@ -25,7 +25,7 @@ class InstructionEncoder(nn.Module):
 
         self.embedding_layer = nn.Embedding.from_pretrained(
                     embeddings=self._load_embeddings(),
-                    freeze=not self.config.fine_tune_embeddings,
+                    freeze=True,
         )
 
 
@@ -49,6 +49,6 @@ class InstructionEncoder(nn.Module):
             hidden_state: [batch_size x hidden_size]
         """
 
-        out = self.embedding_layer(instruction)
+        out = self.embedding_layer(observations)
         
         return out
