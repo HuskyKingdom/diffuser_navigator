@@ -191,7 +191,7 @@ class DiffusionNavigator(nn.Module):
     def predict_noise(self, tokens, noisy_actions, timesteps): # tokens in form (instr_tokens,rgb,depth)
 
 
-        time_embeddings = self.time_emb(timesteps.unsqueeze(-1).float()).squeeze(1)
+        time_embeddings = self.time_emb(timesteps.unsqueeze(-1).float())
         
         # positional encoding
         rgb_position = torch.arange(tokens[1].shape[1], device='cuda').unsqueeze(0).expand(tokens[1].shape[0], tokens[1].shape[1])
