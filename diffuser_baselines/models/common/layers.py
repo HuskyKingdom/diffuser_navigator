@@ -399,7 +399,7 @@ class FFWRelativeCrossAttentionModule(nn.Module):
                 query_pos=None, value_pos=None):
         output = []
         for i in range(self.num_layers):
-            print(f"q {query.size}")
+            print(f"q {query.shape}")
             assert 1==2
             query = self.attn_layers[i](
                 query, value, diff_ts, query_pos, value_pos
