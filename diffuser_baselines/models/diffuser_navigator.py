@@ -79,13 +79,20 @@ class DiffusionNavigator(nn.Module):
         rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, num_patches, embedding_dim)
         depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, num_patches, embedding_dim)
 
-        # # Concatenate instruction, rgb, and depth tokens
-        # tokens = torch.cat([instr_tokens.unsqueeze(1), rgb_tokens, depth_tokens], dim=1)  # (bs, num_tokens, embedding_dim)
 
-        print(f"tensor {instr_tokens.shape}")
-        print(f"tensor {rgb_tokens.shape}")
+        noise = torch.randn(observations["gt_actions"].shape, device=observations["gt_actions"].device)
 
-        assert 1==2
+        noising_timesteps = torch.randint(
+            0,
+            self.position_noise_scheduler.config.num_train_timesteps,
+            (len(noise),), device=noise.device
+        ).long()
+
+
+        print(f"noising timesteps {noising_timesteps}")
+
+
+        context_features = self.cross_attention()
 
         # Cross-attention between instruction and visual features
         tokens = tokens.transpose(0, 1)  # Required for multihead attention
