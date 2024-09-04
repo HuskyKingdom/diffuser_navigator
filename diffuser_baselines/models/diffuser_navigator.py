@@ -90,7 +90,7 @@ class DiffusionNavigator(nn.Module):
         ).long()
 
 
-        print(f"noising timesteps {oracle_action_tokens}")
+        print(f"noising timesteps {oracle_action_tokens.shape}")
 
         assert 1==2
 
