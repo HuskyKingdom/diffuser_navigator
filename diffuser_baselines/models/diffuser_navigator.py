@@ -105,7 +105,7 @@ class DiffusionNavigator(nn.Module):
         depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, 128, em)
         oracle_action_tokens = self.action_encoder(observations["gt_actions"].long())
 
-        space_tokens =  torch.cat((rgb_tokens, depth_tokens), dim=1) # naively concat
+        # space_tokens =  torch.cat((rgb_tokens, depth_tokens), dim=1) # naively concat
 
         # noising oracle_action_tokens
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
