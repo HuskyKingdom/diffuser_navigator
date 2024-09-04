@@ -28,7 +28,7 @@ class InstructionEncoder(nn.Module):
                     freeze=True,
         )
 
-        self.map_layer = nn.linear(50,embed_dim)
+        self.map_layer = nn.Linear(50,embed_dim)
 
 
     def _load_embeddings(self) -> Tensor:
