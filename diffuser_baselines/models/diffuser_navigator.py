@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from habitat_baselines.common.baseline_registry import baseline_registry
 
-from models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule
+from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule
 
 
 
