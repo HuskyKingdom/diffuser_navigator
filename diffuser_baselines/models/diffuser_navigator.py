@@ -108,7 +108,7 @@ class DiffusionNavigator(nn.Module):
         space_tokens =  torch.cat((rgb_tokens, depth_tokens), dim=1) # naively concat
 
         # # noising oracle_action_tokens
-        noise = torch.randn(oracle_action_tokens.shape, device=observations["instruction"].device)
+        noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
 
         # print(f"noising_timesteps min: {self.noise_scheduler.config.num_train_timesteps}")
         # noising_timesteps = torch.randint(
