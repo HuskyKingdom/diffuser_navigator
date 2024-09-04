@@ -52,8 +52,8 @@ class DiffusionNavigator(nn.Module):
 
         # Encoders
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
-        self.rgb_linear = nn.Conv2d(16, embedding_dim, kernel_size=1)
-        self.depth_linear = nn.Conv2d(16, embedding_dim, kernel_size=1)
+        self.rgb_linear = nn.Linear(16,embedding_dim)
+        self.depth_linear = nn.Linear(16,embedding_dim)
         self.action_encoder = nn.Embedding(num_actions, embedding_dim)
 
         # Attention layers
