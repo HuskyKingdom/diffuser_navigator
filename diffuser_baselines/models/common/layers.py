@@ -337,9 +337,7 @@ class RelativeCrossAttentionLayer(nn.Module):
     def forward(self, query, value, diff_ts=None,
                 query_pos=None, value_pos=None, pad_mask=None):
         
-        print(f" obs features  {query.shape,diff_ts.shape}")
-        
-        assert 1==2
+
         if diff_ts is not None:
             adaln_query = self.adaln(query, diff_ts)
         else:
