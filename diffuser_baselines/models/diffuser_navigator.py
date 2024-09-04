@@ -116,7 +116,7 @@ class DiffusionNavigator(nn.Module):
             (len(noise),), device=noise.device
         ).long()
 
-        print(f"alphas_cumprod shape: {noising_timesteps}")
+        # print(f"alphas_cumprod shape: {noising_timesteps}")
        
         # assert 1==2
 
