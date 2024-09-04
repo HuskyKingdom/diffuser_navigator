@@ -181,12 +181,12 @@ class DiffusionNavigator(nn.Module):
         
         context_features = self.vision_language_attention(tokens[1],tokens[0])
 
-        assert 1==2
+        
         time_embeddings = self.time_emb(timesteps.unsqueeze(-1).float())
 
         print(f" context features  {context_features.shape}")
 
-
+        assert 1==2
         # Optionally add time embeddings
         time_embeddings = self.time_emb(timesteps.unsqueeze(-1).float())
         noisy_actions = noisy_actions + time_embeddings
