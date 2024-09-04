@@ -6,19 +6,19 @@ from habitat_baselines.common.baseline_registry import baseline_registry
 
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule
 from habitat_baselines.rl.ppo.policy import Policy
-
+from diffuser_baselines.models.encoders.instruction_encoder import InstructionEncoder
 
 
 @baseline_registry.register_policy
 class DiffusionPolicy(Policy):
     
     def __init__(
-        self,
+        self, config,
         num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
     ) -> None:
         
         super(Policy, self).__init__()
-        self.navigator = DiffusionNavigator(num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
+        self.navigator = DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
 
     def act(observations):
 
@@ -31,10 +31,10 @@ class DiffusionPolicy(Policy):
     
     @classmethod
     def from_config(
-        cls, num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
+        cls,config, num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
     ):
         return cls(
-            num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
+            config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
         )
 
 
@@ -42,7 +42,7 @@ class DiffusionPolicy(Policy):
 
 class DiffusionNavigator(nn.Module):
 
-    def __init__(self, num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps):
+    def __init__(self, config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps):
 
         super(DiffusionNavigator, self).__init__()
 
@@ -51,7 +51,7 @@ class DiffusionNavigator(nn.Module):
         self.num_actions = num_actions
 
         # Encoders
-        self.instruction_encoder = nn.Linear(200, embedding_dim)
+        self.instruction_encoder = InstructionEncoder(config)
         self.rgb_linear = nn.Conv2d(2048, embedding_dim, kernel_size=1)
         self.depth_linear = nn.Conv2d(128, embedding_dim, kernel_size=1)
         self.action_encoder = nn.Embedding(num_actions, embedding_dim)
@@ -75,7 +75,7 @@ class DiffusionNavigator(nn.Module):
 
         
         # Tokenlize
-        # instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
+        instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
         rgb_tokens = self.rgb_linear(observations["rgb_features"])  # (bs, num_patches, embedding_dim)
         rgb_tokens = torch.mean(rgb_tokens, dim=(2, 3))
 
@@ -86,6 +86,7 @@ class DiffusionNavigator(nn.Module):
         # # Concatenate instruction, rgb, and depth tokens
         # tokens = torch.cat([instr_tokens.unsqueeze(1), rgb_tokens, depth_tokens], dim=1)  # (bs, num_tokens, embedding_dim)
 
+        print(f"tensor {instr_tokens.shape}")
         print(f"tensor {rgb_tokens.shape}")
 
         assert 1==2

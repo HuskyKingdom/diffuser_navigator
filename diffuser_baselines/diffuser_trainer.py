@@ -660,6 +660,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         policy = baseline_registry.get_policy(self.config.MODEL.policy_name)
 
         self.policy = policy(
+            config,
             num_actions=num_actions,
             embedding_dim = config.DIFFUSER.embedding_dim,
             num_attention_heads= config.DIFFUSER.num_attention_heads,
