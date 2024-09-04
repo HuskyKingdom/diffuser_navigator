@@ -74,14 +74,15 @@ class DiffusionNavigator(nn.Module):
         bs = observations["instruction"].size(0)
 
         
-        # Tokenlize
+        # tokenlize
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
         rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, num_patches, embedding_dim)
         depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, num_patches, embedding_dim)
+        oracle_action_tokens = self.action_encoder(observations["gt_actions"].long())
 
 
+        # noising oracle_action_tokens
         noise = torch.randn(observations["gt_actions"].shape, device=observations["gt_actions"].device)
-
         noising_timesteps = torch.randint(
             0,
             self.noise_scheduler.config.num_train_timesteps,
@@ -89,7 +90,7 @@ class DiffusionNavigator(nn.Module):
         ).long()
 
 
-        print(f"noising timesteps {noising_timesteps}")
+        print(f"noising timesteps {oracle_action_tokens}")
 
         assert 1==2
 
