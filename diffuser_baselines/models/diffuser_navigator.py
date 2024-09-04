@@ -58,7 +58,7 @@ class DiffusionNavigator(nn.Module):
         self.noise_scheduler = DDPMScheduler(
             num_train_timesteps=diffusion_timesteps,
             beta_schedule="scaled_linear",
-            prediction_type="sample"  # We need to predict samples directly
+            prediction_type="epsilon"
         )
 
         self.n_steps = diffusion_timesteps
