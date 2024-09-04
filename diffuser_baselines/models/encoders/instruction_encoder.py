@@ -8,7 +8,7 @@ from torch import Tensor
 
 
 class InstructionEncoder(nn.Module):
-    def __init__(self, config: Config) -> None:
+    def __init__(self, config: Config,embed_dim) -> None:
         """An encoder that uses RNN to encode an instruction. Returns
         the final hidden state after processing the instruction sequence.
 
@@ -27,6 +27,8 @@ class InstructionEncoder(nn.Module):
                     embeddings=self._load_embeddings(),
                     freeze=True,
         )
+
+        self.map_layer = nn.linear(50,embed_dim)
 
 
     def _load_embeddings(self) -> Tensor:
@@ -50,6 +52,6 @@ class InstructionEncoder(nn.Module):
         """
 
         input = observations.long()
-        out = self.embedding_layer(input)
+        out = self.map_layer(self.embedding_layer(input))
         
         return out

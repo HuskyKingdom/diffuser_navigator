@@ -52,8 +52,8 @@ class DiffusionNavigator(nn.Module):
 
         # Encoders
         self.instruction_encoder = InstructionEncoder(config)
-        self.rgb_linear = nn.Conv2d(2048, embedding_dim, kernel_size=1)
-        self.depth_linear = nn.Conv2d(128, embedding_dim, kernel_size=1)
+        self.rgb_linear = nn.Conv2d(16, embedding_dim, kernel_size=1)
+        self.depth_linear = nn.Conv2d(16, embedding_dim, kernel_size=1)
         self.action_encoder = nn.Embedding(num_actions, embedding_dim)
 
         # Attention layers
@@ -76,12 +76,8 @@ class DiffusionNavigator(nn.Module):
         
         # Tokenlize
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
-        rgb_tokens = self.rgb_linear(observations["rgb_features"])  # (bs, num_patches, embedding_dim)
-        rgb_tokens = torch.mean(rgb_tokens, dim=(2, 3))
-
-
-        depth_tokens = self.depth_linear(observations["depth_features"]) # (bs, num_patches, embedding_dim)
-        depth_tokens = torch.mean(depth_tokens, dim=(2, 3))
+        rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, num_patches, embedding_dim)
+        depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, num_patches, embedding_dim)
 
         # # Concatenate instruction, rgb, and depth tokens
         # tokens = torch.cat([instr_tokens.unsqueeze(1), rgb_tokens, depth_tokens], dim=1)  # (bs, num_tokens, embedding_dim)
