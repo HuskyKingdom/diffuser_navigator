@@ -119,7 +119,7 @@ class DiffusionNavigator(nn.Module):
 
         print(f"alphas_cumprod shape: {noising_timesteps}")
        
-        assert 1==2
+        input("ss")
 
        
         # noised_orc_action_tokens = self.noise_scheduler.add_noise(
