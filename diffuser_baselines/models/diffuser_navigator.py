@@ -173,7 +173,7 @@ class DiffusionNavigator(nn.Module):
     def predict_noise(self, tokens, noisy_actions, timesteps): # tokens in form (instr_tokens,space_tokens)
 
         
-        context_features = self.vl_attention(tokens[1],tokens[0])
+        context_features = self.vision_language_attention(tokens[1],tokens[0])
 
         print(f" context features  {context_features.shape}")
 
