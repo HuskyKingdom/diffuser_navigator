@@ -23,6 +23,7 @@ from diffuser_baselines.common.base_il_trainer import BaseVLNCETrainer
 from vlnce_baselines.common.env_utils import construct_envs
 from vlnce_baselines.common.utils import extract_instruction_tokens
 
+import torch.nn.functional as Fuc
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=FutureWarning)
@@ -79,7 +80,9 @@ def collate_fn(batch):
 
 
     collected_data['gt_actions'] = collected_data['gt_actions'].float()
-    collected_data['gt_actions'] = F.softmax(collected_data['gt_actions'], dim=-1)
+    collected_data['gt_actions'] = Fuc.softmax(collected_data['gt_actions'], dim=-1)
+
+
 
 
 
