@@ -91,6 +91,8 @@ class DiffusionNavigator(nn.Module):
 
         print(f"noising timesteps {noising_timesteps}")
 
+        assert 1==2
+
 
         context_features = self.cross_attention()
 
