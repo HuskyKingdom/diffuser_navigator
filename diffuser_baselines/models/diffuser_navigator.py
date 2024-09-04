@@ -122,7 +122,6 @@ class DiffusionNavigator(nn.Module):
             noising_timesteps
         )
 
-        assert 1==2
 
         # predict noise
         tokens = (instr_tokens,space_tokens)
@@ -188,7 +187,7 @@ class DiffusionNavigator(nn.Module):
         
         time_embeddings = self.time_emb(timesteps.unsqueeze(-1).float())
 
-        print(f" context features  {context_features.shape}")
+        print(f" time_embeddings features  {time_embeddings.shape}")
 
         assert 1==2
         # Optionally add time embeddings
