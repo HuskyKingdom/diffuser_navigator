@@ -584,19 +584,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         }
 
                         loss, action_loss, aux_loss = self._update_agent(
-                            observations_batch,
-                            prev_actions_batch.to(
-                                device=self.device, non_blocking=True
-                            ),
-                            not_done_masks.to(
-                                device=self.device, non_blocking=True
-                            ),
-                            corrected_actions_batch.to(
-                                device=self.device, non_blocking=True
-                            ),
-                            weights_batch.to(
-                                device=self.device, non_blocking=True
-                            ),
+                            batch
                         )
 
                         logger.info(f"train_loss: {loss}")
