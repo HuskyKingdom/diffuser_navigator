@@ -111,12 +111,12 @@ class DiffusionNavigator(nn.Module):
 
         noised_orc_action_tokens = self.noise_scheduler.add_noise(
             oracle_action_tokens, noise,
-            timesteps
+            noising_timesteps
         )
 
         # predict noise
         tokens = (instr_tokens,space_tokens)
-        pred = self.predict_noise(tokens,noised_orc_action_tokens,timesteps)
+        pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps)
 
 
 
