@@ -1,96 +1,133 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import einops
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 
 class DiffusionNavigator(nn.Module):
-    def __init__(self,
-                 embedding_dim=128,
-                 num_attn_heads=8,
-                 diffusion_timesteps=1000,
-                 use_instruction=True):
-        super().__init__()
+
+    def __init__(self, embedding_dim=256, num_attention_heads=8, num_actions=6, diffusion_timesteps=100):
+        super(DiffusionNavigator, self).__init__()
         self.embedding_dim = embedding_dim
-        self.use_instruction = use_instruction
+        self.num_actions = num_actions
 
-        # 编码器: 将 action 映射到 embedding space
-        self.action_encoder = nn.Embedding(1000, embedding_dim)  # 假设动作空间有1000个离散动作
+        # Encoder for instructions
+        self.instruction_encoder = nn.Linear(200, embedding_dim)
 
-        # Position Encoding (可选)
-        self.position_encoding = nn.Parameter(torch.randn(6, embedding_dim))
+        # Linear layers to map rgb and depth features to the same embedding dimension
+        self.rgb_linear = nn.Conv2d(2048, embedding_dim, kernel_size=1)
+        self.depth_linear = nn.Conv2d(128, embedding_dim, kernel_size=1)
 
-        # Denoising Transformer
-        self.transformer = nn.Transformer(
-            d_model=embedding_dim,
-            nhead=num_attn_heads,
-            num_encoder_layers=6,
-            num_decoder_layers=6
+        # Encoder for gt_actions (Discrete actions)
+        self.action_encoder = nn.Embedding(num_actions, embedding_dim)
+
+        # Time embedding
+        self.time_emb = nn.Sequential(
+            nn.Linear(embedding_dim, embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, embedding_dim)
         )
 
-        # 扩散调度器
-        self.position_noise_scheduler = DDPMScheduler(
+        # Attention layers
+        self.cross_attention = nn.MultiheadAttention(embedding_dim, num_attention_heads)
+        self.self_attention = nn.MultiheadAttention(embedding_dim, num_attention_heads)
+
+        # Diffusion schedulers
+        self.noise_scheduler = DDPMScheduler(
             num_train_timesteps=diffusion_timesteps,
             beta_schedule="scaled_linear",
-            prediction_type="epsilon"
+            prediction_type="sample"  # We need to predict samples directly
         )
 
-        # 输出层 (将 embedding space 转回到动作空间)
-        self.action_decoder = nn.Linear(embedding_dim, 1)
+        # Prediction head for actions
+        self.action_predictor = nn.Sequential(
+            nn.Linear(embedding_dim, embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, num_actions)  # Predict logits for actions
+        )
 
-    def encode_inputs(self, rgb_features, depth_features, instructions, gt_actions):
+        self.n_steps = diffusion_timesteps
+
+    def forward(self, instruction, rgb_features, depth_features, gt_actions=None, run_inference=False):
+        bs = instruction.size(0)
         
-        # 将 rgb_features 和 depth_features 转换为 embedding
-        rgb_tokens = einops.rearrange(rgb_features, 'b s c h w -> b s (h w) c')
-        depth_tokens = einops.rearrange(depth_features, 'b s c h w -> b s (h w) c')
+        # Encode instruction
+        instr_tokens = self.instruction_encoder(instruction)  # (bs, embedding_dim)
+        
+        # Apply 1x1 convolutions to map features to embedding dimension
+        rgb_tokens = self.rgb_linear(rgb_features).view(bs, -1, self.embedding_dim)  # (bs, num_patches, embedding_dim)
+        depth_tokens = self.depth_linear(depth_features).view(bs, -1, self.embedding_dim)  # (bs, num_patches, embedding_dim)
 
-        # 对 gt_actions 进行编码
-        gt_action_tokens = self.action_encoder(gt_actions)
+        # Concatenate instruction, rgb, and depth tokens
+        tokens = torch.cat([instr_tokens.unsqueeze(1), rgb_tokens, depth_tokens], dim=1)  # (bs, num_tokens, embedding_dim)
 
-        # 将 instructions 线性映射到 embedding space
-        instruction_tokens = nn.Linear(instructions.size(-1), self.embedding_dim)(instructions)
+        # Cross-attention between instruction and visual features
+        tokens = tokens.transpose(0, 1)  # Required for multihead attention
+        tokens, _ = self.cross_attention(tokens, tokens, tokens)
+        tokens, _ = self.self_attention(tokens, tokens, tokens)
+        tokens = tokens.transpose(0, 1)  # Back to (bs, num_tokens, embedding_dim)
 
-        # 合并所有 tokens
-        tokens = torch.cat([
-            rgb_tokens, depth_tokens, instruction_tokens.unsqueeze(2), gt_action_tokens.unsqueeze(2)
-        ], dim=2)
+        if run_inference:
+            return self.sample_trajectory(tokens)
 
-        # 加入位置编码
-        tokens += self.position_encoding.unsqueeze(0).unsqueeze(2)
+        # Encode gt_actions
+        encoded_gt_actions = self.action_encoder(gt_actions)  # (bs, 6, embedding_dim)
 
-        return tokens
+        # Add noise to gt_actions during training
+        noise = torch.randint(0, self.num_actions, gt_actions.shape).to(gt_actions.device)  # Discrete noise
+        timesteps = torch.randint(0, self.n_steps, (bs,)).long().to(gt_actions.device)
 
-    def forward(self, rgb_features, depth_features, instructions, gt_actions):
+        noisy_actions = self.add_discrete_noise(encoded_gt_actions, noise, timesteps)
 
-        B, S, _ = gt_actions.shape
+        # Predict the logits for the noisy actions
+        predicted_logits = self.predict_noise(tokens, noisy_actions, timesteps)
 
-        # 编码输入
-        tokens = self.encode_inputs(rgb_features, depth_features, instructions, gt_actions)
-
-        # 添加噪声到动作 tokens
-        timesteps = torch.randint(0, self.position_noise_scheduler.config.num_train_timesteps, (B,), device=tokens.device).long()
-        noisy_tokens = self.position_noise_scheduler.add_noise(gt_actions, torch.randn_like(gt_actions), timesteps)
-
-        # 使用 Transformer 进行去噪预测
-        denoised_tokens = self.transformer(tokens, noisy_tokens)
-
-        # 解码动作
-        predicted_actions = self.action_decoder(denoised_tokens)
-
-        # 计算损失
-        loss = F.mse_loss(predicted_actions, noisy_tokens)
+        # Compute loss (cross entropy between predicted logits and original gt_actions)
+        loss = F.cross_entropy(predicted_logits.view(-1, self.num_actions), gt_actions.view(-1))
         return loss
 
-    def sample(self, rgb_features, depth_features, instructions):
-        B, S, _ = rgb_features.shape[:3]
-        tokens = self.encode_inputs(rgb_features, depth_features, instructions, torch.zeros(B, S).long().to(rgb_features.device))
+    def add_discrete_noise(self, actions, noise, timesteps):
+        # Add noise to the actions; in this context, we are replacing actions with noisy actions
+        # based on the timestep, simulating the forward process of diffusion.
+        noisy_actions = actions + noise
+        noisy_actions = noisy_actions % self.num_actions  # Ensure within valid action range
+        return noisy_actions
 
-        # 逐步去噪
-        self.position_noise_scheduler.set_timesteps(self.position_noise_scheduler.config.num_train_timesteps)
-        timesteps = self.position_noise_scheduler.timesteps
-        for t in reversed(timesteps):
-            denoised_tokens = self.transformer(tokens, tokens)
-            tokens = self.position_noise_scheduler.step(denoised_tokens, t, tokens).prev_sample
+    def predict_noise(self, tokens, noisy_actions, timesteps):
+        # Optionally add time embeddings
+        time_embeddings = self.time_emb(timesteps.unsqueeze(-1).float())
+        noisy_actions = noisy_actions + time_embeddings
 
-        predicted_actions = self.action_decoder(tokens)
-        return predicted_actions
+        # Concatenate tokens with noisy_actions for the transformer
+        transformer_input = torch.cat([tokens, noisy_actions.unsqueeze(1)], dim=1)
+
+        # Use attention layers for predicting the logits
+        transformer_input = transformer_input.transpose(0, 1)  # Required for multihead attention
+        transformer_input, _ = self.self_attention(transformer_input, transformer_input, transformer_input)
+        transformer_input = transformer_input.transpose(0, 1)  # Back to (bs, num_tokens, embedding_dim)
+        
+        logits = self.action_predictor(transformer_input[:, -1, :])
+
+        return logits
+
+    def sample_trajectory(self, tokens):
+        bs = tokens.size(0)
+        # Start from pure noise
+        trajectory = torch.randint(0, self.num_actions, (bs, 1)).to(tokens.device)  # Start with random discrete actions
+
+        # Iterative denoising process
+        for t in reversed(range(self.n_steps)):
+            timestep = torch.tensor([t], device=tokens.device).repeat(bs)
+            time_embeddings = self.time_emb(timestep.unsqueeze(-1).float())
+            trajectory = trajectory + time_embeddings
+
+            transformer_input = torch.cat([tokens, trajectory.unsqueeze(1)], dim=1)
+
+            # Use attention layers for denoising
+            transformer_input = transformer_input.transpose(0, 1)  # Required for multihead attention
+            transformer_input, _ = self.self_attention(transformer_input, transformer_input, transformer_input)
+            transformer_input = transformer_input.transpose(0, 1)  # Back to (bs, num_tokens, embedding_dim)
+
+            logits = self.action_predictor(transformer_input[:, -1, :])
+            trajectory = torch.argmax(logits, dim=-1)  # Choose the most likely action
+
+        return trajectory

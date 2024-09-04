@@ -77,6 +77,12 @@ def collate_fn(batch):
     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
 
+
+    collected_data['gt_actions'] = collected_data['gt_actions'].float()
+    collected_data['gt_actions'] = F.softmax(collected_data['gt_actions'], dim=-1)
+
+
+
     print(collected_data['gt_actions'].shape)
 
     assert 1==2
