@@ -205,7 +205,7 @@ class DiffusionNavigator(nn.Module):
             value=tokens[2].transpose(0, 1),
             query_pos=None,
             value_pos=None,
-            diff_ts=time_embeddings)
+            diff_ts=time_embeddings)[-1] # takes last layer
         
         print(f" obs features  {obs_features.shape}")
         
