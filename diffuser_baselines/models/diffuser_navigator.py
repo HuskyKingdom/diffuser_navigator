@@ -115,8 +115,7 @@ class DiffusionNavigator(nn.Module):
             (len(noise),), device=noise.device
         ).long()
 
-        print(f"noise {noising_timesteps.shape,self.noise_scheduler.config.num_train_timesteps}")
-        assert 1==2
+       
         noised_orc_action_tokens = self.noise_scheduler.add_noise(
             oracle_action_tokens, noise,
             noising_timesteps
