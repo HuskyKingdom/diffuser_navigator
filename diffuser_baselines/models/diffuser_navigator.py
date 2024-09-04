@@ -11,11 +11,13 @@ from habitat_baselines.rl.ppo.policy import Policy
 
 @baseline_registry.register_policy
 class DiffusionPolicy(Policy):
+    
     def __init__(
         self,
         num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
     ) -> None:
         
+        super(DiffusionPolicy, self).__init__()
         self.navigator = DiffusionNavigator(num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
 
     def act(observations):
