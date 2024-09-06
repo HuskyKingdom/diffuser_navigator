@@ -197,7 +197,7 @@ class DiffusionNavigator(nn.Module):
         
         
         
-
+        # observation features
         obs_features = self.cross_attention(query=tokens[1].transpose(0, 1),
             value=tokens[2].transpose(0, 1),
             query_pos=None,
@@ -205,8 +205,20 @@ class DiffusionNavigator(nn.Module):
             diff_ts=time_embeddings)[-1] # takes last layer
         
         
-        
+
+        # context features 
         context_features = self.vision_language_attention(obs_features.transpose(0,1),tokens[0]) # rgb attend instr.
+
+
+        # positional embedding
+        instruction_position = torch.arange(tokens[0].shape[1], device='cuda').unsqueeze(0).expand(tokens[0].shape[0], tokens[0].shape[1])
+        action_position = torch.arange(noisy_actions.shape[1], device='cuda').unsqueeze(0).expand(noisy_actions.shape[0], noisy_actions.shape[1])
+
+        instruction_position = self.pe_layer(instruction_position)
+        action_position = self.pe_layer(action_position)
+
+        print(f" instruction features  {instruction_position.shape, action_position.shape}")
+        assert 1==2
 
 
 
@@ -229,8 +241,8 @@ class DiffusionNavigator(nn.Module):
 
 
         print(f" contex features  {features.shape}")
-
         assert 1==2
+
         # Optionally add time embeddings
         time_embeddings = self.time_emb(timesteps.unsqueeze(-1).float())
         noisy_actions = noisy_actions + time_embeddings
