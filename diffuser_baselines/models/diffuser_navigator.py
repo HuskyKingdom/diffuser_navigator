@@ -228,6 +228,9 @@ class DiffusionNavigator(nn.Module):
             diff_ts=time_embeddings)[-1].transpose(0,1)
         
 
+        print(f" features  {features.shape}")
+        assert 1==2
+
         final_features = self.self_attention(features.transpose(0,1), diff_ts=time_embeddings[-1].transpose(0,1),
                 query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
 
