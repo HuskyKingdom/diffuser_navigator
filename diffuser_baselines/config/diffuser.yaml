@@ -14,7 +14,7 @@ EVAL:
   EPISODE_COUNT: -1
 
 IL:
-  epochs: 45
+  epochs: 500
   batch_size: 5
 
   RECOLLECT_TRAINER:
