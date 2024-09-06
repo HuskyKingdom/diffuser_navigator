@@ -189,9 +189,6 @@ class DiffusionNavigator(nn.Module):
 
 
         time_embeddings = self.time_emb(timesteps.float())
-
-        print(f" contex features  {time_embeddings.shape}")
-        assert 1==2
         
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
