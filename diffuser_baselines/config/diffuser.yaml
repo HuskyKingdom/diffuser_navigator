@@ -14,8 +14,8 @@ EVAL:
   EPISODE_COUNT: -1
 
 IL:
-  epochs: 500
-  batch_size: 24
+  epochs: 1000
+  batch_size: 32
 
   RECOLLECT_TRAINER:
     gt_file:
