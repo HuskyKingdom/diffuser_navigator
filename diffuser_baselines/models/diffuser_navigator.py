@@ -190,10 +190,9 @@ class DiffusionNavigator(nn.Module):
 
         time_embeddings = self.time_emb(timesteps.unsqueeze(-1).float()).squeeze(1)
         
-        # positional encoding
-        rgb_position = torch.arange(tokens[1].shape[1], device='cuda').unsqueeze(0).expand(tokens[1].shape[0], tokens[1].shape[1])
-        depth_position = torch.arange(tokens[2].shape[1], device='cuda').unsqueeze(0).expand(tokens[2].shape[0], tokens[2].shape[1])
-
+        # positional embedding
+        instruction_position = self.pe_layer(tokens[0])
+        action_position = self.pe_layer(noisy_actions)
         
         
         
@@ -207,22 +206,15 @@ class DiffusionNavigator(nn.Module):
         
 
         # context features 
-        context_features = self.vision_language_attention(obs_features.transpose(0,1),tokens[0]) # rgb attend instr.
+        context_features = self.vision_language_attention(obs_features.transpose(0,1),instruction_position) # rgb attend instr.
 
 
-        # positional embedding
-
-        instruction_position = self.pe_layer(tokens[0])
-        action_position = self.pe_layer(noisy_actions)
-
-        print(f" instruction features  {instruction_position.shape, action_position.shape}")
-        assert 1==2
 
 
 
         action_features, _ = self.traj_lang_attention[0](
-                seq1=tokens[0], seq1_key_padding_mask=None,
-                seq2=noisy_actions, seq2_key_padding_mask=None,
+                seq1=instruction_position, seq1_key_padding_mask=None,
+                seq2=action_position, seq2_key_padding_mask=None,
                 seq1_pos=None, seq2_pos=None,
                 seq1_sem_pos=None, seq2_sem_pos=None
         )
@@ -238,7 +230,7 @@ class DiffusionNavigator(nn.Module):
 
 
 
-        print(f" contex features  {features.shape}")
+        print(f" contex features  {action_features.shape}")
         assert 1==2
 
         # Optionally add time embeddings
