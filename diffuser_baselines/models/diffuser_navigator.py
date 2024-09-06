@@ -201,12 +201,12 @@ class DiffusionNavigator(nn.Module):
             value=tokens[2].transpose(0, 1),
             query_pos=None,
             value_pos=None,
-            diff_ts=time_embeddings)[-1] # takes last layer
+            diff_ts=time_embeddings)[-1].transpose(0,1) # takes last layer and return to (B,L,D)
         
         
 
         # context features 
-        context_features = self.vision_language_attention(obs_features.transpose(0,1),instruction_position) # rgb attend instr.
+        context_features = self.vision_language_attention(obs_features,instruction_position) # rgb attend instr.
 
 
 
@@ -219,16 +219,17 @@ class DiffusionNavigator(nn.Module):
                 seq1_sem_pos=None, seq2_sem_pos=None
         )
 
+
         # final features
         features = self.cross_attention(query=action_features.transpose(0, 1),
             value=context_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,
-            diff_ts=time_embeddings)[-1]
+            diff_ts=time_embeddings)[-1].transpose(0,1)
         
 
-        final_features = self.self_attention(features, diff_ts=time_embeddings[-1],
-                query_pos=None, context=None, context_pos=None)[-1]
+        final_features = self.self_attention(features.transpose(0,1), diff_ts=time_embeddings[-1].transpose(0,1),
+                query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
 
 
 
