@@ -211,15 +211,15 @@ class DiffusionNavigator(nn.Module):
 
 
 
-
+        # action features
         action_features, _ = self.traj_lang_attention[0](
-                seq1=instruction_position, seq1_key_padding_mask=None,
-                seq2=action_position, seq2_key_padding_mask=None,
+                seq1=action_position, seq1_key_padding_mask=None,
+                seq2=instruction_position, seq2_key_padding_mask=None,
                 seq1_pos=None, seq2_pos=None,
                 seq1_sem_pos=None, seq2_sem_pos=None
         )
 
-
+        # final features
         features = self.cross_attention(query=action_features.transpose(0, 1),
             value=context_features.transpose(0, 1),
             query_pos=None,
@@ -227,10 +227,13 @@ class DiffusionNavigator(nn.Module):
             diff_ts=time_embeddings)[-1]
         
 
+        final_features = self.self_attention(features, diff_ts=time_embeddings[-1],
+                query_pos=None, context=None, context_pos=None)
 
 
 
-        print(f" contex features  {action_features.shape}")
+
+        print(f" contex features  {final_features.shape}")
         assert 1==2
 
         # Optionally add time embeddings
