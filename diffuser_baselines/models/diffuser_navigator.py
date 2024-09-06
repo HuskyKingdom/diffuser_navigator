@@ -227,10 +227,8 @@ class DiffusionNavigator(nn.Module):
             value_pos=None,
             diff_ts=time_embeddings)[-1].transpose(0,1)
         
-
-        print(f" features  {time_embeddings.shape}")
         
-        final_features = self.self_attention(features.transpose(0,1), diff_ts=time_embeddings[-1].transpose(0,1),
+        final_features = self.self_attention(features.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
 
 
