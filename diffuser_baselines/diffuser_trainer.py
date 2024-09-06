@@ -583,29 +583,17 @@ class DiffuserTrainer(BaseVLNCETrainer):
                             for k, v in batch.items()
                         }
 
-                        loss, action_loss, aux_loss = self._update_agent(
+                        loss = self._update_agent(
                             batch
                         )
 
                         logger.info(f"train_loss: {loss}")
-                        logger.info(f"train_action_loss: {action_loss}")
-                        logger.info(f"train_aux_loss: {aux_loss}")
                         logger.info(f"Batches processed: {step_id}.")
                         logger.info(
                             f"On DAgger iter {dagger_it}, Epoch {epoch}."
                         )
                         writer.add_scalar(
                             f"train_loss_iter_{dagger_it}", loss, step_id
-                        )
-                        writer.add_scalar(
-                            f"train_action_loss_iter_{dagger_it}",
-                            action_loss,
-                            step_id,
-                        )
-                        writer.add_scalar(
-                            f"train_aux_loss_iter_{dagger_it}",
-                            aux_loss,
-                            step_id,
                         )
                         step_id += 1  # noqa: SIM113
 
@@ -622,22 +610,11 @@ class DiffuserTrainer(BaseVLNCETrainer):
     ):
         
 
-        distribution = self.policy.build_logits(
+        loss = self.policy.build_loss(
             observations
         )
 
-        logits = distribution.logits
-        logits = logits.view(T, N, -1)
 
-        action_loss = F.cross_entropy(
-            logits.permute(0, 2, 1), corrected_actions, reduction="none"
-        )
-        action_loss = ((weights * action_loss).sum(0) / weights.sum(0)).mean()
-
-        aux_mask = (weights > 0).view(-1)
-        aux_loss = AuxLosses.reduce(aux_mask)
-
-        loss = action_loss + aux_loss
         loss = loss / loss_accumulation_scalar
         loss.backward()
 
@@ -645,9 +622,9 @@ class DiffuserTrainer(BaseVLNCETrainer):
             self.optimizer.step()
             self.optimizer.zero_grad()
 
-        if isinstance(aux_loss, torch.Tensor):
-            aux_loss = aux_loss.item()
-        return loss.item(), action_loss.item(), aux_loss
+
+
+        return loss.item()
 
 
     def _initialize_policy(
@@ -669,7 +646,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         )
         self.policy.to(self.device)
 
-        self.optimizer = torch.optim.Adam(
+        self.optimizer = torch.optim.AdamW(
             self.policy.parameters(), lr=self.config.IL.lr
         )
 

@@ -26,9 +26,11 @@ class DiffusionPolicy(Policy):
         pass
     
 
-    def build_logits(self,observations):
+    def build_loss(self,observations):
 
-        out = self.navigator(observations)
+        loss = self.navigator(observations)
+
+        return loss
     
     @classmethod
     def from_config(
@@ -100,10 +102,18 @@ class DiffusionNavigator(nn.Module):
             beta_schedule="scaled_linear",
         )
 
+
+        # predictors
+        self.noise_predictor = nn.Sequential(
+            nn.Linear(embedding_dim, embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, embedding_dim)
+        )
+
         self.n_steps = diffusion_timesteps
+    
 
-
-    def forward(self, observations, run_inference=False):
+    def tokenlize_input(self,observations):
 
         bs = observations["instruction"].size(0)
 
@@ -112,9 +122,30 @@ class DiffusionNavigator(nn.Module):
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
         rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, 2048, em)
         depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, 128, em)
-        oracle_action_tokens = self.action_encoder(observations["gt_actions"].long())
+
+        if observations["gt_actions"] == None: # inference
+            oracle_action_tokens = None
+        else:
+            oracle_action_tokens = self.action_encoder(observations["gt_actions"].long())
+
+        return instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens
+
+
+
+
+    def forward(self, observations, run_inference=False):
 
         
+        # tokenlize
+        instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens = self.tokenlize_input(observations)
+
+
+        # inference _____
+        
+        if run_inference:
+            return
+
+        # train _____
 
         # noising oracle_action_tokens
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
@@ -132,69 +163,27 @@ class DiffusionNavigator(nn.Module):
         )
 
 
+
         # predict noise
         tokens = (instr_tokens,rgb_tokens,depth_tokens)
         pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps)
 
+        # compute loss
+        loss = F.l1_loss(pred, noise, reduction='mean')
 
-
-        context_features = self.cross_attention()
-
-        # Cross-attention between instruction and visual features
-        tokens = tokens.transpose(0, 1)  # Required for multihead attention
-
-
-        tokens, _ = self.cross_attention(tokens, tokens, tokens)
-        tokens, _ = self.self_attention(tokens, tokens, tokens)
-        tokens = tokens.transpose(0, 1)  # Back to (bs, num_tokens, embedding_dim)
-
-        if run_inference:
-            return self.sample_trajectory(tokens)
-
-        # Encode gt_actions
-        encoded_gt_actions = self.action_encoder(gt_actions)  # (bs, 6, embedding_dim)
-
-        # Add noise to gt_actions during training
-        noise = torch.randint(0, self.num_actions, gt_actions.shape).to(gt_actions.device)  # Discrete noise
-        timesteps = torch.randint(0, self.n_steps, (bs,)).long().to(gt_actions.device)
-
-        noisy_actions = self.add_discrete_noise(encoded_gt_actions, noise, timesteps)
-
-        # Predict the logits for the noisy actions
-        predicted_logits = self.predict_noise(tokens, noisy_actions, timesteps)
-
-        # Compute loss (cross entropy between predicted logits and original gt_actions)
-        loss = F.cross_entropy(predicted_logits.view(-1, self.num_actions), gt_actions.view(-1))
         return loss
 
-    def add_discrete_noise(self, actions, noise, timesteps):
-        # Add noise to the actions; in this context, we are replacing actions with noisy actions
-        # based on the timestep, simulating the forward process of diffusion.
-        noisy_actions = actions + noise
-        noisy_actions = noisy_actions % self.num_actions  # Ensure within valid action range
-        return noisy_actions
 
 
-    def vision_language_attention(self, feats, instr_feats):
-        feats, _ = self.vl_attention[0](
-            seq1=feats, seq1_key_padding_mask=None,
-            seq2=instr_feats, seq2_key_padding_mask=None,
-            seq1_pos=None, seq2_pos=None,
-            seq1_sem_pos=None, seq2_sem_pos=None
-        )
-        return feats
 
 
     def predict_noise(self, tokens, noisy_actions, timesteps): # tokens in form (instr_tokens,rgb,depth)
-
 
         time_embeddings = self.time_emb(timesteps.float())
         
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
         action_position = self.pe_layer(noisy_actions)
-        
-        
         
         # observation features
         obs_features = self.cross_attention(query=tokens[1].transpose(0, 1),
@@ -203,12 +192,8 @@ class DiffusionNavigator(nn.Module):
             value_pos=None,
             diff_ts=time_embeddings)[-1].transpose(0,1) # takes last layer and return to (B,L,D)
         
-        
-
         # context features 
         context_features = self.vision_language_attention(obs_features,instruction_position) # rgb attend instr.
-
-
 
 
         # action features
@@ -232,46 +217,7 @@ class DiffusionNavigator(nn.Module):
                 query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
 
 
+        noise_prediction = self.noise_predictor(final_features)
 
+        return noise_prediction
 
-        print(f" contex features  {final_features.shape}")
-        assert 1==2
-
-        # Optionally add time embeddings
-        time_embeddings = self.time_emb(timesteps.unsqueeze(-1).float())
-        noisy_actions = noisy_actions + time_embeddings
-
-        # Concatenate tokens with noisy_actions for the transformer
-        transformer_input = torch.cat([tokens, noisy_actions.unsqueeze(1)], dim=1)
-
-        # Use attention layers for predicting the logits
-        transformer_input = transformer_input.transpose(0, 1)  # Required for multihead attention
-        transformer_input, _ = self.self_attention(transformer_input, transformer_input, transformer_input)
-        transformer_input = transformer_input.transpose(0, 1)  # Back to (bs, num_tokens, embedding_dim)
-        
-        logits = self.action_predictor(transformer_input[:, -1, :])
-
-        return logits
-
-    def sample_trajectory(self, tokens):
-        bs = tokens.size(0)
-        # Start from pure noise
-        trajectory = torch.randint(0, self.num_actions, (bs, 1)).to(tokens.device)  # Start with random discrete actions
-
-        # Iterative denoising process
-        for t in reversed(range(self.n_steps)):
-            timestep = torch.tensor([t], device=tokens.device).repeat(bs)
-            time_embeddings = self.time_emb(timestep.unsqueeze(-1).float())
-            trajectory = trajectory + time_embeddings
-
-            transformer_input = torch.cat([tokens, trajectory.unsqueeze(1)], dim=1)
-
-            # Use attention layers for denoising
-            transformer_input = transformer_input.transpose(0, 1)  # Required for multihead attention
-            transformer_input, _ = self.self_attention(transformer_input, transformer_input, transformer_input)
-            transformer_input = transformer_input.transpose(0, 1)  # Back to (bs, num_tokens, embedding_dim)
-
-            logits = self.action_predictor(transformer_input[:, -1, :])
-            trajectory = torch.argmax(logits, dim=-1)  # Choose the most likely action
-
-        return trajectory
