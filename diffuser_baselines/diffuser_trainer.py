@@ -564,7 +564,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
                 gc.collect()
 
 
-                AuxLosses.activate()
+                epoch_loss = 0
+                num_epoch_batch = 0
                 for epoch in tqdm.trange(
                     self.config.IL.epochs, dynamic_ncols=True
                 ):
@@ -589,17 +590,23 @@ class DiffuserTrainer(BaseVLNCETrainer):
                             batch
                         )
 
-                        logger.info(f"train_loss: {loss} | Batches processed: {step_id}. | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
+                        epoch_loss += loss
             
                         writer.add_scalar(
                             f"train_loss_iter_{diffuser_it}", loss, step_id
                         )
                         step_id += 1  # noqa: SIM113
+                        num_epoch_batch += 1
 
                     self.save_checkpoint(
                         f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
                     )
-                AuxLosses.deactivate()
+
+                    epoch_loss /= num_epoch_batch
+                    epoch_loss = 0
+                    num_epoch_batch = 0
+                    logger.info(f"epoch loss: {loss} | Batches processed: {step_id}. | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
+
 
     def _update_agent(
         self,
