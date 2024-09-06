@@ -33,6 +33,7 @@ DIFFUSER:
   num_attention_heads: 4
   num_layers: 2
   diffusion_timesteps: 1000
+  logging_file: data/loggings/train.log
 
 MODEL:
   policy_name: DiffusionPolicy

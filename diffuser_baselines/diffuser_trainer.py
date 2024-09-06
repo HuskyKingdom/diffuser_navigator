@@ -262,6 +262,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
         super().__init__(config)
 
 
+
+
     def _make_dirs(self) -> None:
         self._make_ckpt_dir()
         os.makedirs(self.lmdb_features_dir, exist_ok=True)
@@ -532,13 +534,13 @@ class DiffuserTrainer(BaseVLNCETrainer):
             flush_secs=self.flush_secs,
             purge_step=0,
         ) as writer:
-            for dagger_it in range(self.config.IL.DAGGER.iterations):
+            for diffuser_it in range(self.config.IL.DAGGER.iterations):
 
                 # get dataset ---
                 step_id = 0
                 if not self.config.IL.DAGGER.preload_lmdb_features:
                     self._update_dataset(
-                        dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
+                        diffuser_it + (1 if self.config.IL.load_from_ckpt else 0)
                     )
                     assert 1==2
                 # get dataset ---
@@ -587,18 +589,15 @@ class DiffuserTrainer(BaseVLNCETrainer):
                             batch
                         )
 
-                        logger.info(f"train_loss: {loss}")
-                        logger.info(f"Batches processed: {step_id}.")
-                        logger.info(
-                            f"On DAgger iter {dagger_it}, Epoch {epoch}."
-                        )
+                        logger.info(f"train_loss: {loss} | Batches processed: {step_id}. | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
+            
                         writer.add_scalar(
-                            f"train_loss_iter_{dagger_it}", loss, step_id
+                            f"train_loss_iter_{diffuser_it}", loss, step_id
                         )
                         step_id += 1  # noqa: SIM113
 
                     self.save_checkpoint(
-                        f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth"
+                        f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
                     )
                 AuxLosses.deactivate()
 
