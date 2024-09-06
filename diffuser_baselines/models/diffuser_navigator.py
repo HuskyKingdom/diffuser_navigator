@@ -7,7 +7,7 @@ from habitat_baselines.common.baseline_registry import baseline_registry
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule,ParallelAttention
 from habitat_baselines.rl.ppo.policy import Policy
 from diffuser_baselines.models.encoders.instruction_encoder import InstructionEncoder
-from diffuser_baselines.models.common.position_encodings import RotaryPositionEncoding,SinusoidalPosEmb
+from diffuser_baselines.models.common.position_encodings import RotaryPositionEncoding,SinusoidalPosEmb, PositionalEncoding
 
 
 @baseline_registry.register_policy
@@ -67,7 +67,7 @@ class DiffusionNavigator(nn.Module):
             param.requires_grad = False
 
         # positional embeddings
-        self.pe_layer = RotaryPositionEncoding(embedding_dim)
+        self.pe_layer = PositionalEncoding(embedding_dim,0)
 
         # Attention layers
         layer = ParallelAttention(
@@ -215,6 +215,7 @@ class DiffusionNavigator(nn.Module):
         action_position = torch.arange(noisy_actions.shape[1], device='cuda').unsqueeze(0).expand(noisy_actions.shape[0], noisy_actions.shape[1])
 
         print(f" instruction features  {instruction_position.shape, action_position.shape}")
+
         instruction_position = self.pe_layer(instruction_position)
         action_position = self.pe_layer(action_position)
 
