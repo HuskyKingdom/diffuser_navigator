@@ -175,6 +175,15 @@ class DiffusionNavigator(nn.Module):
 
 
 
+    def vision_language_attention(self, feats, instr_feats):
+        feats, _ = self.vl_attention[0](
+            seq1=feats, seq1_key_padding_mask=None,
+            seq2=instr_feats, seq2_key_padding_mask=None,
+            seq1_pos=None, seq2_pos=None,
+            seq1_sem_pos=None, seq2_sem_pos=None
+        )
+        return feats
+    
 
 
     def predict_noise(self, tokens, noisy_actions, timesteps): # tokens in form (instr_tokens,rgb,depth)
