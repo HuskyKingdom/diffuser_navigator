@@ -516,6 +516,9 @@ class DaggerTrainer(BaseVLNCETrainer):
                     self._update_dataset(
                         dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
                     )
+                    print(f"dataset collected.")
+                    assert 1==2
+
 
                 if torch.cuda.is_available():
                     with torch.cuda.device(self.device):
@@ -608,3 +611,5 @@ class DaggerTrainer(BaseVLNCETrainer):
                         f"ckpt.{dagger_it * self.config.IL.epochs + epoch}.pth"
                     )
                 AuxLosses.deactivate()
+
+

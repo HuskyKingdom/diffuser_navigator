@@ -23,6 +23,7 @@ class DiffusionPolicy(Policy):
 
     def act(observations):
 
+
         pass
     
 
@@ -65,8 +66,13 @@ class DiffusionNavigator(nn.Module):
             nn.Linear(embedding_dim, embedding_dim)
         )
 
+
         for param in self.action_encoder.parameters(): # freeze action representations
             param.requires_grad = False
+
+        # prepare action embedding targets for inference
+        action_targets = torch.arange(4).unsqueeze(0)
+        self.action_em_targets = self.action_encoder(action_targets)
 
         # positional embeddings
         self.pe_layer = PositionalEncoding(embedding_dim,0)
@@ -230,3 +236,32 @@ class DiffusionNavigator(nn.Module):
 
         return noise_prediction
 
+
+    def retrive_action_from_em(self,embeddings):  # retrive action index from embedding
+        distances = torch.cdist(self.action_em_targets, embeddings)
+        actions_indexs = torch.argmin(distances, dim=-1)
+        return actions_indexs
+
+    def inference_actions(self,pred_noises): # pred_noises (B,N,D)
+
+        self.noise_scheduler.set_timesteps(self.n_steps)
+
+        pure_noise = torch.randn(
+            size=pred_noises.shape,
+            dtype=pred_noises.dtype,
+            device=pred_noises.device
+        )
+
+        intermidiate_noise = pure_noise
+
+        # Iterative denoising
+        timesteps = self.position_noise_scheduler.timesteps
+        for t in timesteps:
+            denoised_action_em = self.noise_scheduler.step(
+                pred_noises, t, intermidiate_noise
+            ).prev_sample
+            intermidiate_noise = denoised_action_em
+
+        # return action index
+        actions = self.retrive_action_from_em(intermidiate_noise)
+        return actions
