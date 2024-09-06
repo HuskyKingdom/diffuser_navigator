@@ -228,7 +228,7 @@ class DiffusionNavigator(nn.Module):
         
 
         final_features = self.self_attention(features, diff_ts=time_embeddings[-1],
-                query_pos=None, context=None, context_pos=None)
+                query_pos=None, context=None, context_pos=None)[-1]
 
 
 
