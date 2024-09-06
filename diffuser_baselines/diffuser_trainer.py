@@ -76,7 +76,7 @@ def collate_fn(batch):
         else:
             gt_action_segment = sample[2][t:] 
             padding_size = (t + F + 1) - len_seq 
-            gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 4)])
+            gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 0)]) # padding with STOP action if exceed
 
         collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
     
@@ -526,7 +526,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         self._initialize_policy(
             self.config,
             self.config.IL.load_from_ckpt,
-            4 + 1,  # added 1 more for -1 padding
+            4, 
         )
 
         with TensorboardWriter(
