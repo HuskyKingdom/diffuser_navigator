@@ -214,6 +214,7 @@ class DiffusionNavigator(nn.Module):
         instruction_position = torch.arange(tokens[0].shape[1], device='cuda').unsqueeze(0).expand(tokens[0].shape[0], tokens[0].shape[1])
         action_position = torch.arange(noisy_actions.shape[1], device='cuda').unsqueeze(0).expand(noisy_actions.shape[0], noisy_actions.shape[1])
 
+        print(f" instruction features  {instruction_position.shape, action_position.shape}")
         instruction_position = self.pe_layer(instruction_position)
         action_position = self.pe_layer(action_position)
 
