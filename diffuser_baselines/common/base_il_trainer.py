@@ -315,7 +315,6 @@ class BaseVLNCETrainer(BaseILTrainer):
                 
                 # pop actions
                 actions = [[env_index.pop(0)] for env_index in action_candidates]
-                print(actions)
                 actions = torch.tensor(actions).to(self.device)
 
             else:
