@@ -348,7 +348,9 @@ class DiffusionNavigator(nn.Module):
         self.rgb_encoder.to(next(self.parameters()).device)
 
         depth_embedding = self.depth_encoder(batch)
+        rgb_embedding = self.rgb_encoder(batch)
 
         print(f"depth features {depth_embedding.shape}")
+        print(f"depth features {rgb_embedding.shape}")
 
         return None
