@@ -36,34 +36,7 @@ class DiffusionPolicy(Policy):
         'gt_actions': None
         }
 
-        print(f"instruction {batch['instruction'].shape}")
-
-        # for sample in batch:
-        #     len_seq = sample[0]['instruction'].shape[0]
         
-        # # randomly sample timestep t in the range [0, len_seq-1]
-        # t = random.randint(0, len_seq - 1)
-        
-        # # Handle instruction, rgb_features, depth_features
-        # collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t]))
-        # collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t]))
-        # collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t]))
-        
-        # # Handle gt_actions by selecting from t to t+F, padding with -1 if out of bounds
-        # if t + F < len_seq:
-        #     gt_action_segment = sample[2][t:t+F+1]
-        # else:
-        #     gt_action_segment = sample[2][t:] 
-        #     padding_size = (t + F + 1) - len_seq 
-        #     gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 0)]) # padding with STOP action if exceed
-
-        # collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
-    
-        # # Stack into batched tensors
-        # collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
-        # collected_data['rgb_features'] = torch.stack(collected_data['rgb_features'], dim=0)
-        # collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
-        # collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
 
 
         
@@ -92,7 +65,7 @@ class DiffusionNavigator(nn.Module):
 
         super(DiffusionNavigator, self).__init__()
 
-
+        self.config = config
         self.embedding_dim = embedding_dim
         self.num_actions = num_actions
 
@@ -192,7 +165,8 @@ class DiffusionNavigator(nn.Module):
         # inference _____
         
         if run_inference:
-            return
+            tokens = (instr_tokens,rgb_tokens,depth_tokens)
+            return self.inference_actions(tokens)
 
         # train _____
 
@@ -285,21 +259,31 @@ class DiffusionNavigator(nn.Module):
         actions_indexs = torch.argmin(distances, dim=-1)
         return actions_indexs
 
-    def inference_actions(self,pred_noises): # pred_noises (B,N,D)
+
+
+
+    def inference_actions(self,tokens): # pred_noises (B,N,D)
 
         self.noise_scheduler.set_timesteps(self.n_steps)
 
+        
+
         pure_noise = torch.randn(
-            size=pred_noises.shape,
-            dtype=pred_noises.dtype,
-            device=pred_noises.device
+            size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.embedding_dim), # (bs, L, emb.)
+            dtype=tokens[0].dtype,
+            device=tokens[0].device
         )
 
         intermidiate_noise = pure_noise
 
+        assert 1==2
         # Iterative denoising
         timesteps = self.position_noise_scheduler.timesteps
         for t in timesteps:
+            
+            # noise pred.
+            pred_noises = self.predict_noise(tokens,)
+
             denoised_action_em = self.noise_scheduler.step(
                 pred_noises, t, intermidiate_noise
             ).prev_sample
