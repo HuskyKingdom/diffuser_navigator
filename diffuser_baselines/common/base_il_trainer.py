@@ -310,14 +310,17 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                 if len(action_candidates) == 0: 
                     with torch.no_grad():
-                        action_candidates = self.policy.act(batch)
+                        out = self.policy.act(batch)
                 
+                # pop actions
+                action_candidates = out.cpu().tolist()
                 actions = [[env_index.pop(0)] for env_index in action_candidates]
 
             else:
 
                 with torch.no_grad():
-                    action_candidates = self.policy.act(batch)
+                    out = self.policy.act(batch)
+                    action_candidates = out.cpu().tolist()
                     actions = action_candidates
 
 
