@@ -310,10 +310,11 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                 if len(action_candidates) == 0: 
                     action_candidates = self.policy.act(batch)
-
+                    assert 1==2
                 actions = [[env_index.pop(0)] for env_index in action_candidates]
 
             else:
+
                 with torch.no_grad():
                     action_candidates = self.policy.act(batch)
                     actions = action_candidates
