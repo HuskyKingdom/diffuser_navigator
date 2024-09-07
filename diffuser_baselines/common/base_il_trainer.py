@@ -309,8 +309,9 @@ class BaseVLNCETrainer(BaseILTrainer):
             if config.EVAL.ACTION_POP: # forward every F timesteps
 
                 if len(action_candidates) == 0: 
-                    action_candidates = self.policy.act(batch)
-                    assert 1==2
+                    with torch.no_grad():
+                        action_candidates = self.policy.act(batch)
+                
                 actions = [[env_index.pop(0)] for env_index in action_candidates]
 
             else:
