@@ -322,7 +322,7 @@ class DiffusionNavigator(nn.Module):
         self.depth_encoder = getattr(
             resnet_encoders, config.MODEL.DEPTH_ENCODER.cnn_type
         )(
-            space = obs_space,
+            obs_space,
             output_size=config.MODEL.DEPTH_ENCODER.output_size,
             checkpoint=config.MODEL.DEPTH_ENCODER.ddppo_checkpoint,
             backbone=config.MODEL.DEPTH_ENCODER.backbone,
