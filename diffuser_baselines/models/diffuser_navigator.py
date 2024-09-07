@@ -32,7 +32,7 @@ class DiffusionPolicy(Policy):
         'gt_actions': []
         }
 
-        print(f"""depth {batch["depth"].shape}""")
+        self.navigator.encode_visions(batch,self.config)
 
         # for sample in batch:
         #     len_seq = sample[0]['instruction'].shape[0]
@@ -305,17 +305,24 @@ class DiffusionNavigator(nn.Module):
         return actions
 
 
-    def encode_visions(self,rgb,depth,config):
+    def encode_visions(self,batch,config):
 
 
         # init frozon encoders
+        # init the depth visual encoder
         from diffuser_baselines.models.encoders import resnet_encoders
+        from gym import spaces
+
+        obs_space = spaces.Dict({
+            "rgb": spaces.Box(low=0, high=255, shape=(224, 224, 3), dtype='uint8'),
+            "depth": spaces.Box(low=0, high=255, shape=(256, 256, 1), dtype='uint8')
+        })
 
         assert config.MODEL.DEPTH_ENCODER.cnn_type in ["VlnResnetDepthEncoder"]
         self.depth_encoder = getattr(
             resnet_encoders, config.MODEL.DEPTH_ENCODER.cnn_type
         )(
-            observation_space,
+            space = obs_space,
             output_size=config.MODEL.DEPTH_ENCODER.output_size,
             checkpoint=config.MODEL.DEPTH_ENCODER.ddppo_checkpoint,
             backbone=config.MODEL.DEPTH_ENCODER.backbone,
@@ -323,7 +330,7 @@ class DiffusionNavigator(nn.Module):
             spatial_output=True,
         )
 
-        # Init the RGB visual encoder
+        # init the RGB visual encoder
         assert config.MODEL.RGB_ENCODER.cnn_type in [
             "TorchVisionResNet18",
             "TorchVisionResNet50",
@@ -337,6 +344,8 @@ class DiffusionNavigator(nn.Module):
             spatial_output=True,
         )
 
+        depth_embedding = self.depth_encoder(batch)
 
+        print(f"depth features {depth_embedding.shape}")
 
         return None
