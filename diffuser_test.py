@@ -13,7 +13,7 @@ noise = torch.randn_like(original_tensor)
 # 选择一个时间步，比如 timestep = 999
 noising_timesteps = torch.randint(
             0,
-            50,
+            1000,
             (5,), device=noise.device
         ).long()
 
@@ -39,7 +39,7 @@ for i in range(original_tensor.shape[0]):
 # 合并去噪后的样本
 prev_samples = torch.stack(prev_samples)
 
-# 第三步：计算还原后的样本与原始样本之间的误差
-difference = torch.mean((original_tensor - prev_samples) ** 2)
+# 第三步：计算还原后的样本与原始样本之间的 L1 距离
+l1_difference = torch.mean(torch.abs(original_tensor - prev_samples))
 
-print("Mean Squared Error between original and restored tensor:", difference.item())
+print("L1 Distance between original and restored tensor:", l1_difference.item())
