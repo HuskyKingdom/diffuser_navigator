@@ -265,7 +265,7 @@ class DiffusionNavigator(nn.Module):
         target = self.action_em_targets.to(embeddings.device)
         l1_dist = torch.abs(target.unsqueeze(1) - embeddings.unsqueeze(2)).sum(dim=-1)  # (B, L, A)
 
-        print(f" shape {l1_dist.shape}")
+        print(f" shape {l1_dist}")
         assert 1==2
 
         actions_indexs = torch.argmin(l1_dist, dim=-1)
