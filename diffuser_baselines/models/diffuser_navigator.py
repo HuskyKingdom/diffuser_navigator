@@ -31,7 +31,7 @@ class DiffusionPolicy(Policy):
         'gt_actions': []
         }
 
-        print(f"observation {batch["rgb"].shape}")
+        print(f"""observation {batch["rgb"].shape}""")
 
         # for sample in batch:
         #     len_seq = sample[0]['instruction'].shape[0]
