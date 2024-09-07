@@ -347,10 +347,34 @@ class DiffusionNavigator(nn.Module):
         self.depth_encoder.to(next(self.parameters()).device)
         self.rgb_encoder.to(next(self.parameters()).device)
 
+
+        # hooking cnn output
+        def hook_builder(tgt_tensor):
+            def hook(m, i, o):
+                tgt_tensor.set_(o.cpu())
+
+            return hook
+
+        rgb_features = None
+        rgb_hook = None    
+        rgb_features = torch.zeros((1,), device="cpu")
+        rgb_hook = self.policy.net.rgb_encoder.cnn.register_forward_hook(
+            hook_builder(rgb_features)
+        )
+
+        depth_features = None
+        depth_hook = None
+        if not self.config.MODEL.DEPTH_ENCODER.trainable:
+            depth_features = torch.zeros((1,), device="cpu")
+            depth_hook = self.policy.net.depth_encoder.visual_encoder.register_forward_hook(
+                hook_builder(depth_features)
+            )
+
         depth_embedding = self.depth_encoder(batch)
         rgb_embedding = self.rgb_encoder(batch)
 
-        print(f"depth features {depth_embedding.shape}")
-        print(f"depth features {rgb_embedding.shape}")
+
+        print(f"depth features {rgb_features.shape}")
+        print(f"depth features {depth_features.shape}")
 
         return None
