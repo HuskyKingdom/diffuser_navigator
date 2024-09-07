@@ -20,6 +20,7 @@ noisy_tensor = scheduler.add_noise(original_tensor, noise, noising_timesteps)
 # 第二步：从 T=999 到 T=0 逐步去噪
 for t in range(T, -1, -1):  # 从999降到0
     prev_samples = []
+    print(t)
     for i in range(original_tensor.shape[0]):
         # 模型输出假设为噪声（与实际噪声相同）
         model_output = noise[i]  # 模型预测的噪声
