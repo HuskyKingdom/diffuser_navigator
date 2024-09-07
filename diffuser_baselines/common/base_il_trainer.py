@@ -267,13 +267,13 @@ class BaseVLNCETrainer(BaseILTrainer):
         envs = construct_envs_auto_reset_false(
             config, get_env_class(config.ENV_NAME)
         )
-        observation_space, action_space = self._get_spaces(config, envs=envs)
+
+        # init policy
 
         self._initialize_policy(
-            config,
-            load_from_ckpt=True,
-            observation_space=observation_space,
-            action_space=action_space,
+            self.config,
+            self.config.IL.load_from_ckpt,
+            4, 
         )
         self.policy.eval()
 
@@ -284,18 +284,6 @@ class BaseVLNCETrainer(BaseILTrainer):
         batch = batch_obs(observations, self.device)
         batch = apply_obs_transforms_batch(batch, self.obs_transforms)
 
-        rnn_states = torch.zeros(
-            envs.num_envs,
-            self.policy.net.num_recurrent_layers,
-            config.MODEL.STATE_ENCODER.hidden_size,
-            device=self.device,
-        )
-        prev_actions = torch.zeros(
-            envs.num_envs, 1, device=self.device, dtype=torch.long
-        )
-        not_done_masks = torch.zeros(
-            envs.num_envs, 1, dtype=torch.uint8, device=self.device
-        )
 
         stats_episodes = {}
 
@@ -318,6 +306,8 @@ class BaseVLNCETrainer(BaseILTrainer):
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
             current_episodes = envs.current_episodes()
 
+            assert 1==2
+            
             with torch.no_grad():
                 actions, rnn_states = self.policy.act(
                     batch,
