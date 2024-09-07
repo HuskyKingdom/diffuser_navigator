@@ -70,7 +70,7 @@ def collate_fn(batch):
         collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t]))
         collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t]))
         
-        # Handle gt_actions by selecting from t to t+F, padding with -1 if out of bounds
+        # Handle gt_actions by selecting from t to t+F, padding with STOP(0) if out of bounds
         if t + F < len_seq:
             gt_action_segment = sample[2][t:t+F+1]
         else:
