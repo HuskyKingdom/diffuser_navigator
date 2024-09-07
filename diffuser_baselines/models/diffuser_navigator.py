@@ -36,6 +36,8 @@ class DiffusionPolicy(Policy):
         'gt_actions': None
         }
 
+        actions = self.navigator(collected_data,run_inference = True)
+
         
 
 
