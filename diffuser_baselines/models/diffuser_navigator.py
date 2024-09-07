@@ -314,8 +314,8 @@ class DiffusionNavigator(nn.Module):
         from gym import spaces
 
         obs_space = spaces.Dict({
-            "rgb": spaces.Box(low=0, high=255, shape=(224, 224, 3), dtype='uint8'),
-            "depth": spaces.Box(low=0, high=255, shape=(256, 256, 1), dtype='uint8')
+            "rgb": spaces.Box(low=0, high=255, shape=(224, 224, 3), dtype='float32'),
+            "depth": spaces.Box(low=0, high=255, shape=(256, 256, 1), dtype='float32')
         })
 
         assert config.MODEL.DEPTH_ENCODER.cnn_type in ["VlnResnetDepthEncoder"]
@@ -344,8 +344,8 @@ class DiffusionNavigator(nn.Module):
             spatial_output=True,
         )
 
-        self.depth_encoder.to(self.device)
-        self.rgb_encoder.to(self.device)
+        self.depth_encoder.to(next(self.parameters()).device)
+        self.rgb_encoder.to(next(self.parameters()).device)
 
         depth_embedding = self.depth_encoder(batch)
 
