@@ -32,7 +32,7 @@ for i in range(original_tensor.shape[0]):
         timestep=noising_timesteps[i],  # 针对每个样本的时间步
         sample=noisy_tensor[i].unsqueeze(0)  # 输入单个样本
     )
-
+    print(step_output.shape)
     # 获取去噪后的样本
     prev_samples.append(step_output["prev_sample"].squeeze(0))
 
