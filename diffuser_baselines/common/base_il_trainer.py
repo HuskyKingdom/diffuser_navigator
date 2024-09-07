@@ -301,14 +301,14 @@ class BaseVLNCETrainer(BaseILTrainer):
         )
         start_time = time.time()
 
-        action_candidates = []
+        action_candidates = [[]]
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
             current_episodes = envs.current_episodes()
             
 
             if config.EVAL.ACTION_POP: # forward every F timesteps
 
-                if len(action_candidates) == 0: 
+                if len(action_candidates[0]) == 0: 
                     with torch.no_grad():
                         out = self.policy.act(batch)
                         action_candidates = out.cpu().tolist()
