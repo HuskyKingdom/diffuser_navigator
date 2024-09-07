@@ -105,6 +105,47 @@ class DiffusionNavigator(nn.Module):
         )
 
 
+        # init frozon encoders
+        # init the depth visual encoder
+        from diffuser_baselines.models.encoders import resnet_encoders
+        from gym import spaces
+
+        obs_space = spaces.Dict({
+            "rgb": spaces.Box(low=0, high=255, shape=(224, 224, 3), dtype='float32'),
+            "depth": spaces.Box(low=0, high=255, shape=(256, 256, 1), dtype='float32')
+        })
+
+        assert config.MODEL.DEPTH_ENCODER.cnn_type in ["VlnResnetDepthEncoder"]
+        self.depth_encoder = getattr(
+            resnet_encoders, config.MODEL.DEPTH_ENCODER.cnn_type
+        )(
+            obs_space,
+            output_size=config.MODEL.DEPTH_ENCODER.output_size,
+            checkpoint=config.MODEL.DEPTH_ENCODER.ddppo_checkpoint,
+            backbone=config.MODEL.DEPTH_ENCODER.backbone,
+            trainable=config.MODEL.DEPTH_ENCODER.trainable,
+            spatial_output=True,
+        )
+
+        # init the RGB visual encoder
+        assert config.MODEL.RGB_ENCODER.cnn_type in [
+            "TorchVisionResNet18",
+            "TorchVisionResNet50",
+        ]
+        self.rgb_encoder = getattr(
+            resnet_encoders, config.MODEL.RGB_ENCODER.cnn_type
+        )(
+            config.MODEL.RGB_ENCODER.output_size,
+            normalize_visual_inputs=config.MODEL.normalize_rgb,
+            trainable=config.MODEL.RGB_ENCODER.trainable,
+            spatial_output=True,
+        )
+
+        self.depth_encoder.to(next(self.parameters()).device)
+        self.rgb_encoder.to(next(self.parameters()).device)
+
+
+
         for param in self.action_encoder.parameters(): # freeze action representations
             param.requires_grad = False
 
@@ -307,46 +348,7 @@ class DiffusionNavigator(nn.Module):
 
     def encode_visions(self,batch,config):
 
-        if self.rgb_encoder == None:
-            # init frozon encoders
-            # init the depth visual encoder
-            from diffuser_baselines.models.encoders import resnet_encoders
-            from gym import spaces
-
-            obs_space = spaces.Dict({
-                "rgb": spaces.Box(low=0, high=255, shape=(224, 224, 3), dtype='float32'),
-                "depth": spaces.Box(low=0, high=255, shape=(256, 256, 1), dtype='float32')
-            })
-
-            assert config.MODEL.DEPTH_ENCODER.cnn_type in ["VlnResnetDepthEncoder"]
-            self.depth_encoder = getattr(
-                resnet_encoders, config.MODEL.DEPTH_ENCODER.cnn_type
-            )(
-                obs_space,
-                output_size=config.MODEL.DEPTH_ENCODER.output_size,
-                checkpoint=config.MODEL.DEPTH_ENCODER.ddppo_checkpoint,
-                backbone=config.MODEL.DEPTH_ENCODER.backbone,
-                trainable=config.MODEL.DEPTH_ENCODER.trainable,
-                spatial_output=True,
-            )
-
-            # init the RGB visual encoder
-            assert config.MODEL.RGB_ENCODER.cnn_type in [
-                "TorchVisionResNet18",
-                "TorchVisionResNet50",
-            ]
-            self.rgb_encoder = getattr(
-                resnet_encoders, config.MODEL.RGB_ENCODER.cnn_type
-            )(
-                config.MODEL.RGB_ENCODER.output_size,
-                normalize_visual_inputs=config.MODEL.normalize_rgb,
-                trainable=config.MODEL.RGB_ENCODER.trainable,
-                spatial_output=True,
-            )
-
-            self.depth_encoder.to(next(self.parameters()).device)
-            self.rgb_encoder.to(next(self.parameters()).device)
-
+    
 
         # hooking cnn output
         def hook_builder(tgt_tensor):
