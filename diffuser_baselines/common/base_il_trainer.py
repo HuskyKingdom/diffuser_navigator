@@ -311,13 +311,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             with torch.no_grad():
 
         
-                actions, rnn_states = self.policy.act(
-                    batch,
-                    rnn_states,
-                    prev_actions,
-                    not_done_masks,
-                    deterministic=not config.EVAL.SAMPLE,
-                )
+                actions = self.policy.act(batch)
 
                 assert 1==2
                 prev_actions.copy_(actions)
