@@ -38,6 +38,7 @@ class DiffusionPolicy(Policy):
 
 
         actions = self.navigator(collected_data,run_inference = True)
+        return actions
 
         
 
@@ -262,7 +263,7 @@ class DiffusionNavigator(nn.Module):
         target = self.action_em_targets.to(embeddings.device)
         l1_dist = torch.abs(target.unsqueeze(1) - embeddings.unsqueeze(2)).sum(dim=-1)  # (B, L, A)
         actions_indexs = torch.argmin(l1_dist, dim=-1)
-        
+
         return actions_indexs
 
 
@@ -299,10 +300,6 @@ class DiffusionNavigator(nn.Module):
 
         # return action index
         actions = self.retrive_action_from_em(intermidiate_noise)
-
-
-        print(f"final actions {actions}")
-        assert 1==2
 
         return actions
 
