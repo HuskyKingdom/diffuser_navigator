@@ -21,7 +21,7 @@ class DiffusionPolicy(Policy):
         super(Policy, self).__init__()
         self.navigator = DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
 
-    def act(batch):
+    def act(self,batch):
 
         # format batch data
         collected_data = {
