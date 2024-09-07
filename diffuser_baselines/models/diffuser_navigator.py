@@ -308,8 +308,8 @@ class DiffusionNavigator(nn.Module):
 
     def encode_visions(self,batch,config):
 
+        # TODO MOVE TO INIT.
         
-
         # init frozon encoders
         # init the depth visual encoder
         from diffuser_baselines.models.encoders import resnet_encoders
