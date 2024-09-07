@@ -14,7 +14,7 @@ EVAL:
   EPISODE_COUNT: -1
 
 IL:
-  ckpt_to_load: data/checkpoints/diffuser/ckpt.100.pth
+  ckpt_to_load: data/checkpoints/diffuser/ckpt.900.pth
   epochs: 1000
   batch_size: 32
   
