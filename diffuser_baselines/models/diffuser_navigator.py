@@ -292,7 +292,7 @@ class DiffusionNavigator(nn.Module):
             )
 
             intermidiate_noise = step_out["prev_sample"]
-            print(t)
+            print(t * torch.ones(len(tokens[0])).to(tokens[0].device).long())
 
 
         print(f"final denoised embedding {intermidiate_noise.shape}")
