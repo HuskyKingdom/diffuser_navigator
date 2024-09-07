@@ -198,7 +198,7 @@ class DiffusionNavigator(nn.Module):
         pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps)
 
         # compute loss
-        loss = F.l1_loss(pred, noise, reduction='mean')
+        loss = F.mse_loss(pred, noise)
 
         return loss
 
