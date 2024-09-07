@@ -21,10 +21,47 @@ class DiffusionPolicy(Policy):
         super(Policy, self).__init__()
         self.navigator = DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
 
-    def act(observations):
+    def act(batch):
+
+        # format batch data
+        collected_data = {
+        'instruction': [],
+        'rgb_features': [],
+        'depth_features': [],
+        'gt_actions': []
+        }
+
+        print(f"observation {batch["rgb"].shape}")
+
+        # for sample in batch:
+        #     len_seq = sample[0]['instruction'].shape[0]
+        
+        # # randomly sample timestep t in the range [0, len_seq-1]
+        # t = random.randint(0, len_seq - 1)
+        
+        # # Handle instruction, rgb_features, depth_features
+        # collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t]))
+        # collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t]))
+        # collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t]))
+        
+        # # Handle gt_actions by selecting from t to t+F, padding with -1 if out of bounds
+        # if t + F < len_seq:
+        #     gt_action_segment = sample[2][t:t+F+1]
+        # else:
+        #     gt_action_segment = sample[2][t:] 
+        #     padding_size = (t + F + 1) - len_seq 
+        #     gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 0)]) # padding with STOP action if exceed
+
+        # collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
+    
+        # # Stack into batched tensors
+        # collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
+        # collected_data['rgb_features'] = torch.stack(collected_data['rgb_features'], dim=0)
+        # collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
+        # collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
 
 
-        pass
+        
     
 
     def build_loss(self,observations):

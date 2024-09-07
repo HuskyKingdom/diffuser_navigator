@@ -216,6 +216,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             rgb_frames,
         )
 
+
     def _eval_checkpoint(
         self,
         checkpoint_path: str,
@@ -305,13 +306,11 @@ class BaseVLNCETrainer(BaseILTrainer):
 
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
             current_episodes = envs.current_episodes()
-
-            print(batch)
-
-
-            assert 1==2
+            
 
             with torch.no_grad():
+
+        
                 actions, rnn_states = self.policy.act(
                     batch,
                     rnn_states,
@@ -319,6 +318,8 @@ class BaseVLNCETrainer(BaseILTrainer):
                     not_done_masks,
                     deterministic=not config.EVAL.SAMPLE,
                 )
+
+                assert 1==2
                 prev_actions.copy_(actions)
 
             outputs = envs.step([a[0].item() for a in actions])
