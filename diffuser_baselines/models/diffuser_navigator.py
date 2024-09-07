@@ -24,15 +24,19 @@ class DiffusionPolicy(Policy):
 
     def act(self,batch):
 
+        
+
+        rgb_features,depth_features = self.navigator.encode_visions(batch,self.config)
+
         # format batch data
         collected_data = {
-        'instruction': [],
-        'rgb_features': [],
-        'depth_features': [],
-        'gt_actions': []
+        'instruction': batch['instruction'],
+        'rgb_features': rgb_features,
+        'depth_features': depth_features,
+        'gt_actions': None
         }
 
-        self.navigator.encode_visions(batch,self.config)
+        print(f"instruction {batch['instruction'].shape}")
 
         # for sample in batch:
         #     len_seq = sample[0]['instruction'].shape[0]
@@ -375,7 +379,5 @@ class DiffusionNavigator(nn.Module):
         rgb_embedding = self.rgb_encoder(batch)
 
 
-        print(f"depth features {rgb_features.shape}")
-        print(f"depth features {depth_features.shape}")
 
-        return None
+        return rgb_features,depth_features
