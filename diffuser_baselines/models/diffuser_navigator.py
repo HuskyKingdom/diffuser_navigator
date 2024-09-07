@@ -292,13 +292,15 @@ class DiffusionNavigator(nn.Module):
             )
 
             intermidiate_noise = step_out["prev_sample"]
-            print(t * torch.ones(len(tokens[0])).to(tokens[0].device).long())
 
 
-        print(f"final denoised embedding {intermidiate_noise.shape}")
-        assert 1==2
         # return action index
         actions = self.retrive_action_from_em(intermidiate_noise)
+
+
+        print(f"final actions {actions}")
+        assert 1==2
+
         return actions
 
 
