@@ -292,6 +292,7 @@ class DiffusionNavigator(nn.Module):
             )
 
             intermidiate_noise = step_out["prev_sample"]
+            print(t)
 
 
         print(f"final denoised embedding {intermidiate_noise.shape}")
