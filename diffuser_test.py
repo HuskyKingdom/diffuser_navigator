@@ -28,7 +28,7 @@ model_output = noise
 step_output = scheduler.step(
     model_output=model_output,
     timestep=noising_timesteps,
-    sample=torch.tensor(noisy_tensor)
+    sample=noisy_tensor
 )
 
 # 获取去噪后的样本
