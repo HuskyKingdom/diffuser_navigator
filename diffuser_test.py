@@ -14,7 +14,7 @@ noise = torch.randn_like(original_tensor)
 noising_timesteps = torch.randint(
             0,
             1000,
-            (len(noise),), device=noise.device
+            (5,6), device=noise.device
         ).long()
 
 # 第一步：对原始张量进行加噪
