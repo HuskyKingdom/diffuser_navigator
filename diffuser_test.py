@@ -5,7 +5,7 @@ import torch
 scheduler = DDPMScheduler(num_train_timesteps=1000)
 
 # 创建一个形状为 (5, 6, 256) 的张量，表示原始数据
-original_tensor = torch.randn(5, 6, 256)
+original_tensor = torch.randn(1, 6, 256)
 
 # 生成与原始张量形状一致的纯随机噪声
 noise = torch.randn_like(original_tensor)
@@ -22,13 +22,13 @@ for t in range(T, -1, -1):  # 从999降到0
     prev_samples = []
     for i in range(original_tensor.shape[0]):
         # 模型输出假设为噪声（与实际噪声相同）
-        model_output = noise[i]  # 模型预测的噪声
+        model_output = noise  # 模型预测的噪声
 
         # 使用调度器的 step 函数逐步去噪，sample 是上一轮去噪结果
         step_output = scheduler.step(
-            model_output=model_output.unsqueeze(0),  # 输入单个样本
+            model_output=model_output,  # 输入单个样本
             timestep=torch.tensor([t], device=noisy_tensor.device),  # 当前时间步
-            sample=noisy_tensor[i].unsqueeze(0)  # 上一轮去噪后的结果作为输入
+            sample=noisy_tensor[i]  # 上一轮去噪后的结果作为输入
         )
 
         # 获取去噪后的样本
@@ -36,7 +36,7 @@ for t in range(T, -1, -1):  # 从999降到0
 
     # 更新 noisy_tensor 为当前的去噪结果，用于下一轮去噪
     noisy_tensor = torch.stack(prev_samples)
-    print(prev_samples.shape)
+    print(noisy_tensor.shape)
 
 # 第三步：计算还原后的样本与原始样本之间的 L1 距离
 l1_difference = torch.mean(torch.abs(original_tensor - noisy_tensor))
