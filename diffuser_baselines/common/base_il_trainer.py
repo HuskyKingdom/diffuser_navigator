@@ -312,8 +312,9 @@ class BaseVLNCETrainer(BaseILTrainer):
 
         
                 actions = self.policy.act(batch)
-
                 assert 1==2
+
+                
                 prev_actions.copy_(actions)
 
             outputs = envs.step([a[0].item() for a in actions])

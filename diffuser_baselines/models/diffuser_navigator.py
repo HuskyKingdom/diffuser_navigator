@@ -20,6 +20,7 @@ class DiffusionPolicy(Policy):
         
         super(Policy, self).__init__()
         self.navigator = DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
+        self.config = config
 
     def act(self,batch):
 
@@ -31,7 +32,7 @@ class DiffusionPolicy(Policy):
         'gt_actions': []
         }
 
-        print(f"""observation {batch["rgb"].shape}""")
+        print(f"""depth {batch["depth"].shape}""")
 
         # for sample in batch:
         #     len_seq = sample[0]['instruction'].shape[0]
@@ -302,3 +303,40 @@ class DiffusionNavigator(nn.Module):
         # return action index
         actions = self.retrive_action_from_em(intermidiate_noise)
         return actions
+
+
+    def encode_visions(self,rgb,depth,config):
+
+
+        # init frozon encoders
+        from diffuser_baselines.models.encoders import resnet_encoders
+
+        assert config.MODEL.DEPTH_ENCODER.cnn_type in ["VlnResnetDepthEncoder"]
+        self.depth_encoder = getattr(
+            resnet_encoders, config.MODEL.DEPTH_ENCODER.cnn_type
+        )(
+            observation_space,
+            output_size=config.MODEL.DEPTH_ENCODER.output_size,
+            checkpoint=config.MODEL.DEPTH_ENCODER.ddppo_checkpoint,
+            backbone=config.MODEL.DEPTH_ENCODER.backbone,
+            trainable=config.MODEL.DEPTH_ENCODER.trainable,
+            spatial_output=True,
+        )
+
+        # Init the RGB visual encoder
+        assert config.MODEL.RGB_ENCODER.cnn_type in [
+            "TorchVisionResNet18",
+            "TorchVisionResNet50",
+        ]
+        self.rgb_encoder = getattr(
+            resnet_encoders, config.MODEL.RGB_ENCODER.cnn_type
+        )(
+            config.MODEL.RGB_ENCODER.output_size,
+            normalize_visual_inputs=config.MODEL.normalize_rgb,
+            trainable=config.MODEL.RGB_ENCODER.trainable,
+            spatial_output=True,
+        )
+
+
+
+        return None
