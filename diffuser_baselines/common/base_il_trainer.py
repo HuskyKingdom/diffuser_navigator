@@ -310,11 +310,19 @@ class BaseVLNCETrainer(BaseILTrainer):
 
             with torch.no_grad():
 
-        
+                batch = {
+                k: v.to(
+                    device=self.device,
+                    dtype=torch.float32,
+                    non_blocking=True,
+                )
+                for k, v in batch.items()
+                }
+
                 actions = self.policy.act(batch)
                 assert 1==2
 
-                
+
                 prev_actions.copy_(actions)
 
             outputs = envs.step([a[0].item() for a in actions])
