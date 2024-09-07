@@ -344,6 +344,9 @@ class DiffusionNavigator(nn.Module):
             spatial_output=True,
         )
 
+        self.depth_encoder.to(self.device)
+        self.rgb_encoder.to(self.device)
+
         depth_embedding = self.depth_encoder(batch)
 
         print(f"depth features {depth_embedding.shape}")
