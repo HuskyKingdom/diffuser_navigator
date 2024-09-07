@@ -658,7 +658,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
 
         if load_from_ckpt:
-            assert 1==2
             ckpt_path = config.IL.ckpt_to_load
             ckpt_dict = self.load_checkpoint(ckpt_path, map_location="cpu")
             self.policy.load_state_dict(ckpt_dict["state_dict"])
