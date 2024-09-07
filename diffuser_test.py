@@ -22,7 +22,7 @@ for t in range(T, -1, -1):  # 从999降到0
     prev_samples = []
     for i in range(original_tensor.shape[0]):
         # 模型输出假设为噪声（与实际噪声相同）
-        model_output = noise  # 模型预测的噪声
+        model_output = torch.randn_like(original_tensor)  # 模型预测的噪声
 
         # 使用调度器的 step 函数逐步去噪，sample 是上一轮去噪结果
         step_output = scheduler.step(
