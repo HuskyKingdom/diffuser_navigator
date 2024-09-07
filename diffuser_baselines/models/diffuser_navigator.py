@@ -258,7 +258,7 @@ class DiffusionNavigator(nn.Module):
 
 
     def retrive_action_from_em(self,embeddings):  # retrive action index from embedding
-        distances = torch.cdist(self.action_em_targets, embeddings)
+        distances = torch.cdist(self.action_em_targets.to(embeddings.device), embeddings)
         actions_indexs = torch.argmin(distances, dim=-1)
         return actions_indexs
 
