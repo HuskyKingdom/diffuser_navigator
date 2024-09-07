@@ -307,6 +307,8 @@ class BaseVLNCETrainer(BaseILTrainer):
             current_episodes = envs.current_episodes()
 
             print(batch)
+
+            
             assert 1==2
 
             with torch.no_grad():
