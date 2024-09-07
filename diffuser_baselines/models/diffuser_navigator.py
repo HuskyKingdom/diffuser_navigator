@@ -97,7 +97,7 @@ class DiffusionNavigator(nn.Module):
         self.action_em_targets = self.action_encoder(action_targets)
 
         # positional embeddings
-        self.pe_layer = PositionalEncoding(embedding_dim,0)
+        self.pe_layer = PositionalEncoding(embedding_dim,0.2)
 
         # Attention layers
         layer = ParallelAttention(
