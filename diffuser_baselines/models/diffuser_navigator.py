@@ -287,16 +287,14 @@ class DiffusionNavigator(nn.Module):
             # noise pred.
             pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long())
 
-            print(f"predicted noise shape {pred_noises.shape}")
-            assert 1==2
-
             step_out = self.noise_scheduler.step(
                 pred_noises, t, intermidiate_noise
-            ).prev_sample
+            )
 
+            intermidiate_noise = step_out["prev_sample"]
 
-
-            intermidiate_noise = denoised_action_em
+            print(intermidiate_noise.shape)
+            assert 1==2
 
         # return action index
         actions = self.retrive_action_from_em(intermidiate_noise)
