@@ -351,14 +351,12 @@ class DiffusionNavigator(nn.Module):
 
         rgb_features = None
         rgb_hook = None    
-        rgb_features = torch.zeros((1,), device="cpu")
         rgb_hook = self.rgb_encoder.cnn.register_forward_hook(
             hook_builder(rgb_features)
         )
 
         depth_features = None
         depth_hook = None
-        depth_features = torch.zeros((1,), device="cpu")
         depth_hook = self.depth_encoder.visual_encoder.register_forward_hook(
             hook_builder(depth_features)
         )
