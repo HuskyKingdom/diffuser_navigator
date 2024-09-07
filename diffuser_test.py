@@ -12,8 +12,8 @@ noise = torch.randn_like(original_tensor)
 
 # 选择一个时间步，比如 timestep = 999
 noising_timesteps = torch.randint(
-            0,
-            50,
+            900,
+            1000,
             (5,), device=noise.device
         ).long()
 
