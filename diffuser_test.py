@@ -40,5 +40,6 @@ for i in range(original_tensor.shape[0]):
 prev_samples = torch.stack(prev_samples)
 
 # 第三步：计算还原后的样本与原始样本之间的误差
-difference = torch.mean((original_tensor - prev_sample) ** 2)
+difference = torch.mean((original_tensor - prev_samples) ** 2)
+
 print("Mean Squared Error between original and restored tensor:", difference.item())
