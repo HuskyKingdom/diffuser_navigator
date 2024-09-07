@@ -280,7 +280,7 @@ class DiffusionNavigator(nn.Module):
         intermidiate_noise = pure_noise
 
         # Iterative denoising
-        timesteps = self.position_noise_scheduler.timesteps
+        timesteps = self.noise_scheduler.timesteps
 
         for t in timesteps:
             
