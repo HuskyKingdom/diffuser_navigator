@@ -282,21 +282,6 @@ class DiffusionNavigator(nn.Module):
         # Iterative denoising
         timesteps = self.position_noise_scheduler.timesteps
 
-
-        prev_samples = []
-        for i in range(pure_noise.shape[0]): # each batch
-           
-            model_output = noise[i]  # 模型预测的噪声
-
-            step_output = scheduler.step(
-                model_output=model_output.unsqueeze(0), 
-                timestep=noising_timesteps[i],  
-                sample=noisy_tensor[i].unsqueeze(0)  
-            )
-            prev_samples.append(step_output["prev_sample"].squeeze(0))
-
-
-
         for t in timesteps:
             
             # noise pred.
