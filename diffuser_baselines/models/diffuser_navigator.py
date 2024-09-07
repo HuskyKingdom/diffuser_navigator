@@ -281,16 +281,36 @@ class DiffusionNavigator(nn.Module):
 
         # Iterative denoising
         timesteps = self.position_noise_scheduler.timesteps
+
+
+        prev_samples = []
+        for i in range(pure_noise.shape[0]): # each batch
+           
+            model_output = noise[i]  # 模型预测的噪声
+
+            step_output = scheduler.step(
+                model_output=model_output.unsqueeze(0), 
+                timestep=noising_timesteps[i],  
+                sample=noisy_tensor[i].unsqueeze(0)  
+            )
+            prev_samples.append(step_output["prev_sample"].squeeze(0))
+
+
+
         for t in timesteps:
             
             # noise pred.
             pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long())
 
-            denoised_action_em = self.noise_scheduler.step(
+            print(f"predicted noise shape {pred_noises.shape}")
+            assert 1==2
+
+            step_out = self.noise_scheduler.step(
                 pred_noises, t, intermidiate_noise
             ).prev_sample
 
-            
+
+
             intermidiate_noise = denoised_action_em
 
         # return action index
