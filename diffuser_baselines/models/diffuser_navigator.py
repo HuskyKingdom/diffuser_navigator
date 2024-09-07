@@ -293,9 +293,9 @@ class DiffusionNavigator(nn.Module):
 
             intermidiate_noise = step_out["prev_sample"]
 
-            print(intermidiate_noise.shape)
-            assert 1==2
 
+        print(f"final denoised embedding {intermidiate_noise.shape}")
+        assert 1==2
         # return action index
         actions = self.retrive_action_from_em(intermidiate_noise)
         return actions
