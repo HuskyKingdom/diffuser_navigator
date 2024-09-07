@@ -36,6 +36,8 @@ class DiffusionPolicy(Policy):
         'gt_actions': None
         }
 
+        print(collected_data['rgb_features'].device)
+        assert 1==2
         actions = self.navigator(collected_data,run_inference = True)
 
         
