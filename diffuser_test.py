@@ -21,18 +21,23 @@ noising_timesteps = torch.randint(
 noisy_tensor = scheduler.add_noise(original_tensor, noise, noising_timesteps)
 
 # 第二步：进行去噪
-# 假设模型输出预测的是噪声（与实际噪声相同）
-model_output = noise
+prev_samples = []
+for i in range(original_tensor.shape[0]):
+    # 假设模型输出预测的是噪声（与实际噪声相同）
+    model_output = noise[i]  # 模型预测的噪声
 
-# 使用调度器的 step 函数还原去噪
-step_output = scheduler.step(
-    model_output=model_output,
-    timestep=noising_timesteps,
-    sample=noisy_tensor
-)
+    # 使用调度器的 step 函数还原去噪
+    step_output = scheduler.step(
+        model_output=model_output.unsqueeze(0),  # 输入单个样本
+        timestep=noising_timesteps[i],  # 针对每个样本的时间步
+        sample=noisy_tensor[i].unsqueeze(0)  # 输入单个样本
+    )
 
-# 获取去噪后的样本
-prev_sample = step_output["prev_sample"]
+    # 获取去噪后的样本
+    prev_samples.append(step_output["prev_sample"].squeeze(0))
+
+# 合并去噪后的样本
+prev_samples = torch.stack(prev_samples)
 
 # 第三步：计算还原后的样本与原始样本之间的误差
 difference = torch.mean((original_tensor - prev_sample) ** 2)
