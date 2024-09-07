@@ -260,15 +260,32 @@ class DiffusionNavigator(nn.Module):
         return noise_prediction
 
 
-    def retrive_action_from_em(self,embeddings):  # retrive action index from embedding
+    # def retrive_action_from_em(self,embeddings):  # retrive action index from embedding
         
+    #     target = self.action_em_targets.to(embeddings.device)
+    #     l1_dist = torch.abs(target.unsqueeze(1) - embeddings.unsqueeze(2)).sum(dim=-1)  # (B, L, A)
+    #     actions_indexs = torch.argmin(l1_dist, dim=-1)
+
+    #     return actions_indexs
+
+
+
+    def retrive_action_from_em(self, embeddings):  # retrieve action index from embedding
+        # 将 action_em_targets 转移到 embeddings 的设备上
         target = self.action_em_targets.to(embeddings.device)
-        l1_dist = torch.abs(target.unsqueeze(1) - embeddings.unsqueeze(2)).sum(dim=-1)  # (B, L, A)
-        actions_indexs = torch.argmin(l1_dist, dim=-1)
+        
+        # target 的 shape 为 (B, A, D)，embeddings 的 shape 为 (B, L, D)
+        # 我们需要在 L 维度上比较 embeddings 和所有动作目标的相似性
+        # 使用余弦相似度计算每个时间步的嵌入和所有动作目标之间的相似性
+        
+        # 调整维度以进行广播，target.unsqueeze(1) 的 shape 为 (B, 1, A, D)
+        # embeddings.unsqueeze(2) 的 shape 为 (B, L, 1, D)
+        cosine_sim = F.cosine_similarity(embeddings.unsqueeze(2), target.unsqueeze(1), dim=-1)  # (B, L, A)
+        
+        # 余弦相似度越大，向量越相似，取最大相似度对应的索引
+        actions_indexs = torch.argmax(cosine_sim, dim=-1)
 
         return actions_indexs
-
-
 
 
     def inference_actions(self,tokens): # pred_noises (B,N,D)
