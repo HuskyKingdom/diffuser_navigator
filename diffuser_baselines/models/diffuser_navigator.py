@@ -279,17 +279,18 @@ class DiffusionNavigator(nn.Module):
 
         intermidiate_noise = pure_noise
 
-        assert 1==2
         # Iterative denoising
         timesteps = self.position_noise_scheduler.timesteps
         for t in timesteps:
             
             # noise pred.
-            pred_noises = self.predict_noise(tokens,)
+            pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long())
 
             denoised_action_em = self.noise_scheduler.step(
                 pred_noises, t, intermidiate_noise
             ).prev_sample
+
+            
             intermidiate_noise = denoised_action_em
 
         # return action index
