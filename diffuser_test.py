@@ -18,7 +18,7 @@ noising_timesteps = torch.randint(
         ).long()
 
 # 第一步：对原始张量进行加噪
-noisy_tensor = scheduler.add_noise(original_tensor.numpy(), noise.numpy(), noising_timesteps)
+noisy_tensor = scheduler.add_noise(original_tensor, noise, noising_timesteps)
 
 # 第二步：进行去噪
 # 假设模型输出预测的是噪声（与实际噪声相同）
