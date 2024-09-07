@@ -311,10 +311,12 @@ class BaseVLNCETrainer(BaseILTrainer):
                 if len(action_candidates) == 0: 
                     with torch.no_grad():
                         out = self.policy.act(batch)
+                        action_candidates = out.cpu().tolist()
                 
                 # pop actions
-                action_candidates = out.cpu().tolist()
                 actions = [[env_index.pop(0)] for env_index in action_candidates]
+                print(actions)
+                actions = torch.tensor(actions).to(self.device)
 
             else:
 
