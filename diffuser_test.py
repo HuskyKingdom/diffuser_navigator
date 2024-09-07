@@ -11,10 +11,14 @@ original_tensor = torch.randn(5, 6, 256)
 noise = torch.randn_like(original_tensor)
 
 # 选择一个时间步，比如 timestep = 999
-timestep = 999
+noising_timesteps = torch.randint(
+            0,
+            1000,
+            (len(noise),), device=noise.device
+        ).long()
 
 # 第一步：对原始张量进行加噪
-noisy_tensor = scheduler.add_noise(original_tensor.numpy(), noise.numpy(), timestep)
+noisy_tensor = scheduler.add_noise(original_tensor.numpy(), noise.numpy(), noising_timesteps)
 
 # 第二步：进行去噪
 # 假设模型输出预测的是噪声（与实际噪声相同）
@@ -23,7 +27,7 @@ model_output = noise
 # 使用调度器的 step 函数还原去噪
 step_output = scheduler.step(
     model_output=model_output,
-    timestep=timestep,
+    timestep=noising_timesteps,
     sample=torch.tensor(noisy_tensor)
 )
 
