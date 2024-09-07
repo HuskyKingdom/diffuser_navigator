@@ -306,8 +306,9 @@ class BaseVLNCETrainer(BaseILTrainer):
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
             current_episodes = envs.current_episodes()
 
+            print(batch)
             assert 1==2
-            
+
             with torch.no_grad():
                 actions, rnn_states = self.policy.act(
                     batch,
