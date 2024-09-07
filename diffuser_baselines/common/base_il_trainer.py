@@ -183,9 +183,7 @@ class BaseVLNCETrainer(BaseILTrainer):
     def _pause_envs(
         envs_to_pause,
         envs,
-        recurrent_hidden_states,
         not_done_masks,
-        prev_actions,
         batch,
         rgb_frames=None,
     ):
@@ -197,9 +195,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 envs.pause_at(idx)
 
             # indexing along the batch dimensions
-            recurrent_hidden_states = recurrent_hidden_states[state_index]
             not_done_masks = not_done_masks[state_index]
-            prev_actions = prev_actions[state_index]
 
             for k, v in batch.items():
                 batch[k] = v[state_index]
@@ -209,13 +205,14 @@ class BaseVLNCETrainer(BaseILTrainer):
 
         return (
             envs,
-            recurrent_hidden_states,
             not_done_masks,
-            prev_actions,
             batch,
             rgb_frames,
         )
 
+
+    def action_pop(): # 
+        return
 
     def _eval_checkpoint(
         self,
@@ -304,18 +301,25 @@ class BaseVLNCETrainer(BaseILTrainer):
         )
         start_time = time.time()
 
+        action_candidates = []
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
             current_episodes = envs.current_episodes()
             
 
-            with torch.no_grad():
+            if config.EVAL.ACTION_POP: # forward every F timesteps
+
+                if len(action_candidates) == 0: 
+                    action_candidates = self.policy.act(batch)
+
+                actions = [[env_index.pop(0)] for env_index in action_candidates]
+
+            else:
+                with torch.no_grad():
+                    action_candidates = self.policy.act(batch)
+                    actions = action_candidates
 
 
-                actions = self.policy.act(batch)
-                assert 1==2
-
-
-                prev_actions.copy_(actions)
+                
 
             outputs = envs.step([a[0].item() for a in actions])
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
@@ -341,7 +345,6 @@ class BaseVLNCETrainer(BaseILTrainer):
                 ep_id = current_episodes[i].episode_id
                 stats_episodes[ep_id] = infos[i]
                 observations[i] = envs.reset_at(i)[0]
-                prev_actions[i] = torch.zeros(1, dtype=torch.long)
 
                 if config.use_pbar:
                     pbar.update()
@@ -383,17 +386,13 @@ class BaseVLNCETrainer(BaseILTrainer):
 
             (
                 envs,
-                rnn_states,
                 not_done_masks,
-                prev_actions,
                 batch,
                 rgb_frames,
             ) = self._pause_envs(
                 envs_to_pause,
                 envs,
-                rnn_states,
                 not_done_masks,
-                prev_actions,
                 batch,
                 rgb_frames,
             )

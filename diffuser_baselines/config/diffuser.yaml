@@ -12,6 +12,7 @@ EVAL:
   USE_CKPT_CONFIG: False
   SPLIT: val_unseen
   EPISODE_COUNT: -1
+  ACTION_POP: True
 
 IL:
   ckpt_to_load: data/checkpoints/diffuser/ckpt.900.pth
