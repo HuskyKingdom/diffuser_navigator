@@ -272,7 +272,7 @@ class BaseVLNCETrainer(BaseILTrainer):
 
         self._initialize_policy(
             self.config,
-            self.config.IL.load_from_ckpt,
+            True,
             4, 
         )
         self.policy.eval()
@@ -308,7 +308,7 @@ class BaseVLNCETrainer(BaseILTrainer):
 
             print(batch)
 
-            
+
             assert 1==2
 
             with torch.no_grad():
