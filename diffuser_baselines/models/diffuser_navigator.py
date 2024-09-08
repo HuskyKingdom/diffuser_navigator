@@ -260,14 +260,17 @@ class DiffusionNavigator(nn.Module):
         return noise_prediction
 
 
-    def retrive_action_from_em(self,embeddings):  # retrive action index from embedding
-        
-        target = self.action_em_targets.to(embeddings.device)
-        l1_dist = torch.abs(target.unsqueeze(1) - embeddings.unsqueeze(2)).sum(dim=-1)  # (B, L, A)
 
-        actions_indexs = torch.argmin(l1_dist, dim=-1)
+    def retrive_action_from_em(self, embeddings):  # retrieve action index from embedding
+        target = self.action_em_targets.to(embeddings.device)
+        
+        # Compute L2 distance (squared differences) instead of L1
+        l2_dist = torch.sqrt(torch.sum((target.unsqueeze(1) - embeddings.unsqueeze(2)) ** 2, dim=-1))  # (B, L, A)
+        
+        actions_indexs = torch.argmin(l2_dist, dim=-1)
 
         return actions_indexs
+
 
 
 
