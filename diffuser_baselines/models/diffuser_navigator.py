@@ -234,17 +234,17 @@ class DiffusionNavigator(nn.Module):
         context_features = self.vision_language_attention(obs_features,instruction_position) # rgb attend instr.
 
 
-        # action features
-        action_features, _ = self.traj_lang_attention[0](
-                seq1=action_position, seq1_key_padding_mask=None,
-                seq2=instruction_position, seq2_key_padding_mask=None,
-                seq1_pos=None, seq2_pos=None,
-                seq1_sem_pos=None, seq2_sem_pos=None
-        )
+        # # action features
+        # action_features, _ = self.traj_lang_attention[0](
+        #         seq1=action_position, seq1_key_padding_mask=None,
+        #         seq2=instruction_position, seq2_key_padding_mask=None,
+        #         seq1_pos=None, seq2_pos=None,
+        #         seq1_sem_pos=None, seq2_sem_pos=None
+        # )
 
 
         # final features
-        features = self.cross_attention(query=action_features.transpose(0, 1),
+        features = self.cross_attention(query=action_position.transpose(0, 1),
             value=context_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,

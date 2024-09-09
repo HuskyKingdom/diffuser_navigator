@@ -15,7 +15,6 @@ EVAL:
   ACTION_POP: True
 
 IL:
-  ckpt_to_load: data/checkpoints/diffuser/ckpt.800.pth
   epochs: 1000
   batch_size: 32
   
