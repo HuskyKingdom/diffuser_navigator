@@ -322,8 +322,8 @@ class BaseVLNCETrainer(BaseILTrainer):
                 with torch.no_grad():
                     out = self.policy.act(batch)
                     # action_candidates = out.cpu().tolist()
-                    actions = torch.tensor(actions).to(self.device)
-                    actions = action_candidates
+                    # actions = torch.tensor(out).to(self.device)
+                    actions = out
 
 
                 
