@@ -377,6 +377,8 @@ class BaseVLNCETrainer(BaseILTrainer):
                     del stats_episodes[ep_id]["top_down_map_vlnce"]
                     rgb_frames[i] = []
 
+                print(f"infos: {infos[i]}")
+
             observations = extract_instruction_tokens(
                 observations,
                 self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID,
