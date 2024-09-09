@@ -10,9 +10,9 @@ RESULTS_DIR: data/checkpoints/diffuser/evals
 
 EVAL:
   USE_CKPT_CONFIG: False
-  SPLIT: val_unseen
+  SPLIT: val_seen
   EPISODE_COUNT: -1
-  ACTION_POP: False
+  ACTION_POP: True
 
 IL:
   ckpt_to_load: data/checkpoints/diffuser/ckpt.800.pth
