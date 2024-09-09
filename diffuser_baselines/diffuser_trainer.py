@@ -50,7 +50,10 @@ def collate_fn(batch):
     """
 
     # num of feature timestep prediction
-    F = 5 # action_lenth - 1
+
+    
+
+    F = 2 # action_lenth - 1
 
     collected_data = {
         'instruction': [],
