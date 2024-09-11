@@ -37,6 +37,8 @@ class DiffusionPolicy(Policy):
         }
 
 
+        print("@@@@@@@@@@@@@@@@@@@@@@@@",batch[2])
+
         actions = self.navigator(collected_data,run_inference = True)
 
         print(f"final actions {actions}")
@@ -163,7 +165,7 @@ class DiffusionNavigator(nn.Module):
 
     def forward(self, observations, run_inference=False):
 
-        print("@@@@@@@@@@@@@@@@@@@@@@@@",observations["gt_actions"])
+        
 
 
         # tokenlize
