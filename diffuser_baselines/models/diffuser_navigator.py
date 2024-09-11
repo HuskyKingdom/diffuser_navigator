@@ -213,7 +213,7 @@ class DiffusionNavigator(nn.Module):
         intermidiate_noise = step_out["prev_sample"]
 
 
-        print(f"Predicted Actions {observations["gt_actions"]}")
+        print(f"Predicted Actions {observations['gt_actions']}")
 
         # compute loss
         loss = F.mse_loss(pred, noise)
