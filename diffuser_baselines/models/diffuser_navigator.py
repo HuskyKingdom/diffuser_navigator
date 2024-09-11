@@ -182,7 +182,7 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
 
         noising_timesteps = torch.randint(
-            49,
+            0,
             self.noise_scheduler.config.num_train_timesteps,
             (len(noise),), device=noise.device
         ).long()
@@ -203,10 +203,9 @@ class DiffusionNavigator(nn.Module):
 
         print(f"GroundTruth Actions {observations['gt_actions'][0]}")
 
-
         # print(f"shapes : {pred.shape} ; {noising_timesteps.shape} ; {noised_orc_action_tokens.shape}")
         step_out = self.noise_scheduler.step(
-            pred[30].unsqueeze(0), noising_timesteps[30], noised_orc_action_tokens[0].unsqueeze(0)
+            pred[0].unsqueeze(0), noising_timesteps[0], noise[0].unsqueeze(0)
         )
 
         denoised = step_out["prev_sample"]
