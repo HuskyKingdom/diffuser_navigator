@@ -210,10 +210,12 @@ class DiffusionNavigator(nn.Module):
             pred[0], noising_timesteps[0], noised_orc_action_tokens[0]
         )
 
-        intermidiate_noise = step_out["prev_sample"]
+        denoised = step_out["prev_sample"]
+
+        pre_actions = self.retrive_action_from_em(denoised)
 
 
-        print(f"Predicted Actions {observations['gt_actions']}")
+        print(f"Predicted Actions {pre_actions}")
 
         # compute loss
         loss = F.mse_loss(pred, noise)

@@ -10,13 +10,13 @@ RESULTS_DIR: data/checkpoints/diffuser/evals
 
 EVAL:
   USE_CKPT_CONFIG: False
-  SPLIT: train
+  SPLIT: train # for testing overfitting only
   EPISODE_COUNT: -1
   ACTION_POP: True
 
 IL:
   ckpt_to_load: data/checkpoints/diffuser/ckpt.900.pth
-  load_from_ckpt: True
+  load_from_ckpt: True # for testing overfitting only
   epochs: 1000
   batch_size: 32
   
