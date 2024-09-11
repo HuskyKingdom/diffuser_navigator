@@ -37,8 +37,6 @@ class DiffusionPolicy(Policy):
         }
 
 
-        print("@@@@@@@@@@@@@@@@@@@@@@@@",batch)
-
         actions = self.navigator(collected_data,run_inference = True)
 
         print(f"final actions {actions}")
@@ -200,6 +198,22 @@ class DiffusionNavigator(nn.Module):
         # predict noise
         tokens = (instr_tokens,rgb_tokens,depth_tokens)
         pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps)
+
+
+
+
+        print(f"GroundTruth Actions {observations["gt_actions"]}")
+
+
+
+        step_out = self.noise_scheduler.step(
+            pred, noising_timesteps, noised_orc_action_tokens
+        )
+
+        intermidiate_noise = step_out["prev_sample"]
+
+
+        print(f"Predicted Actions {observations["gt_actions"]}")
 
         # compute loss
         loss = F.mse_loss(pred, noise)
