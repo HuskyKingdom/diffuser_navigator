@@ -201,6 +201,7 @@ class DiffusionNavigator(nn.Module):
 
 
 
+        print(f"action tokens {oracle_action_tokens[0]} | noised {noised_orc_action_tokens[0]}")
 
         print(f"GroundTruth Actions {observations['gt_actions'][0]}")
 
