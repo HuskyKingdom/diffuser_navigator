@@ -202,7 +202,7 @@ class DiffusionNavigator(nn.Module):
 
 
 
-        print(f"GroundTruth Actions {observations["gt_actions"]}")
+        print(f"GroundTruth Actions {observations['gt_actions']}")
 
 
 
