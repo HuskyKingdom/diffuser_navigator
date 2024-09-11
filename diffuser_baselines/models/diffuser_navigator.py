@@ -205,7 +205,7 @@ class DiffusionNavigator(nn.Module):
         print(f"GroundTruth Actions {observations['gt_actions'][0]}")
 
 
-
+        print(f"shapes : {pred[0].shape} ; {noising_timesteps[0].shape} ; {noised_orc_action_tokens[0].shape}")
         step_out = self.noise_scheduler.step(
             pred[0], noising_timesteps[0], noised_orc_action_tokens[0]
         )
@@ -213,7 +213,7 @@ class DiffusionNavigator(nn.Module):
         denoised = step_out["prev_sample"]
 
 
-        print(denoised.shape)
+        
         pre_actions = self.retrive_action_from_em(denoised)
 
         
