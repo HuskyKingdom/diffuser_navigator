@@ -208,6 +208,10 @@ class DiffusionNavigator(nn.Module):
         pre_actions = self.retrive_action_from_em(denoised)
         print(f"Predicted Actions {pre_actions}")
 
+
+        kl_loss = F.kl_div(pred.log_softmax(dim=-1), noise.softmax(dim=-1), reduction='batchmean')
+
+
         # compute loss
         loss = F.mse_loss(pred, noise)
 
