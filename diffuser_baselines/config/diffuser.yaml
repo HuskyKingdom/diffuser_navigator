@@ -10,7 +10,7 @@ RESULTS_DIR: data/checkpoints/diffuser/evals
 
 EVAL:
   USE_CKPT_CONFIG: False
-  SPLIT: val_seen
+  SPLIT: train
   EPISODE_COUNT: -1
   ACTION_POP: True
 
