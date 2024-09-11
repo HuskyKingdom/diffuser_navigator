@@ -212,9 +212,11 @@ class DiffusionNavigator(nn.Module):
 
         denoised = step_out["prev_sample"]
 
+
+        print(denoised.shape)
         pre_actions = self.retrive_action_from_em(denoised)
 
-
+        
         print(f"Predicted Actions {pre_actions}")
 
         # compute loss
