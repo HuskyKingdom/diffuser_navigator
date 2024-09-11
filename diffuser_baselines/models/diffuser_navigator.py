@@ -184,7 +184,7 @@ class DiffusionNavigator(nn.Module):
         noising_timesteps = torch.randint(
             400,
             self.noise_scheduler.config.num_train_timesteps,
-            (len(noise),), device=noise.device
+            (len(noise),3), device=noise.device
         ).long()
 
  
