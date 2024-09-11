@@ -18,7 +18,7 @@ IL:
   ckpt_to_load: data/checkpoints/diffuser/ckpt.900.pth
   load_from_ckpt: False # for testing overfitting only
   epochs: 1000
-  batch_size: 48
+  batch_size: 64
   
 
   RECOLLECT_TRAINER:
