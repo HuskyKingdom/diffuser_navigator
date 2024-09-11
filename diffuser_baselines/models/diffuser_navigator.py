@@ -215,6 +215,8 @@ class DiffusionNavigator(nn.Module):
 
         loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
 
+        print(kl_loss)
+
         return loss
 
 
