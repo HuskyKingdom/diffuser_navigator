@@ -163,9 +163,9 @@ class DiffusionNavigator(nn.Module):
 
     def forward(self, observations, run_inference=False):
 
-        print(observations["gt_actions"])
+        print("@@@@@@@@@@@@@@@@@@@@@@@@",observations["gt_actions"])
 
-        
+
         # tokenlize
         instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens = self.tokenlize_input(observations)
 
