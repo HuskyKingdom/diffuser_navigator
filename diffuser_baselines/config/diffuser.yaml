@@ -37,7 +37,7 @@ DIFFUSER:
   embedding_dim: 128
   num_attention_heads: 4
   num_layers: 2
-  diffusion_timesteps: 50
+  diffusion_timesteps: 800
   logging_file: data/loggings/train.log
   LR: 1.0e-4
   action_length: 3
