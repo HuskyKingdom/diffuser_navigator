@@ -207,7 +207,7 @@ class DiffusionNavigator(nn.Module):
 
 
         step_out = self.noise_scheduler.step(
-            pred, noising_timesteps, noised_orc_action_tokens
+            pred[0], noising_timesteps[0], noised_orc_action_tokens[0]
         )
 
         intermidiate_noise = step_out["prev_sample"]
