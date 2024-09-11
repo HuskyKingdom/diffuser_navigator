@@ -182,7 +182,7 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
 
         noising_timesteps = torch.randint(
-            799,
+            0,
             self.noise_scheduler.config.num_train_timesteps,
             (len(noise),), device=noise.device
         ).long()
@@ -194,11 +194,9 @@ class DiffusionNavigator(nn.Module):
         )
 
 
-
         # predict noise
         tokens = (instr_tokens,rgb_tokens,depth_tokens)
         pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps)
-
 
 
         print(f"GroundTruth Actions {observations['gt_actions'][0]}")
