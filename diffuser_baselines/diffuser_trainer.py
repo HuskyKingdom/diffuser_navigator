@@ -53,7 +53,7 @@ def collate_fn(batch):
 
     
 
-    F = 3 # action_lenth - 1
+    F = 4 # action_lenth - 1
 
     collected_data = {
         'instruction': [],

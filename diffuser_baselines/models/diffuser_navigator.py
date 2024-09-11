@@ -199,14 +199,14 @@ class DiffusionNavigator(nn.Module):
         pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps)
 
 
-        print(f"GroundTruth Actions {observations['gt_actions'][0]}")
-        # print(f"shapes : {pred.shape} ; {noising_timesteps.shape} ; {noised_orc_action_tokens.shape}")
-        step_out = self.noise_scheduler.step(
-            pred[0].unsqueeze(0), noising_timesteps[0], noised_orc_action_tokens[0].unsqueeze(0)
-        )
-        denoised = step_out["prev_sample"]
-        pre_actions = self.retrive_action_from_em(denoised)
-        print(f"Predicted Actions {pre_actions}")
+        # print(f"GroundTruth Actions {observations['gt_actions'][0]}")
+        # # print(f"shapes : {pred.shape} ; {noising_timesteps.shape} ; {noised_orc_action_tokens.shape}")
+        # step_out = self.noise_scheduler.step(
+        #     pred[0].unsqueeze(0), noising_timesteps[0], noised_orc_action_tokens[0].unsqueeze(0)
+        # )
+        # denoised = step_out["prev_sample"]
+        # pre_actions = self.retrive_action_from_em(denoised)
+        # print(f"Predicted Actions {pre_actions}")
 
 
         # compute loss
@@ -214,8 +214,6 @@ class DiffusionNavigator(nn.Module):
         mse_loss = F.mse_loss(pred, noise)
 
         loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
-
-        print(kl_loss)
 
         return loss
 
