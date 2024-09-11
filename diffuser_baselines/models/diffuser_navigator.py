@@ -37,7 +37,7 @@ class DiffusionPolicy(Policy):
         }
 
 
-        print("@@@@@@@@@@@@@@@@@@@@@@@@",batch[2])
+        print("@@@@@@@@@@@@@@@@@@@@@@@@",batch)
 
         actions = self.navigator(collected_data,run_inference = True)
 
