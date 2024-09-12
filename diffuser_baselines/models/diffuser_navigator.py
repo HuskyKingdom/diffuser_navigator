@@ -230,7 +230,6 @@ class DiffusionNavigator(nn.Module):
 
             intermidiate_noise = step_out["prev_sample"]
 
-            print(f"denoising {t}")
   
         denoised = step_out["prev_sample"]
         pre_actions = self.retrive_action_from_em(denoised)
