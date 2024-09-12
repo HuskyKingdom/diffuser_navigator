@@ -220,7 +220,8 @@ class DiffusionNavigator(nn.Module):
         for t in denoise_steps:
 
             # noise pred.
-            pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long())
+            with torch.no_grad():
+                pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long())
 
             
             step_out = self.noise_scheduler.step(
