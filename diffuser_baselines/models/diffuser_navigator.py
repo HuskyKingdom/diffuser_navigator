@@ -209,17 +209,16 @@ class DiffusionNavigator(nn.Module):
 
         tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0))
         intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
-
-        import random
+    
         for t in denoise_steps:
 
             # noise pred.
             with torch.no_grad():
-                pred_noises = self.predict_noise(tokens,intermidiate_noise,random.randint(0,100) * torch.ones(len(tokens[0])).to(tokens[0].device).long())
+                pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long())
 
             
             step_out = self.noise_scheduler.step(
-                pred_noises, t, intermidiate_noise
+                torch.randn(pred_noises.shape, device=oracle_action_tokens.device), t, intermidiate_noise
             )
 
             intermidiate_noise = step_out["prev_sample"]
