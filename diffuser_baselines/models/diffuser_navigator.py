@@ -214,11 +214,11 @@ class DiffusionNavigator(nn.Module):
 
             # noise pred.
             with torch.no_grad():
-                pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long())
+                pred_noises = self.predict_noise(tokens,intermidiate_noise,t * 52 * torch.ones(len(tokens[0])).to(tokens[0].device).long())
 
             
             step_out = self.noise_scheduler.step(
-                pred_noises, torch.randn(t.shape, device=oracle_action_tokens.device).long(), intermidiate_noise
+                pred_noises, t, intermidiate_noise
             )
 
             intermidiate_noise = step_out["prev_sample"]
