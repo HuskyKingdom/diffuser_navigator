@@ -224,7 +224,7 @@ class DiffusionNavigator(nn.Module):
         if self.total_evaled <100:
             self.total_evaled +=5
         else:
-            print(f"evaluated {self.total_evaled * 5} | accuracy {self.total_correct / (self.tokenlize_input * 5)}")
+            print(f"evaluated {self.total_evaled * 5} | accuracy {self.total_correct / (self.total_evaled * 5)}")
             assert 1==2
 
 
