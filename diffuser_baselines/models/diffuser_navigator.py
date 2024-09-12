@@ -185,8 +185,8 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
 
         noising_timesteps = torch.randint(
-            700,
-            800, # self.noise_scheduler.config.num_train_timesteps
+            900,
+            1000, # self.noise_scheduler.config.num_train_timesteps
             (len(noise),), device=noise.device
         ).long()
 
@@ -216,7 +216,7 @@ class DiffusionNavigator(nn.Module):
 
 
         
-        denoised = step_out["prev_sample"]
+        denoised = step_out["pred_original_sample"]
         pre_actions = self.retrive_action_from_em(denoised)
         print(f"Predicted Actions {pre_actions}")
 
