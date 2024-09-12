@@ -185,8 +185,8 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
 
         noising_timesteps = torch.randint(
-            600,
-            700, # self.noise_scheduler.config.num_train_timesteps
+            700,
+            800, # self.noise_scheduler.config.num_train_timesteps
             (len(noise),), device=noise.device
         ).long()
 
@@ -307,32 +307,32 @@ class DiffusionNavigator(nn.Module):
     #     return actions_indexs
 
 
-    # def retrive_action_from_em(self, embeddings):  # retrieve action index from embedding
-    #     target = self.action_em_targets.to(embeddings.device)
-        
-    #     # Compute L2 distance (squared differences) instead of L1
-    #     l2_dist = torch.sqrt(torch.sum((target.unsqueeze(1) - embeddings.unsqueeze(2)) ** 2, dim=-1))  # (B, L, A)
-        
-    #     actions_indexs = torch.argmin(l2_dist, dim=-1)
-
-    #     return actions_indexs
-
-
-    # consine sim
     def retrive_action_from_em(self, embeddings):  # retrieve action index from embedding
         target = self.action_em_targets.to(embeddings.device)
         
-        # Normalize the embeddings and targets
-        embeddings_norm = torch.nn.functional.normalize(embeddings, p=2, dim=-1)  # (B, L, D)
-        target_norm = torch.nn.functional.normalize(target, p=2, dim=-1)  # (A, D)
+        # Compute L2 distance (squared differences) instead of L1
+        l2_dist = torch.sqrt(torch.sum((target.unsqueeze(1) - embeddings.unsqueeze(2)) ** 2, dim=-1))  # (B, L, A)
         
-        # Compute cosine similarity
-        cos_sim = torch.matmul(embeddings_norm, target_norm.transpose(-1, -2))  # (B, L, A)
-        
-        # Since we want to retrieve the action index, use argmax to find the most similar action
-        actions_indexs = torch.argmax(cos_sim, dim=-1)
-        
+        actions_indexs = torch.argmin(l2_dist, dim=-1)
+
         return actions_indexs
+
+
+    # # consine sim
+    # def retrive_action_from_em(self, embeddings):  # retrieve action index from embedding
+    #     target = self.action_em_targets.to(embeddings.device)
+        
+    #     # Normalize the embeddings and targets
+    #     embeddings_norm = torch.nn.functional.normalize(embeddings, p=2, dim=-1)  # (B, L, D)
+    #     target_norm = torch.nn.functional.normalize(target, p=2, dim=-1)  # (A, D)
+        
+    #     # Compute cosine similarity
+    #     cos_sim = torch.matmul(embeddings_norm, target_norm.transpose(-1, -2))  # (B, L, A)
+        
+    #     # Since we want to retrieve the action index, use argmax to find the most similar action
+    #     actions_indexs = torch.argmax(cos_sim, dim=-1)
+        
+    #     return actions_indexs
 
 
 
