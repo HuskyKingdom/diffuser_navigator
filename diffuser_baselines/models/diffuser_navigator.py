@@ -219,11 +219,10 @@ class DiffusionNavigator(nn.Module):
         list2 = observations['gt_actions'][0].cpu().tolist()
 
         same_index_count = sum(1 for a, b in zip(list1, list2) if a == b)
-        self.total_correct += 5
+        self.total_correct += same_index_count
 
         if self.total_evaled <100:
-            self.total_evaled +=1
-            self.total_correct +=same_index_count
+            self.total_evaled +=5
         else:
             print(f"evaluated {self.total_evaled * 5} | accuracy {self.total_correct / (self.tokenlize_input * 5)}")
             assert 1==2
