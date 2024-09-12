@@ -209,6 +209,13 @@ class DiffusionNavigator(nn.Module):
         step_out = self.noise_scheduler.step(
             pred[30].unsqueeze(0), noising_timesteps[30], noised_orc_action_tokens[0].unsqueeze(0)
         )
+
+        step_out = self.noise_scheduler.step(
+            torch.randn(pred[30].unsqueeze(0).shape, device=oracle_action_tokens.device), torch.randn(noising_timesteps[30].shape, device=oracle_action_tokens.device), noised_orc_action_tokens[0].unsqueeze(0)
+        )
+
+
+        
         denoised = step_out["prev_sample"]
         pre_actions = self.retrive_action_from_em(denoised)
         print(f"Predicted Actions {pre_actions}")
