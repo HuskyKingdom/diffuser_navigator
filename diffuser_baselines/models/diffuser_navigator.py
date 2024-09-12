@@ -215,7 +215,7 @@ class DiffusionNavigator(nn.Module):
         )
 
 
-        
+        print(step_out.keys())
         denoised = step_out["pred_original_sample"]
         pre_actions = self.retrive_action_from_em(denoised)
         print(f"Predicted Actions {pre_actions}")
