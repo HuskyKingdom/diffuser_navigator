@@ -205,18 +205,33 @@ class DiffusionNavigator(nn.Module):
         # evaluations ____
 
         print(f"GroundTruth Actions {observations['gt_actions'][0]}")
-        # print(f"shapes : {pred.shape} ; {noising_timesteps.shape} ; {noised_orc_action_tokens.shape}")
+        
+
         # step_out = self.noise_scheduler.step(
-        #     pred[30].unsqueeze(0), noising_timesteps[30], noised_orc_action_tokens[0].unsqueeze(0)
+        #     pred[0].unsqueeze(0), noising_timesteps[0], noised_orc_action_tokens[0].unsqueeze(0)
         # )
 
-        step_out = self.noise_scheduler.step(
-            torch.randn(pred[30].unsqueeze(0).shape, device=oracle_action_tokens.device), torch.randn(noising_timesteps[30].shape, device=oracle_action_tokens.device).long(), noised_orc_action_tokens[0].unsqueeze(0)
-        )
 
+        denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
 
-        print(step_out.keys())
-        denoised = step_out["pred_original_sample"]
+        tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0))
+        intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
+
+        for t in denoise_steps:
+
+            # noise pred.
+            pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long())
+
+            
+            step_out = self.noise_scheduler.step(
+                pred_noises, t, intermidiate_noise
+            )
+
+            intermidiate_noise = step_out["prev_sample"]
+
+            print(f"denoising {t}")
+  
+        denoised = step_out["prev_sample"]
         pre_actions = self.retrive_action_from_em(denoised)
         print(f"Predicted Actions {pre_actions}")
 
