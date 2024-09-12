@@ -125,6 +125,7 @@ class DiffusionNavigator(nn.Module):
         ])
 
         self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        self.cross_attention_sec = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.self_attention = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
         # Diffusion schedulers
@@ -297,7 +298,7 @@ class DiffusionNavigator(nn.Module):
 
 
         # final features
-        features = self.cross_attention(query=action_position.transpose(0, 1),
+        features = self.cross_attention_sec(query=action_position.transpose(0, 1),
             value=context_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,
