@@ -167,8 +167,6 @@ class DiffusionNavigator(nn.Module):
     def forward(self, observations, run_inference=False):
 
         
-
-
         # tokenlize
         instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens = self.tokenlize_input(observations)
 
@@ -207,11 +205,6 @@ class DiffusionNavigator(nn.Module):
         print(f"GroundTruth Actions {observations['gt_actions'][0]}")
         
 
-        # step_out = self.noise_scheduler.step(
-        #     pred[0].unsqueeze(0), noising_timesteps[0], noised_orc_action_tokens[0].unsqueeze(0)
-        # )
-
-
         denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
 
         tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0))
@@ -225,7 +218,7 @@ class DiffusionNavigator(nn.Module):
 
             
             step_out = self.noise_scheduler.step(
-                pred_noises, t, intermidiate_noise
+                torch.randn(pred_noises.shape, device=oracle_action_tokens.device), t, intermidiate_noise
             )
 
             intermidiate_noise = step_out["prev_sample"]
@@ -252,12 +245,13 @@ class DiffusionNavigator(nn.Module):
 
 
         # compute loss
-        kl_loss = F.kl_div(pred.log_softmax(dim=-1), noise.softmax(dim=-1), reduction='batchmean')
+        # kl_loss = F.kl_div(pred.log_softmax(dim=-1), noise.softmax(dim=-1), reduction='batchmean')
         mse_loss = F.mse_loss(pred, noise)
 
-        loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
+        # loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
+        loss = mse_loss
 
-        loss = loss - loss # evaluation
+        # loss = loss - loss # evaluation
 
         return loss
 
