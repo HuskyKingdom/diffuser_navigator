@@ -214,19 +214,19 @@ class DiffusionNavigator(nn.Module):
         print(f"Predicted Actions {pre_actions}")
 
 
-        # # analyzing
-        # list1 = pre_actions.squeeze(0).cpu().tolist()
-        # list2 = observations['gt_actions'][0].cpu().tolist()
+        # analyzing
+        list1 = pre_actions.squeeze(0).cpu().tolist()
+        list2 = observations['gt_actions'][0].cpu().tolist()
 
-        # same_index_count = sum(1 for a, b in zip(list1, list2) if a == b)
-        # self.total_correct += same_index_count
+        same_index_count = sum(1 for a, b in zip(list1, list2) if a == b)
+        self.total_correct += same_index_count
 
-        # if self.total_evaled < 100:
-        #     self.total_evaled += 5
-        # else:
-        #     print(self.total_correct)
-        #     print(f"evaluated {self.total_evaled} | accuracy {self.total_correct / (self.total_evaled)}")
-        #     assert 1==2
+        if self.total_evaled < 100:
+            self.total_evaled += 5
+        else:
+            print(self.total_correct)
+            print(f"evaluated {self.total_evaled} | accuracy {self.total_correct / (self.total_evaled)}")
+            assert 1==2
 
 
         # compute loss
