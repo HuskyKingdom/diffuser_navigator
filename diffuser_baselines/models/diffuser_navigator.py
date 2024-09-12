@@ -210,12 +210,12 @@ class DiffusionNavigator(nn.Module):
         tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0))
         intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
 
+        import random
         for t in denoise_steps:
 
             # noise pred.
-            import random
             with torch.no_grad():
-                pred_noises = self.predict_noise(tokens,intermidiate_noise,random.randint(0, 100) * torch.ones(len(tokens[0])).to(tokens[0].device).long())
+                pred_noises = self.predict_noise(tokens,intermidiate_noise,random.randint(0,100) * torch.ones(len(tokens[0])).to(tokens[0].device).long())
 
             
             step_out = self.noise_scheduler.step(
@@ -252,7 +252,7 @@ class DiffusionNavigator(nn.Module):
         # loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
         loss = mse_loss
 
-        # loss = loss - loss # evaluation
+        loss = loss - loss # evaluation
 
         return loss
 
