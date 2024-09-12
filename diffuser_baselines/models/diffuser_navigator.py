@@ -185,8 +185,8 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
 
         noising_timesteps = torch.randint(
+            700,
             800,
-            900,
             (len(noise),), device=noise.device
         ).long()
 
