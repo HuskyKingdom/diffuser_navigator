@@ -185,8 +185,8 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
 
         noising_timesteps = torch.randint(
-            500,
-            600, # self.noise_scheduler.config.num_train_timesteps
+            900,
+            1000, # self.noise_scheduler.config.num_train_timesteps
             (len(noise),), device=noise.device
         ).long()
 
@@ -222,9 +222,9 @@ class DiffusionNavigator(nn.Module):
         self.total_correct += same_index_count
 
         if self.total_evaled < 100:
-            self.total_evaled +=5
+            self.total_evaled += 5
         else:
-            print(f"evaluated {self.total_evaled * 5} | accuracy {self.total_correct / (self.total_evaled * 5)}")
+            print(f"evaluated {self.total_evaled} | accuracy {self.total_correct / (self.total_evaled)}")
             assert 1==2
 
 
