@@ -75,6 +75,9 @@ class DiffusionNavigator(nn.Module):
         self.embedding_dim = embedding_dim
         self.num_actions = num_actions
 
+        self.total_evaled = 0
+        self.total_correct = 0
+
         # Encoders
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
         self.rgb_linear = nn.Linear(16,embedding_dim)
@@ -199,6 +202,8 @@ class DiffusionNavigator(nn.Module):
         pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps)
 
 
+        # evaluations ____
+
         print(f"GroundTruth Actions {observations['gt_actions'][0]}")
         # print(f"shapes : {pred.shape} ; {noising_timesteps.shape} ; {noised_orc_action_tokens.shape}")
         step_out = self.noise_scheduler.step(
@@ -209,11 +214,28 @@ class DiffusionNavigator(nn.Module):
         print(f"Predicted Actions {pre_actions}")
 
 
+        # analyzing
+        list1 = pre_actions.squeeze(0).cpu().tolist()
+        list2 = observations['gt_actions'][0].cpu().tolist()
+
+        same_index_count = sum(1 for a, b in zip(list1, list2) if a == b)
+        self.total_correct += 1
+
+        if self.total_evaled <100:
+            self.total_evaled +=1
+            self.total_correct +=1
+        else:
+            print(f"evaluated {self.tokenlize_input * 5} | accuracy {}")
+            assert 1==2
+
+
         # compute loss
         kl_loss = F.kl_div(pred.log_softmax(dim=-1), noise.softmax(dim=-1), reduction='batchmean')
         mse_loss = F.mse_loss(pred, noise)
 
         loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
+
+        loss = loss - loss
 
         return loss
 
