@@ -223,9 +223,9 @@ class DiffusionNavigator(nn.Module):
 
         if self.total_evaled <100:
             self.total_evaled +=1
-            self.total_correct +=1
+            self.total_correct +=same_index_count
         else:
-            print(f"evaluated {self.tokenlize_input * 5} | accuracy {}")
+            print(f"evaluated {self.tokenlize_input * 5} | accuracy {self.total_correct / (self.tokenlize_input * 5)}")
             assert 1==2
 
 
@@ -235,7 +235,7 @@ class DiffusionNavigator(nn.Module):
 
         loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
 
-        loss = loss - loss
+        loss = loss - loss # evaluation
 
         return loss
 
