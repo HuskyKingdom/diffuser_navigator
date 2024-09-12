@@ -183,8 +183,8 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
 
         noising_timesteps = torch.randint(
-            600,
-            700, # self.noise_scheduler.config.num_train_timesteps
+            900,
+            self.noise_scheduler.config.num_train_timesteps, # self.noise_scheduler.config.num_train_timesteps
             (len(noise),), device=noise.device
         ).long()
 
@@ -218,7 +218,7 @@ class DiffusionNavigator(nn.Module):
 
             
             step_out = self.noise_scheduler.step(
-                torch.randn(pred_noises.shape, device=oracle_action_tokens.device), t, intermidiate_noise
+                pred_noises, t, intermidiate_noise
             )
 
             intermidiate_noise = step_out["prev_sample"]
@@ -245,11 +245,11 @@ class DiffusionNavigator(nn.Module):
 
 
         # compute loss
-        # kl_loss = F.kl_div(pred.log_softmax(dim=-1), noise.softmax(dim=-1), reduction='batchmean')
+        kl_loss = F.kl_div(pred.log_softmax(dim=-1), noise.softmax(dim=-1), reduction='batchmean')
         mse_loss = F.mse_loss(pred, noise)
 
         # loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
-        loss = mse_loss
+        loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
 
         loss = loss - loss # evaluation
 
