@@ -211,7 +211,7 @@ class DiffusionNavigator(nn.Module):
         # )
 
         step_out = self.noise_scheduler.step(
-            torch.randn(pred[30].unsqueeze(0).shape, device=oracle_action_tokens.device), torch.randn(noising_timesteps[30].shape, device=oracle_action_tokens.device).long, noised_orc_action_tokens[0].unsqueeze(0)
+            torch.randn(pred[30].unsqueeze(0).shape, device=oracle_action_tokens.device), torch.randn(noising_timesteps[30].shape, device=oracle_action_tokens.device).long(), noised_orc_action_tokens[0].unsqueeze(0)
         )
 
 
