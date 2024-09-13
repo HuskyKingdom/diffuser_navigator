@@ -220,7 +220,7 @@ class DiffusionNavigator(nn.Module):
 
             
             step_out = self.noise_scheduler.step(
-                pred_noises, t, intermidiate_noise
+                pred_noises, random.randint(0,1000), intermidiate_noise
             )
 
             intermidiate_noise = step_out["prev_sample"]
