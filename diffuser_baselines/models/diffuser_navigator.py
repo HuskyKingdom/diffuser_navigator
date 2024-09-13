@@ -212,12 +212,13 @@ class DiffusionNavigator(nn.Module):
         intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
     
         for t in denoise_steps:
-
+            
+            import random
             # noise pred.
             with torch.no_grad():
                 pred_noises = self.predict_noise(tokens,intermidiate_noise,random.randint(0,1000)* torch.ones(len(tokens[0])).to(tokens[0].device).long())
 
-            import random
+            
             step_out = self.noise_scheduler.step(
                 pred_noises, t, intermidiate_noise
             )
