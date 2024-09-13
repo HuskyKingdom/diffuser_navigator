@@ -246,11 +246,11 @@ class DiffusionNavigator(nn.Module):
 
 
         # compute loss
-        kl_loss = F.kl_div(pred.log_softmax(dim=-1), noise.softmax(dim=-1), reduction='batchmean')
+        # kl_loss = F.kl_div(pred.log_softmax(dim=-1), noise.softmax(dim=-1), reduction='batchmean')
         mse_loss = F.mse_loss(pred, noise)
 
         # loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
-        loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
+        loss = mse_loss
 
         # loss = loss - loss # evaluation
 
