@@ -119,8 +119,7 @@ def collate_fn(batch):
         'rgb_features': [],           # 时间 t 的 RGB 特征
         'depth_features': [],         # 时间 t 的深度特征
         'gt_actions': [],             # 从 t 到 t+F 的专家动作
-        'history_rgb_features': [],   # 从时间 0 到 t 的历史 RGB 特征
-        'history_actions': [],        # 从时间 0 到 t 的历史动作
+        'history_rgb_features': [],   # 从时间 0 到 t 的历史 RGB 特征W
     }
     
     t_list = []
@@ -171,10 +170,6 @@ def collate_fn(batch):
     collected_data['history_rgb_features'] = torch.stack(collected_data['history_rgb_features'], dim=0)
     
 
-    for k,v in collected_data.items():
-        print(f"batch {k}")
-        print(f"batch {v.shape}")
-    assert 1==0
         
     return collected_data
 
