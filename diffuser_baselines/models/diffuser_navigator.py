@@ -187,8 +187,6 @@ class DiffusionNavigator(nn.Module):
         # language padding mask
         pad_mask = (observations['instruction'] == 0)
 
-        print(pad_mask)
-        assert 1==2
 
         # inference _____
         
