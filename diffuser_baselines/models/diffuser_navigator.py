@@ -158,7 +158,7 @@ class DiffusionNavigator(nn.Module):
         rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, 2048, em)
         depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, 128, em)
 
-        his_tokens = self.his_gap(observations["history_rgb_features"]).view(his_tokens.size(0), -1)
+        his_tokens = self.his_gap(observations["history_rgb_features"]).view(observations["history_rgb_features"].size(0),observations["history_rgb_features"].size(1), -1)
         his_tokens = self.his_liner(his_tokens)
 
         if observations["gt_actions"] == None: # inference
