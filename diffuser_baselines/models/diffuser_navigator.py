@@ -22,7 +22,7 @@ class DiffusionPolicy(Policy):
         self.navigator = DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.config = config
 
-    def act(self,batch):
+    def act(self,batch,t=None):
 
         
 
@@ -33,7 +33,8 @@ class DiffusionPolicy(Policy):
         'instruction': batch['instruction'],
         'rgb_features': rgb_features.to(batch['instruction'].device),
         'depth_features': depth_features.to(batch['instruction'].device),
-        'gt_actions': None
+        'gt_actions': None,
+        'seq_timesteps': torch.tensor([t]),
         }
 
 
@@ -42,7 +43,7 @@ class DiffusionPolicy(Policy):
         print(f"final actions {actions}")
         return actions
 
-        
+    
 
 
         
@@ -188,7 +189,7 @@ class DiffusionNavigator(nn.Module):
         # inference _____
         
         if run_inference:
-            tokens = (instr_tokens,rgb_tokens,depth_tokens)
+            tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features)
             return self.inference_actions(tokens)
 
         # train _____

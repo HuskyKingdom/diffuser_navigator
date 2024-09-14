@@ -302,6 +302,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         start_time = time.time()
 
         action_candidates = [[]]
+        cur_seq_len = [0 for i in envs.num_envs] # modif
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
             current_episodes = envs.current_episodes()
             
@@ -310,17 +311,18 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                 if len(action_candidates[0]) == 0: 
                     with torch.no_grad():
-                        out = self.policy.act(batch)
+                        out = self.policy.act(batch,cur_seq_len)
                         action_candidates = out.cpu().tolist()
                 
                 # pop actions
                 actions = [[env_index.pop(0)] for env_index in action_candidates]
                 actions = torch.tensor(actions).to(self.device)
+                
 
             else:
 
                 with torch.no_grad():
-                    out = self.policy.act(batch)
+                    out = self.policy.act(batch,cur_seq_len)
                     # action_candidates = out.cpu().tolist()
                     # actions = torch.tensor(out).to(self.device)
                     actions = out
@@ -329,6 +331,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 
 
             outputs = envs.step([a[0].item() for a in actions])
+            cur_seq_len = [x+1 for x in cur_seq_len]
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
 
             not_done_masks = torch.tensor(
@@ -352,6 +355,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 ep_id = current_episodes[i].episode_id
                 stats_episodes[ep_id] = infos[i]
                 observations[i] = envs.reset_at(i)[0]
+                cur_seq_len[i] = 0
 
                 if config.use_pbar:
                     pbar.update()
