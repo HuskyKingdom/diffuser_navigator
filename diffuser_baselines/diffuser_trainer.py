@@ -172,7 +172,8 @@ def collate_fn(batch):
     
 
     for k,v in collected_data.items():
-        print(f"batch {k},{v.shape}")
+        print(f"batch {k}")
+        print(f"batch {v.shape}")
     assert 1==0
         
     return collected_data
