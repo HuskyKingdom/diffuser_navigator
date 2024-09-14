@@ -184,13 +184,17 @@ class DiffusionNavigator(nn.Module):
         # tokenlize
         instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens,seq_leng_features = self.tokenlize_input(observations)
 
+        # language padding mask
+        pad_mask = (observations['instruction'] == 0)
 
+        print(pad_mask)
+        assert 1==2
 
         # inference _____
         
         if run_inference:
             tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features)
-            return self.inference_actions(tokens)
+            return self.inference_actions(tokens,pad_mask)
 
         # train _____
 
@@ -212,7 +216,7 @@ class DiffusionNavigator(nn.Module):
 
         # predict noise
         tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features)
-        pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps)
+        pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps,pad_mask)
 
 
         # # evaluations ____
@@ -272,10 +276,10 @@ class DiffusionNavigator(nn.Module):
 
 
 
-    def vision_language_attention(self, feats, instr_feats):
+    def vision_language_attention(self, feats, instr_feats,seq1_pad=None,seq2_pad=None):
         feats, _ = self.vl_attention[0](
-            seq1=feats, seq1_key_padding_mask=None,
-            seq2=instr_feats, seq2_key_padding_mask=None,
+            seq1=feats, seq1_key_padding_mask=seq1_pad,
+            seq2=instr_feats, seq2_key_padding_mask=seq2_pad,
             seq1_pos=None, seq2_pos=None,
             seq1_sem_pos=None, seq2_sem_pos=None
         )
@@ -283,7 +287,7 @@ class DiffusionNavigator(nn.Module):
     
 
 
-    def predict_noise(self, tokens, noisy_actions, timesteps): # tokens in form (instr_tokens,rgb,depth,seq_leng_features)
+    def predict_noise(self, tokens, noisy_actions, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,seq_leng_features)
 
         time_embeddings = self.time_emb(timesteps.float())
         
@@ -293,7 +297,7 @@ class DiffusionNavigator(nn.Module):
 
         # languege features
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=tokens[-1],
-                query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
+                query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
         # observation features
         obs_features = self.cross_attention(query=tokens[1].transpose(0, 1),
@@ -303,13 +307,13 @@ class DiffusionNavigator(nn.Module):
             diff_ts=time_embeddings)[-1].transpose(0,1) # takes last layer and return to (B,L,D)
         
         # context features 
-        context_features = self.vision_language_attention(obs_features,lan_features) # rgb attend instr.
+        context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
 
 
         # action features
         action_features, _ = self.traj_lang_attention[0](
                 seq1=action_position, seq1_key_padding_mask=None,
-                seq2=lan_features, seq2_key_padding_mask=None,
+                seq2=lan_features, seq2_key_padding_mask=pad_mask,
                 seq1_pos=None, seq2_pos=None,
                 seq1_sem_pos=None, seq2_sem_pos=None
         )
@@ -371,7 +375,7 @@ class DiffusionNavigator(nn.Module):
 
 
 
-    def inference_actions(self,tokens): # pred_noises (B,N,D)
+    def inference_actions(self,tokens,mask): # pred_noises (B,N,D)
 
         self.noise_scheduler.set_timesteps(self.n_steps)
 
@@ -391,7 +395,7 @@ class DiffusionNavigator(nn.Module):
         for t in timesteps:
             
             # noise pred.
-            pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long())
+            pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),mask)
 
             
             step_out = self.noise_scheduler.step(
