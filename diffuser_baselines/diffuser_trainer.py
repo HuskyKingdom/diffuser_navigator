@@ -170,6 +170,7 @@ def collate_fn(batch):
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
     collected_data['history_rgb_features'] = torch.stack(collected_data['history_rgb_features'], dim=0)
     
+    print(collected_data['history_rgb_features'])
     return collected_data
 
 
