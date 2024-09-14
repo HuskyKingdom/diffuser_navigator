@@ -16,7 +16,7 @@ EVAL:
 
 IL:
   ckpt_to_load: data/checkpoints/diffuser/ckpt.600.pth
-  load_from_ckpt: True # for testing overfitting only
+  load_from_ckpt: False # for testing overfitting only
   epochs: 2000
   batch_size: 32
   
