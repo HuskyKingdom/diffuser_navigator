@@ -130,6 +130,7 @@ class DiffusionNavigator(nn.Module):
             )
         ])
 
+        self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.cross_attention_sec = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.self_attention = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
@@ -161,10 +162,8 @@ class DiffusionNavigator(nn.Module):
         rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, 2048, em)
         depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, 128, em)
 
-        print(f" before {observations['seq_timesteps'].shape}")
-        seq_leng_tokens = self.seq_leng_emb(observations["seq_timesteps"])
-        print(f" before {seq_leng_tokens.shape}")
-        assert 1==2
+        seq_leng_features = self.seq_leng_emb(observations["seq_timesteps"])
+
 
         if observations["gt_actions"] == None: # inference
             oracle_action_tokens = None
@@ -173,7 +172,7 @@ class DiffusionNavigator(nn.Module):
 
         
 
-        return instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens
+        return instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens,seq_leng_features
 
 
 
@@ -182,10 +181,8 @@ class DiffusionNavigator(nn.Module):
 
         
         # tokenlize
-        instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens,his_tokens = self.tokenlize_input(observations)
+        instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens,seq_leng_features = self.tokenlize_input(observations)
 
-        print(f"his tokens {his_tokens.shape}")
-        assert 1==2
 
 
         # inference _____
@@ -213,7 +210,7 @@ class DiffusionNavigator(nn.Module):
 
 
         # predict noise
-        tokens = (instr_tokens,rgb_tokens,depth_tokens)
+        tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features)
         pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps)
 
 
@@ -285,13 +282,17 @@ class DiffusionNavigator(nn.Module):
     
 
 
-    def predict_noise(self, tokens, noisy_actions, timesteps): # tokens in form (instr_tokens,rgb,depth)
+    def predict_noise(self, tokens, noisy_actions, timesteps): # tokens in form (instr_tokens,rgb,depth,seq_leng_features)
 
         time_embeddings = self.time_emb(timesteps.float())
         
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
         action_position = self.pe_layer(noisy_actions)
+
+        # languege features
+        lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=tokens[-1],
+                query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
         
         # observation features
         obs_features = self.cross_attention(query=tokens[1].transpose(0, 1),
@@ -301,20 +302,20 @@ class DiffusionNavigator(nn.Module):
             diff_ts=time_embeddings)[-1].transpose(0,1) # takes last layer and return to (B,L,D)
         
         # context features 
-        context_features = self.vision_language_attention(obs_features,instruction_position) # rgb attend instr.
+        context_features = self.vision_language_attention(obs_features,lan_features) # rgb attend instr.
 
 
-        # # action features
-        # action_features, _ = self.traj_lang_attention[0](
-        #         seq1=action_position, seq1_key_padding_mask=None,
-        #         seq2=instruction_position, seq2_key_padding_mask=None,
-        #         seq1_pos=None, seq2_pos=None,
-        #         seq1_sem_pos=None, seq2_sem_pos=None
-        # )
+        # action features
+        action_features, _ = self.traj_lang_attention[0](
+                seq1=action_position, seq1_key_padding_mask=None,
+                seq2=lan_features, seq2_key_padding_mask=None,
+                seq1_pos=None, seq2_pos=None,
+                seq1_sem_pos=None, seq2_sem_pos=None
+        )
 
 
         # final features
-        features = self.cross_attention_sec(query=action_position.transpose(0, 1),
+        features = self.cross_attention_sec(query=action_features.transpose(0, 1),
             value=context_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,
