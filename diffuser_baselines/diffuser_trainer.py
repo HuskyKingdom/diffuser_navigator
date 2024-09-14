@@ -171,7 +171,7 @@ def collate_fn(batch):
     collected_data['history_rgb_features'] = torch.stack(collected_data['history_rgb_features'], dim=0)
     
 
-    for k,v in collected_data:
+    for k,v in collected_data.items():
         print(f"batch {k},{v.shape}")
     assert 1==0
         
