@@ -90,9 +90,12 @@ class DiffusionNavigator(nn.Module):
             nn.Linear(embedding_dim, embedding_dim)
         )
 
-        self.his_gap = nn.AdaptiveAvgPool2d((1, 1)) # for history embeddings
-        self.his_liner = nn.Linear(2048, embedding_dim)
-        
+        self.seq_leng_emb = nn.Sequential(
+            SinusoidalPosEmb(embedding_dim),
+            nn.Linear(embedding_dim, embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, embedding_dim)
+        )
 
 
         for param in self.action_encoder.parameters(): # freeze action representations
@@ -158,8 +161,10 @@ class DiffusionNavigator(nn.Module):
         rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, 2048, em)
         depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, 128, em)
 
-        his_tokens = self.his_gap(observations["history_rgb_features"]).view(observations["history_rgb_features"].size(0),observations["history_rgb_features"].size(1), -1)
-        his_tokens = self.his_liner(his_tokens)
+        print(f" before {observations["seq_timesteps"].shape}")
+        seq_leng_tokens = self.seq_leng_emb(observations["seq_timesteps"])
+        print(f" before {seq_leng_tokens.shape}")
+        assert 1==2
 
         if observations["gt_actions"] == None: # inference
             oracle_action_tokens = None
@@ -168,7 +173,7 @@ class DiffusionNavigator(nn.Module):
 
         
 
-        return instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens,his_tokens
+        return instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens
 
 
 
