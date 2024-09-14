@@ -161,7 +161,7 @@ class DiffusionNavigator(nn.Module):
         rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, 2048, em)
         depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, 128, em)
 
-        print(f" before {observations["seq_timesteps"].shape}")
+        print(f" before {observations['seq_timesteps'].shape}")
         seq_leng_tokens = self.seq_leng_emb(observations["seq_timesteps"])
         print(f" before {seq_leng_tokens.shape}")
         assert 1==2
