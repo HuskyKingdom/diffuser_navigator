@@ -40,58 +40,140 @@ class ObservationsDict(dict):
 
 
 # make input into batched tensors & -1 pad on the oracle actions
+# def collate_fn(batch):    
+#     """
+#     [
+#     {instruction:(len_seq,200); progress:(len_seq,1); rgb_features:(len_seq,2048,4,4); depth_features:(len_seq,128,4,4)},
+#     prev_actions:(len_seq),
+#     gt_actions:(len_seq),
+#     ]
+#     """
+
+#     # num of feature timestep prediction
+
+    
+
+#     F = 2 # action_lenth - 1
+
+#     collected_data = {
+#         'instruction': [],
+#         'rgb_features': [],
+#         'depth_features': [],
+#         'gt_actions': []
+#     }
+    
+#     for sample in batch:
+#         len_seq = sample[0]['instruction'].shape[0]
+        
+#         # randomly sample timestep t in the range [0, len_seq-1]
+#         t = random.randint(0, len_seq - 1)
+        
+#         # Handle instruction, rgb_features, depth_features
+#         collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t]))
+#         collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t]))
+#         collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t]))
+        
+#         # Handle gt_actions by selecting from t to t+F, padding with STOP(0) if out of bounds
+#         if t + F < len_seq:
+#             gt_action_segment = sample[2][t:t+F+1]
+#         else:
+#             gt_action_segment = sample[2][t:] 
+#             padding_size = (t + F + 1) - len_seq 
+#             gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 0)]) # padding with STOP action if exceed
+
+#         collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
+    
+#     # Stack into batched tensors
+#     collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
+#     collected_data['rgb_features'] = torch.stack(collected_data['rgb_features'], dim=0)
+#     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
+#     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
+
+
+#     return collected_data
+    
+
+
+
 def collate_fn(batch):    
     """
+    batch 是样本列表
+    每个样本是：
     [
-    {instruction:(len_seq,200); progress:(len_seq,1); rgb_features:(len_seq,2048,4,4); depth_features:(len_seq,128,4,4)},
-    prev_actions:(len_seq),
-    gt_actions:(len_seq),
+        {
+            'instruction': (len_seq, 200),
+            'progress': (len_seq, 1),
+            'rgb_features': (len_seq, 2048, 4, 4),
+            'depth_features': (len_seq, 128, 4, 4)
+        },
+        prev_actions: (len_seq),
+        gt_actions: (len_seq),
     ]
     """
 
-    # num of feature timestep prediction
-
     
-
-    F = 2 # action_lenth - 1
+    F = 2  # 预测的未来动作数量
 
     collected_data = {
-        'instruction': [],
-        'rgb_features': [],
-        'depth_features': [],
-        'gt_actions': []
+        'instruction': [],            # 时间 t 的指令
+        'rgb_features': [],           # 时间 t 的 RGB 特征
+        'depth_features': [],         # 时间 t 的深度特征
+        'gt_actions': [],             # 从 t 到 t+F 的专家动作
+        'history_rgb_features': [],   # 从时间 0 到 t 的历史 RGB 特征
+        'history_actions': [],        # 从时间 0 到 t 的历史动作
     }
     
+    t_list = []
+    
+    # padding length
     for sample in batch:
         len_seq = sample[0]['instruction'].shape[0]
-        
-        # randomly sample timestep t in the range [0, len_seq-1]
         t = random.randint(0, len_seq - 1)
+        t_list.append(t)
+    max_t = max(t_list)
+    
+    for idx, sample in enumerate(batch):
+        len_seq = sample[0]['instruction'].shape[0]
+        t = t_list[idx]
         
-        # Handle instruction, rgb_features, depth_features
+        # 时间 t 的当前观测
         collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t]))
         collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t]))
         collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t]))
         
-        # Handle gt_actions by selecting from t to t+F, padding with STOP(0) if out of bounds
+        # 从 t 到 t+F 的专家动作，必要时用 STOP(0) 填充
         if t + F < len_seq:
             gt_action_segment = sample[2][t:t+F+1]
         else:
             gt_action_segment = sample[2][t:] 
             padding_size = (t + F + 1) - len_seq 
-            gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 0)]) # padding with STOP action if exceed
-
+            gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 0)])  # 用 STOP 动作填充
         collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
+        
+        # 计算历史序列的填充大小
+        padding_size = max_t + 1 - (t + 1)
+        
+        # 从时间 0 到 t 的历史 RGB 特征
+        rgb_hist = sample[0]['rgb_features'][0:t+1]
+        if padding_size > 0:
+            rgb_hist = np.concatenate(
+                [rgb_hist, np.zeros((padding_size, *rgb_hist.shape[1:]))],
+                axis=0
+            )
+        collected_data['history_rgb_features'].append(torch.tensor(rgb_hist))
+
     
-    # Stack into batched tensors
+    # 将收集的数据堆叠成批量张量
     collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
     collected_data['rgb_features'] = torch.stack(collected_data['rgb_features'], dim=0)
     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
-
-
-    return collected_data
+    collected_data['history_rgb_features'] = torch.stack(collected_data['history_rgb_features'], dim=0)
     
+    return collected_data
+
+
+
 
 
 
@@ -263,9 +345,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
             split=config.TASK_CONFIG.DATASET.SPLIT
         )
         super().__init__(config)
-
-
-
 
     def _make_dirs(self) -> None:
         self._make_ckpt_dir()
@@ -588,6 +667,10 @@ class DiffuserTrainer(BaseVLNCETrainer):
                             )
                             for k, v in batch.items()
                         }
+
+
+                        print(f"batch {batch['history_rgb_features'].shape}")
+                        assert 1==2
 
                         loss = self._update_agent(
                             batch
