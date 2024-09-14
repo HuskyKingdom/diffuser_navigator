@@ -670,7 +670,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
 
                         print(f"batch {batch['history_rgb_features'].shape}")
-                        assert 1==2
+                        assert 1==0
 
                         loss = self._update_agent(
                             batch
