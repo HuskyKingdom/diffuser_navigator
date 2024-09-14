@@ -158,7 +158,6 @@ def collate_fn(batch):
     collected_data['rgb_features'] = torch.stack(collected_data['rgb_features'], dim=0)
     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
-    collected_data['history_rgb_features'] = torch.stack(collected_data['history_rgb_features'], dim=0)
     collected_data['seq_timesteps'] = torch.tensor(collected_data['seq_timesteps'])
 
     return collected_data
