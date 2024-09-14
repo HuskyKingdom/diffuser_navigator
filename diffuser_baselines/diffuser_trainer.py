@@ -94,8 +94,7 @@ class ObservationsDict(dict):
     
 
 
-
-def collate_fn(batch):    
+def collate_fn(batch):
     """
     batch 是样本列表
     每个样本是：
@@ -110,8 +109,10 @@ def collate_fn(batch):
         gt_actions: (len_seq),
     ]
     """
+    import random
+    import numpy as np
+    import torch
 
-    
     F = 2  # 预测的未来动作数量
 
     collected_data = {
@@ -119,41 +120,46 @@ def collate_fn(batch):
         'rgb_features': [],           # 时间 t 的 RGB 特征
         'depth_features': [],         # 时间 t 的深度特征
         'gt_actions': [],             # 从 t 到 t+F 的专家动作
-        'history_rgb_features': [],   # 从时间 0 到 t 的历史 RGB 特征W
+        'history_rgb_features': [],   # 从时间 0 到 t 的历史 RGB 特征
+        'seq_lengths': [],            # 序列的原始长度（从 0 到 t+1）
     }
-    
+
     t_list = []
-    
-    # padding length
+
+    # 首先确定每个样本的 t，并找到最大的 t 以进行填充
     for sample in batch:
         len_seq = sample[0]['instruction'].shape[0]
         t = random.randint(0, len_seq - 1)
         t_list.append(t)
     max_t = max(t_list)
-    
+
     for idx, sample in enumerate(batch):
         len_seq = sample[0]['instruction'].shape[0]
         t = t_list[idx]
-        
+
         # 时间 t 的当前观测
         collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t]))
         collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t]))
         collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t]))
-        
+
         # 从 t 到 t+F 的专家动作，必要时用 STOP(0) 填充
         if t + F < len_seq:
             gt_action_segment = sample[2][t:t+F+1]
         else:
-            gt_action_segment = sample[2][t:] 
-            padding_size = (t + F + 1) - len_seq 
+            gt_action_segment = sample[2][t:]
+            padding_size = (t + F + 1) - len_seq
             gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 0)])  # 用 STOP 动作填充
         collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
-        
+
+        # 记录序列原始长度
+        seq_length = t + 1
+        collected_data['seq_lengths'].append(seq_length)
+
         # 计算历史序列的填充大小
-        padding_size = max_t + 1 - (t + 1)
-        
+        padding_size = max_t + 1 - seq_length
+
         # 从时间 0 到 t 的历史 RGB 特征
-        rgb_hist = sample[0]['rgb_features'][0:t+1]
+        rgb_hist = sample[0]['rgb_features'][0:seq_length]
         if padding_size > 0:
             rgb_hist = np.concatenate(
                 [rgb_hist, np.zeros((padding_size, *rgb_hist.shape[1:]))],
@@ -161,17 +167,18 @@ def collate_fn(batch):
             )
         collected_data['history_rgb_features'].append(torch.tensor(rgb_hist))
 
-    
+        # 已移除 history_actions
+
     # 将收集的数据堆叠成批量张量
     collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
     collected_data['rgb_features'] = torch.stack(collected_data['rgb_features'], dim=0)
     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
     collected_data['history_rgb_features'] = torch.stack(collected_data['history_rgb_features'], dim=0)
-    
+    collected_data['seq_lengths'] = torch.tensor(collected_data['seq_lengths'])
 
-        
     return collected_data
+
 
 
 
@@ -671,6 +678,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
 
                         print(f"batch {batch['history_rgb_features'].shape}")
+                        print(f"batch {batch['seq_lengths']}")
                         assert 1==0
 
                         loss = self._update_agent(
