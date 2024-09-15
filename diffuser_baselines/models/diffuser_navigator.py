@@ -211,6 +211,12 @@ class DiffusionNavigator(nn.Module):
             noising_timesteps
         )
 
+        noised_orc_action_tokens = torch.randn(
+            size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.embedding_dim), # (bs, L, emb.)
+            dtype=tokens[0].dtype,
+            device=tokens[0].device
+        )
+
 
         # predict noise
         tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features)
