@@ -405,6 +405,8 @@ class DiffusionNavigator(nn.Module):
 
             intermidiate_noise = step_out["prev_sample"]
 
+            print(t)
+
 
         # return action index
         actions = self.retrive_action_from_em(intermidiate_noise)
