@@ -232,7 +232,7 @@ class DiffusionNavigator(nn.Module):
 
             # noise pred.
             with torch.no_grad():
-                pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0]),pad_mask).to(tokens[0].device).long())
+                pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
             import random
             step_out = self.noise_scheduler.step(
