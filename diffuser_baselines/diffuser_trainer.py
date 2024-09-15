@@ -526,7 +526,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     skips, torch.zeros_like(actions), actions
                 )
                 skips = skips.squeeze(-1).to(device="cpu", non_blocking=True)
-                prev_actions.copy_(actions)
 
                 outputs = envs.step([a[0].item() for a in actions])
                 observations, _, dones, _ = [list(x) for x in zip(*outputs)]
