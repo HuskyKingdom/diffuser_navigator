@@ -28,9 +28,6 @@ class DiffusionPolicy(Policy):
     def act(self,batch,t=None):
 
         
-        print(f"rgb {batch['rgb']}")
-        assert 1==2
-
         rgb_features,depth_features = self.navigator.encode_visions(batch,self.config)
 
         # format batch data
@@ -47,16 +44,24 @@ class DiffusionPolicy(Policy):
 
         print(f"final actions {actions}")
         return actions
-
-    
-
-
         
     
 
     def build_loss(self,observations):
 
-        loss = self.navigator(observations)
+
+        rgb_features,depth_features = self.navigator.encode_visions(observations,self.config)
+
+        # format batch data
+        collected_data = {
+        'instruction': observations['instruction'],
+        'rgb_features': rgb_features.to(observations['instruction'].device),
+        'depth_features': depth_features.to(observations['instruction'].device),
+        'gt_actions': observations['gt_actions'],
+        'seq_timesteps': observations['seq_timesteps'].to(observations['instruction'].device),
+        }
+
+        loss = self.navigator(collected_data)
 
         return loss
     
@@ -199,6 +204,8 @@ class DiffusionNavigator(nn.Module):
 
         bs = observations["instruction"].size(0)
 
+        print(observations["rgb_features"].shape)
+        assert 1==2
         
         # tokenlize
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
@@ -468,35 +475,11 @@ class DiffusionNavigator(nn.Module):
 
     def encode_visions(self,batch,config):
 
-        # TODO MOVE TO INIT.
-        # hooking cnn output
-        def hook_builder(tgt_tensor):
-            def hook(m, i, o):
-                tgt_tensor.set_(o.cpu())
-
-            return hook
-
-        rgb_features = None
-        rgb_hook = None    
-        rgb_features = torch.zeros((1,), device="cpu")
-        rgb_hook = self.rgb_encoder.cnn.register_forward_hook(
-            hook_builder(rgb_features)
-        )
-
-        depth_features = None
-        depth_hook = None
-        depth_features = torch.zeros((1,), device="cpu")
-        depth_hook = self.depth_encoder.visual_encoder.register_forward_hook(
-            hook_builder(depth_features)
-        )
 
         depth_embedding = self.depth_encoder(batch)
         rgb_embedding = self.rgb_encoder(batch)
 
         print(f"embeddings {rgb_embedding.shape}")
 
-        rgb_hook.remove()
-        depth_hook.remove()
 
-
-        return rgb_features,depth_features
+        return rgb_embedding,depth_embedding
