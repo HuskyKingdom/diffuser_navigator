@@ -28,7 +28,7 @@ class DiffusionPolicy(Policy):
     def act(self,batch,t=None):
 
         
-        rgb_features,depth_features = self.navigator.encode_visions(batch,self.config)
+        rgb_features,depth_features = self.navigator.encode_visions(batch,self.config) # raw batch
 
         # format batch data
         collected_data = {
@@ -50,7 +50,7 @@ class DiffusionPolicy(Policy):
     def build_loss(self,observations):
 
 
-        rgb_features,depth_features = self.navigator.encode_visions(observations,self.config)
+        rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
 
         # format batch data
         collected_data = {
@@ -203,9 +203,6 @@ class DiffusionNavigator(nn.Module):
     def tokenlize_input(self,observations):
 
         bs = observations["instruction"].size(0)
-
-        print(observations["rgb_features"].shape)
-        assert 1==2
         
         # tokenlize
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
@@ -478,8 +475,5 @@ class DiffusionNavigator(nn.Module):
 
         depth_embedding = self.depth_encoder(batch)
         rgb_embedding = self.rgb_encoder(batch)
-
-        print(f"embeddings {rgb_embedding.shape}")
-
 
         return rgb_embedding,depth_embedding
