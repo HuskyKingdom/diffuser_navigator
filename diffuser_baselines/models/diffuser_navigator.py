@@ -426,6 +426,9 @@ class DiffusionNavigator(nn.Module):
 
     def encode_visions(self,batch,config):
 
+
+
+
         # TODO MOVE TO INIT.
         
         # init frozon encoders
@@ -464,8 +467,8 @@ class DiffusionNavigator(nn.Module):
             spatial_output=True,
         )
 
-        self.depth_encoder.to(next(self.parameters()).device).eval()
-        self.rgb_encoder.to(next(self.parameters()).device).eval()
+        self.depth_encoder.to(next(self.parameters()).device).train()
+        self.rgb_encoder.to(next(self.parameters()).device).train()
 
 
         # hooking cnn output
@@ -492,6 +495,7 @@ class DiffusionNavigator(nn.Module):
         depth_embedding = self.depth_encoder(batch)
         rgb_embedding = self.rgb_encoder(batch)
 
+        print(f"embeddings {rgb_embedding.shape}")
 
         rgb_hook.remove()
         depth_hook.remove()
