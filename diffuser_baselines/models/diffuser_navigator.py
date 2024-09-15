@@ -200,7 +200,7 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
 
         noising_timesteps = torch.randint(
-            990,
+            999,
             self.noise_scheduler.config.num_train_timesteps, # self.noise_scheduler.config.num_train_timesteps
             (len(noise),), device=noise.device
         ).long()
@@ -236,7 +236,6 @@ class DiffusionNavigator(nn.Module):
             with torch.no_grad():
                 pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
-            print(t * torch.ones(len(tokens[0])).to(tokens[0].device).long())
             step_out = self.noise_scheduler.step(
                 pred_noises, t, intermidiate_noise
             )
