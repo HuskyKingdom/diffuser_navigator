@@ -604,7 +604,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     self._update_dataset(
                         diffuser_it + (1 if self.config.IL.load_from_ckpt else 0)
                     )
-                    assert 1==2
                 # get dataset ---
                     
                 diffusion_dataset = TrajectoryDataset(self.lmdb_features_dir,self.config.IL.DAGGER.lmdb_map_size,self.config.IL.batch_size)
