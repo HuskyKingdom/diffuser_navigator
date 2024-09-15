@@ -224,7 +224,7 @@ class DiffusionNavigator(nn.Module):
 
         denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
 
-        tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0))
+        tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0),seq_leng_features[0].unsqueeze(0))
         intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
 
         print(f"pd {pad_mask[0].unsqueeze(0).shape}")
