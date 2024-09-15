@@ -211,11 +211,6 @@ class DiffusionNavigator(nn.Module):
             noising_timesteps
         )
 
-        noised_orc_action_tokens = torch.randn(
-            size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.embedding_dim), # (bs, L, emb.)
-            dtype=tokens[0].dtype,
-            device=tokens[0].device
-        )
 
 
         # predict noise
@@ -224,6 +219,14 @@ class DiffusionNavigator(nn.Module):
 
 
         # evaluations ____
+
+
+        noised_orc_action_tokens = torch.randn(
+            size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.embedding_dim), # (bs, L, emb.)
+            dtype=tokens[0].dtype,
+            device=tokens[0].device
+        )
+
 
         print(f"GroundTruth Actions {observations['gt_actions'][0]}")
         
