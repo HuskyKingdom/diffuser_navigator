@@ -302,7 +302,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         start_time = time.time()
 
         action_candidates = [[]]
-        cur_seq_len = [0 for i in envs.num_envs] # modif
+        cur_seq_len = [0 for i in range(envs.num_envs)] # modif
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
             current_episodes = envs.current_episodes()
             
