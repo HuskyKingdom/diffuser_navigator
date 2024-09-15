@@ -496,13 +496,10 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         break
 
                 actions = self.policy.act(
-                    batch,[1]
-                )
-                actions = torch.where(
-                    torch.rand_like(actions, dtype=torch.float) < beta,
-                    batch[expert_uuid].long(),
-                    actions,
-                )
+                    batch,[1],encode_only = True
+                ) # inference for getting features only
+                
+                actions = batch[expert_uuid].long()
 
                 for i in range(envs.num_envs):
                     if rgb_features is not None:

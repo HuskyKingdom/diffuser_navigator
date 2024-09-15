@@ -25,10 +25,13 @@ class DiffusionPolicy(Policy):
         self.navigator = DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.config = config
 
-    def act(self,batch,t=None):
+    def act(self,batch,t=None,encode_only=False):
 
         
         rgb_features,depth_features = self.navigator.encode_visions(batch,self.config) # raw batch
+
+        if encode_only:
+            return None
 
         # format batch data
         collected_data = {
