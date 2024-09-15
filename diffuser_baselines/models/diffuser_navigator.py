@@ -452,8 +452,8 @@ class DiffusionNavigator(nn.Module):
             spatial_output=True,
         )
 
-        self.depth_encoder.to(next(self.parameters()).device)
-        self.rgb_encoder.to(next(self.parameters()).device)
+        self.depth_encoder.to(next(self.parameters()).device).eval()
+        self.rgb_encoder.to(next(self.parameters()).device).eval()
 
 
         # hooking cnn output
@@ -480,6 +480,9 @@ class DiffusionNavigator(nn.Module):
         depth_embedding = self.depth_encoder(batch)
         rgb_embedding = self.rgb_encoder(batch)
 
+
+        rgb_hook.remove()
+        depth_hook.remove()
 
 
         return rgb_features,depth_features

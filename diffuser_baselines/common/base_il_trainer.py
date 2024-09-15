@@ -314,7 +314,6 @@ class BaseVLNCETrainer(BaseILTrainer):
                 if len(action_candidates[0]) == 0: 
                     with torch.no_grad():
                         out = self.policy.act(batch,cur_seq_len)
-                        print(cur_seq_len)
                         action_candidates = out.cpu().tolist()
                 
                 # pop actions
