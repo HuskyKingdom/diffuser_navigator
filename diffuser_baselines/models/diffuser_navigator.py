@@ -34,7 +34,7 @@ class DiffusionPolicy(Policy):
         'rgb_features': rgb_features.to(batch['instruction'].device),
         'depth_features': depth_features.to(batch['instruction'].device),
         'gt_actions': None,
-        'seq_timesteps': torch.tensor([t]).to(batch['instruction'].device),
+        'seq_timesteps': torch.tensor(t).to(batch['instruction'].device),
         }
 
 
