@@ -353,18 +353,13 @@ class DiffuserTrainer(BaseVLNCETrainer):
         envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
         expert_uuid = self.config.IL.DAGGER.expert_policy_sensor_uuid
 
-        rnn_states = torch.zeros(
-            envs.num_envs,
-            self.policy.net.num_recurrent_layers,
-            self.config.MODEL.STATE_ENCODER.hidden_size,
-            device=self.device,
-        )
         prev_actions = torch.zeros(
             envs.num_envs,
             1,
             device=self.device,
             dtype=torch.long,
         )
+
         not_done_masks = torch.zeros(
             envs.num_envs, 1, dtype=torch.uint8, device=self.device
         )
@@ -401,7 +396,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         rgb_hook = None
         if not self.config.MODEL.RGB_ENCODER.trainable:
             rgb_features = torch.zeros((1,), device="cpu")
-            rgb_hook = self.policy.net.rgb_encoder.cnn.register_forward_hook(
+            rgb_hook = self.policy.navigator.rgb_encoder.cnn.register_forward_hook(
                 hook_builder(rgb_features)
             )
 
@@ -409,7 +404,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         depth_hook = None
         if not self.config.MODEL.DEPTH_ENCODER.trainable:
             depth_features = torch.zeros((1,), device="cpu")
-            depth_hook = self.policy.net.depth_encoder.visual_encoder.register_forward_hook(
+            depth_hook = self.policy.navigator.depth_encoder.visual_encoder.register_forward_hook(
                 hook_builder(depth_features)
             )
 
@@ -488,28 +483,20 @@ class DiffuserTrainer(BaseVLNCETrainer):
                 if ensure_unique_episodes:
                     (
                         envs,
-                        rnn_states,
                         not_done_masks,
-                        prev_actions,
                         batch,
                         _,
                     ) = self._pause_envs(
                         envs_to_pause,
                         envs,
-                        rnn_states,
                         not_done_masks,
-                        prev_actions,
                         batch,
                     )
                     if envs.num_envs == 0:
                         break
 
-                actions, rnn_states = self.policy.act(
-                    batch,
-                    rnn_states,
-                    prev_actions,
-                    not_done_masks,
-                    deterministic=False,
+                actions = self.policy.act(
+                    batch
                 )
                 actions = torch.where(
                     torch.rand_like(actions, dtype=torch.float) < beta,

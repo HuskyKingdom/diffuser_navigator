@@ -9,6 +9,9 @@ from habitat_baselines.rl.ppo.policy import Policy
 from diffuser_baselines.models.encoders.instruction_encoder import InstructionEncoder
 from diffuser_baselines.models.common.position_encodings import RotaryPositionEncoding,SinusoidalPosEmb, PositionalEncoding
 
+from diffuser_baselines.models.encoders import resnet_encoders
+from gym import spaces
+
 
 @baseline_registry.register_policy
 class DiffusionPolicy(Policy):
@@ -25,6 +28,8 @@ class DiffusionPolicy(Policy):
     def act(self,batch,t=None):
 
         
+        print(f"rgb {batch['rgb']}")
+        assert 1==2
 
         rgb_features,depth_features = self.navigator.encode_visions(batch,self.config)
 
@@ -79,7 +84,45 @@ class DiffusionNavigator(nn.Module):
         self.total_evaled = 0
         self.total_correct = 0
 
-        # Encoders
+
+        # Vision Encoders
+        obs_space = spaces.Dict({
+            "rgb": spaces.Box(low=0, high=255, shape=(224, 224, 3), dtype='float32'),
+            "depth": spaces.Box(low=0, high=255, shape=(256, 256, 1), dtype='float32')
+        })
+
+        assert config.MODEL.DEPTH_ENCODER.cnn_type in ["VlnResnetDepthEncoder"]
+        self.depth_encoder = getattr(
+            resnet_encoders, config.MODEL.DEPTH_ENCODER.cnn_type
+        )(
+            obs_space,
+            output_size=config.MODEL.DEPTH_ENCODER.output_size,
+            checkpoint=config.MODEL.DEPTH_ENCODER.ddppo_checkpoint,
+            backbone=config.MODEL.DEPTH_ENCODER.backbone,
+            trainable=config.MODEL.DEPTH_ENCODER.trainable,
+            spatial_output=True,
+        )
+
+        # init the RGB visual encoder
+        assert config.MODEL.RGB_ENCODER.cnn_type in [
+            "TorchVisionResNet18",
+            "TorchVisionResNet50",
+        ]
+        self.rgb_encoder = getattr(
+            resnet_encoders, config.MODEL.RGB_ENCODER.cnn_type
+        )(
+            config.MODEL.RGB_ENCODER.output_size,
+            normalize_visual_inputs=config.MODEL.normalize_rgb,
+            trainable=config.MODEL.RGB_ENCODER.trainable,
+            spatial_output=True,
+        )
+
+        self.depth_encoder.to(next(self.parameters()).device).train()
+        self.rgb_encoder.to(next(self.parameters()).device).train()
+
+
+
+        # Other Encoders
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
         self.rgb_linear = nn.Linear(16,embedding_dim)
         self.depth_linear = nn.Linear(16,embedding_dim)
@@ -97,7 +140,6 @@ class DiffusionNavigator(nn.Module):
             nn.ReLU(),
             nn.Linear(embedding_dim, embedding_dim)
         )
-
 
         for param in self.action_encoder.parameters(): # freeze action representations
             param.requires_grad = False
@@ -200,8 +242,8 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
 
         noising_timesteps = torch.randint(
-            999,
-            1000, # self.noise_scheduler.config.num_train_timesteps
+            0,
+            self.noise_scheduler.config.num_train_timesteps, # self.noise_scheduler.config.num_train_timesteps
             (len(noise),), device=noise.device
         ).long()
 
@@ -218,59 +260,59 @@ class DiffusionNavigator(nn.Module):
         pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps,pad_mask)
 
 
-        # evaluations ____
+        # # evaluations ____
 
 
-        noised_orc_action_tokens = torch.randn(
-            size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.embedding_dim), # (bs, L, emb.)
-            dtype=tokens[0].dtype,
-            device=tokens[0].device
-        )
+        # noised_orc_action_tokens = torch.randn(
+        #     size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.embedding_dim), # (bs, L, emb.)
+        #     dtype=tokens[0].dtype,
+        #     device=tokens[0].device
+        # )
 
 
-        print(f"GroundTruth Actions {observations['gt_actions'][0]}")
+        # print(f"GroundTruth Actions {observations['gt_actions'][0]}")
         
 
-        denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
+        # denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
 
-        tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0),seq_leng_features[0].unsqueeze(0))
-        intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
+        # tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0),seq_leng_features[0].unsqueeze(0))
+        # intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
 
 
         
-        pad_mask = pad_mask[0].unsqueeze(0)
+        # pad_mask = pad_mask[0].unsqueeze(0)
     
-        for t in denoise_steps:
+        # for t in denoise_steps:
 
-            # noise pred.
-            with torch.no_grad():
-                pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
+        #     # noise pred.
+        #     with torch.no_grad():
+        #         pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
-            step_out = self.noise_scheduler.step(
-                pred_noises, t, intermidiate_noise
-            )
+        #     step_out = self.noise_scheduler.step(
+        #         pred_noises, t, intermidiate_noise
+        #     )
 
-            intermidiate_noise = step_out["prev_sample"]
+        #     intermidiate_noise = step_out["prev_sample"]
 
   
-        denoised = step_out["prev_sample"]
-        pre_actions = self.retrive_action_from_em(denoised)
-        print(f"Predicted Actions {pre_actions}")
+        # denoised = step_out["prev_sample"]
+        # pre_actions = self.retrive_action_from_em(denoised)
+        # print(f"Predicted Actions {pre_actions}")
 
 
-        # analyzing
-        list1 = pre_actions.squeeze(0).cpu().tolist()
-        list2 = observations['gt_actions'][0].cpu().tolist()
+        # # analyzing
+        # list1 = pre_actions.squeeze(0).cpu().tolist()
+        # list2 = observations['gt_actions'][0].cpu().tolist()
 
-        same_index_count = sum(1 for a, b in zip(list1, list2) if a == b)
-        self.total_correct += same_index_count
+        # same_index_count = sum(1 for a, b in zip(list1, list2) if a == b)
+        # self.total_correct += same_index_count
 
-        if self.total_evaled < 100:
-            self.total_evaled += 3
-        else:
-            print(self.total_correct)
-            print(f"evaluated {self.total_evaled} | accuracy {self.total_correct / (self.total_evaled)}")
-            assert 1==2
+        # if self.total_evaled < 100:
+        #     self.total_evaled += 3
+        # else:
+        #     print(self.total_correct)
+        #     print(f"evaluated {self.total_evaled} | accuracy {self.total_correct / (self.total_evaled)}")
+        #     assert 1==2
 
 
         # compute loss
@@ -280,7 +322,7 @@ class DiffusionNavigator(nn.Module):
         # loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
         loss = mse_loss
 
-        loss = loss - loss # evaluation
+        # loss = loss - loss # evaluation
 
         return loss
 
@@ -426,51 +468,7 @@ class DiffusionNavigator(nn.Module):
 
     def encode_visions(self,batch,config):
 
-
-
-
         # TODO MOVE TO INIT.
-        
-        # init frozon encoders
-        # init the depth visual encoder
-        from diffuser_baselines.models.encoders import resnet_encoders
-        from gym import spaces
-
-        obs_space = spaces.Dict({
-            "rgb": spaces.Box(low=0, high=255, shape=(224, 224, 3), dtype='float32'),
-            "depth": spaces.Box(low=0, high=255, shape=(256, 256, 1), dtype='float32')
-        })
-
-        assert config.MODEL.DEPTH_ENCODER.cnn_type in ["VlnResnetDepthEncoder"]
-        self.depth_encoder = getattr(
-            resnet_encoders, config.MODEL.DEPTH_ENCODER.cnn_type
-        )(
-            obs_space,
-            output_size=config.MODEL.DEPTH_ENCODER.output_size,
-            checkpoint=config.MODEL.DEPTH_ENCODER.ddppo_checkpoint,
-            backbone=config.MODEL.DEPTH_ENCODER.backbone,
-            trainable=config.MODEL.DEPTH_ENCODER.trainable,
-            spatial_output=True,
-        )
-
-        # init the RGB visual encoder
-        assert config.MODEL.RGB_ENCODER.cnn_type in [
-            "TorchVisionResNet18",
-            "TorchVisionResNet50",
-        ]
-        self.rgb_encoder = getattr(
-            resnet_encoders, config.MODEL.RGB_ENCODER.cnn_type
-        )(
-            config.MODEL.RGB_ENCODER.output_size,
-            normalize_visual_inputs=config.MODEL.normalize_rgb,
-            trainable=config.MODEL.RGB_ENCODER.trainable,
-            spatial_output=True,
-        )
-
-        self.depth_encoder.to(next(self.parameters()).device).train()
-        self.rgb_encoder.to(next(self.parameters()).device).train()
-
-
         # hooking cnn output
         def hook_builder(tgt_tensor):
             def hook(m, i, o):
