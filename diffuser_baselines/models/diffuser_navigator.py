@@ -226,7 +226,7 @@ class DiffusionNavigator(nn.Module):
 
         tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0))
         intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
-        pad_mask = pad_mask[0].unsqueeze(0)
+        pad_mask = pad_mask[0]
     
         for t in denoise_steps:
 
