@@ -303,6 +303,8 @@ class BaseVLNCETrainer(BaseILTrainer):
 
         action_candidates = [[]]
         cur_seq_len = [0 for i in range(envs.num_envs)] # modif
+
+
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
             current_episodes = envs.current_episodes()
             
@@ -312,6 +314,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 if len(action_candidates[0]) == 0: 
                     with torch.no_grad():
                         out = self.policy.act(batch,cur_seq_len)
+                        print(cur_seq_len)
                         action_candidates = out.cpu().tolist()
                 
                 # pop actions
