@@ -237,7 +237,7 @@ class DiffusionNavigator(nn.Module):
         intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
 
 
-        print(f"tokens {tokens[0].shape,tokens[1].shape,tokens[2].shape,tokens[3].shape} ")
+        
         pad_mask = pad_mask[0].unsqueeze(0)
     
         for t in denoise_steps:
@@ -390,6 +390,7 @@ class DiffusionNavigator(nn.Module):
         self.noise_scheduler.set_timesteps(self.n_steps)
 
         
+        print(f"tokens {tokens[0].shape,tokens[1].shape,tokens[2].shape,tokens[3].shape} ")
 
         pure_noise = torch.randn(
             size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.embedding_dim), # (bs, L, emb.)
