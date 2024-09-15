@@ -214,7 +214,7 @@ class DiffusionNavigator(nn.Module):
 
         # predict noise
         tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features)
-        pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps,pad_mask)
+        # pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps,pad_mask)
 
 
         # evaluations ____
