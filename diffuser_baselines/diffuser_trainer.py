@@ -496,7 +496,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         break
 
                 actions = self.policy.act(
-                    batch
+                    batch,[1]
                 )
                 actions = torch.where(
                     torch.rand_like(actions, dtype=torch.float) < beta,
