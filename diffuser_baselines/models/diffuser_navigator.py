@@ -41,7 +41,6 @@ class DiffusionPolicy(Policy):
         actions = self.navigator(collected_data,run_inference = True)
 
         print(f"final actions {actions}")
-        print(t)
         return actions
 
     

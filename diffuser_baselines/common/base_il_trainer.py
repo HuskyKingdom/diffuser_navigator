@@ -333,6 +333,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 
 
             outputs = envs.step([a[0].item() for a in actions])
+            print(cur_seq_len)
             cur_seq_len = [x+1 for x in cur_seq_len]
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
 
