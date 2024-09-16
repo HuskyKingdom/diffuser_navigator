@@ -273,7 +273,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             True,
             4, 
         )
-        # self.policy.eval()
+        self.policy.eval()
 
         observations = envs.reset()
         observations = extract_instruction_tokens(
