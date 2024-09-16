@@ -237,7 +237,7 @@ class DiffusionNavigator(nn.Module):
         one_hot_encoded = torch.zeros(bs, seq_len, n_classes, device=actions.device)
         one_hot_encoded.scatter_(2, actions.unsqueeze(-1), 1)
 
-        return one_hot_encoded
+        return one_hot_encoded.long()
 
     def forward(self, observations, run_inference=False):
 
