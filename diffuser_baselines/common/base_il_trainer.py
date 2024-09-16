@@ -59,6 +59,8 @@ class BaseVLNCETrainer(BaseILTrainer):
         action_space: Space,
     ) -> None:
         policy = baseline_registry.get_policy(self.config.MODEL.policy_name)
+        print("asshole")
+        assert 1==2
         self.policy = policy.from_config(
             config=config,
             observation_space=observation_space,
@@ -279,6 +281,20 @@ class BaseVLNCETrainer(BaseILTrainer):
         observations = extract_instruction_tokens(
             observations, self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID
         )
+
+        import cv2
+        import numpy as np
+ 
+        img = observations['rgb'].cpu().numpy().astype(np.uint8)
+        img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
+        cv2.imshow('Image Window', img)
+        
+        cv2.waitKey(0) 
+        cv2.destroyAllWindows()
+
+
+
+
         batch = batch_obs(observations, self.device)
         batch = apply_obs_transforms_batch(batch, self.obs_transforms)
 
@@ -481,16 +497,6 @@ class BaseVLNCETrainer(BaseILTrainer):
 
         observations = envs.reset()
 
-
-        import cv2
-        import numpy as np
- 
-        img = observations['rgb'].cpu().numpy().astype(np.uint8)
-        img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
-        cv2.imshow('Image Window', img)
-        
-        cv2.waitKey(0) 
-        cv2.destroyAllWindows()
 
 
         observations = extract_instruction_tokens(
