@@ -480,6 +480,19 @@ class BaseVLNCETrainer(BaseILTrainer):
         self.policy.eval()
 
         observations = envs.reset()
+
+
+        import cv2
+        import numpy as np
+ 
+        img = observations['rgb'].cpu().numpy().astype(np.uint8)
+        img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
+        cv2.imshow('Image Window', img)
+        
+        cv2.waitKey(0) 
+        cv2.destroyAllWindows()
+
+
         observations = extract_instruction_tokens(
             observations, self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID
         )
