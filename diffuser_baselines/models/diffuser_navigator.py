@@ -231,7 +231,7 @@ class DiffusionNavigator(nn.Module):
         one_hot_encoded = np.zeros((bs, 5, n_classes))
 
         for i in range(bs):
-            one_hot_encoded[i, np.arange(5), actions[i]] = 1
+            one_hot_encoded[i, np.arange(5), actions[i].item()] = 1
 
         return one_hot_encoded
 
@@ -239,7 +239,9 @@ class DiffusionNavigator(nn.Module):
     def forward(self, observations, run_inference=False):
 
 
-
+        encoded_actions = self.one_hot_encoding(observations["gt_actions"].long(),4)
+        print(encoded_actions)
+        assert 1==2
 
         
         # tokenlize
@@ -368,8 +370,6 @@ class DiffusionNavigator(nn.Module):
         instruction_position = self.pe_layer(tokens[0])
         action_position = self.pe_layer(noisy_actions)
 
-        print(f"action {action_position.shape}")
-        assert 1==2
 
         # languege features
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=tokens[-1],
