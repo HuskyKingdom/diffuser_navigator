@@ -59,8 +59,6 @@ class BaseVLNCETrainer(BaseILTrainer):
         action_space: Space,
     ) -> None:
         policy = baseline_registry.get_policy(self.config.MODEL.policy_name)
-        print("asshole")
-        assert 1==2
         self.policy = policy.from_config(
             config=config,
             observation_space=observation_space,
@@ -285,7 +283,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         import cv2
         import numpy as np
  
-        img = observations[0]['rgb'].cpu().numpy().astype(np.uint8)
+        img = observations[0]['rgb'].astype(np.uint8)
         img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
         cv2.imshow('Image Window', img)
         
