@@ -34,7 +34,9 @@ class DiffusionPolicy(Policy):
         import numpy as np
         print( batch['rgb'].cpu().numpy())
         print( type(batch['rgb'].cpu().numpy()))
-        cv2.imshow('Image Window', batch['rgb'].cpu().numpy().astype(np.uint8))
+        img = batch['rgb'].cpu().numpy().astype(np.uint8)
+        img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
+        cv2.imshow('Image Window', img)
         
         cv2.waitKey(20) 
         cv2.destroyAllWindows()
