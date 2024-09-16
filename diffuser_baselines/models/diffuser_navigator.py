@@ -38,7 +38,7 @@ class DiffusionPolicy(Policy):
         img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
         cv2.imshow('Image Window', img)
         
-        cv2.waitKey(20) 
+        cv2.waitKey(0) 
         cv2.destroyAllWindows()
 
 
