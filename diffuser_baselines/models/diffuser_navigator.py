@@ -219,7 +219,11 @@ class DiffusionNavigator(nn.Module):
         if observations["gt_actions"] == None: # inference
             oracle_action_tokens = None
         else:
-            oracle_action_tokens = self.action_encoder(observations["gt_actions"].long())
+            encoded_actions = self.one_hot_encoding(observations["gt_actions"].long(),4)
+            oracle_action_tokens = self.action_encoder(encoded_actions)
+            print(oracle_action_tokens.shape)
+            assert 1==2
+
 
         
 
@@ -238,9 +242,7 @@ class DiffusionNavigator(nn.Module):
     def forward(self, observations, run_inference=False):
 
 
-        encoded_actions = self.one_hot_encoding(observations["gt_actions"].long(),4)
-        print(encoded_actions.shape)
-        assert 1==2
+        
 
         
         # tokenlize
