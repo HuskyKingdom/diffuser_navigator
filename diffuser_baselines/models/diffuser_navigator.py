@@ -31,8 +31,10 @@ class DiffusionPolicy(Policy):
         rgb_features,depth_features = self.navigator.encode_visions(batch,self.config) # raw batch
 
         import cv2
-        cv2.imshow('Image Window', batch['rgb'].cpu().numpy())
         print( batch['rgb'].cpu().numpy())
+        print( type(batch['rgb'].cpu().numpy()))
+        cv2.imshow('Image Window', batch['rgb'].cpu().numpy())
+        
         cv2.waitKey(20) 
         cv2.destroyAllWindows()
 
