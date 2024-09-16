@@ -135,7 +135,15 @@ class DiffusionNavigator(nn.Module):
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
         self.rgb_linear = nn.Linear(16,embedding_dim)
         self.depth_linear = nn.Linear(16,embedding_dim)
-        self.action_encoder = nn.Embedding(num_actions, embedding_dim)
+
+        # self.action_encoder = nn.Embedding(num_actions, embedding_dim)
+        self.action_encoder = nn.Sequential(
+            nn.Linear(4, embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, embedding_dim)
+        )
+
+
         self.time_emb = nn.Sequential(
             SinusoidalPosEmb(embedding_dim),
             nn.Linear(embedding_dim, embedding_dim),
@@ -150,12 +158,12 @@ class DiffusionNavigator(nn.Module):
             nn.Linear(embedding_dim, embedding_dim)
         )
 
-        for param in self.action_encoder.parameters(): # freeze action representations
-            param.requires_grad = False
+        # for param in self.action_encoder.parameters(): # freeze action representations
+        #     param.requires_grad = False
 
         # prepare action embedding targets for inference
         action_targets = torch.arange(4).unsqueeze(0)
-        self.action_em_targets = self.action_encoder(action_targets)
+        # self.action_em_targets = self.action_encoder(action_targets)
 
         # positional embeddings
         self.pe_layer = PositionalEncoding(embedding_dim,0.2)
