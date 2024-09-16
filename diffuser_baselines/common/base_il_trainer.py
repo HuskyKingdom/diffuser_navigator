@@ -280,17 +280,6 @@ class BaseVLNCETrainer(BaseILTrainer):
             observations, self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID
         )
 
-        import cv2
-        import numpy as np
- 
-        img = observations[0]['rgb'].astype(np.uint8)
-        img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
-        cv2.imshow('Image Window', img)
-        
-        cv2.waitKey(0) 
-        cv2.destroyAllWindows()
-
-
 
 
         batch = batch_obs(observations, self.device)
@@ -350,6 +339,17 @@ class BaseVLNCETrainer(BaseILTrainer):
             print(cur_seq_len)
             cur_seq_len = [x+1 for x in cur_seq_len]
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
+
+            import cv2
+            import numpy as np
+    
+            img = observations[0]['rgb'].astype(np.uint8)
+            img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
+            cv2.imshow('Image Window', img)
+            
+            cv2.waitKey(0) 
+            cv2.destroyAllWindows()
+
 
             not_done_masks = torch.tensor(
                 [[0] if done else [1] for done in dones],
