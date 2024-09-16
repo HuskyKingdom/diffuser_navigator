@@ -138,7 +138,7 @@ class DiffusionNavigator(nn.Module):
 
         # self.action_encoder = nn.Embedding(num_actions, embedding_dim)
         self.action_encoder = nn.Sequential(
-            nn.Linear(4, embedding_dim),
+            nn.Linear(self.config.DIFFUSER.action_space, embedding_dim),
             nn.ReLU(),
             nn.Linear(embedding_dim, embedding_dim)
         )
@@ -162,7 +162,7 @@ class DiffusionNavigator(nn.Module):
         #     param.requires_grad = False
 
         # prepare action embedding targets for inference
-        action_targets = torch.arange(4).unsqueeze(0)
+        # action_targets = torch.arange(self.config.DIFFUSER.action_space).unsqueeze(0)
         # self.action_em_targets = self.action_encoder(action_targets)
 
         # positional embeddings
@@ -206,7 +206,7 @@ class DiffusionNavigator(nn.Module):
         self.noise_predictor = nn.Sequential(
             nn.Linear(embedding_dim, embedding_dim),
             nn.ReLU(),
-            nn.Linear(embedding_dim, embedding_dim)
+            nn.Linear(embedding_dim, self.config.DIFFUSER.action_space)
         )
 
         self.n_steps = diffusion_timesteps
@@ -259,7 +259,7 @@ class DiffusionNavigator(nn.Module):
 
 
         # encode & tokenlize actions
-        encoded_actions = self.one_hot_encoding(observations["gt_actions"].long(),4)
+        encoded_actions = self.one_hot_encoding(observations["gt_actions"].long(),self.config.DIFFUSER.action_space)
 
 
         # noising oracle_action_tokens
@@ -292,7 +292,7 @@ class DiffusionNavigator(nn.Module):
 
 
         # noised_orc_action_tokens = torch.randn(
-        #     size=(len(tokens[0]),self.config.DIFFUSER.action_length,4), # (bs, L, emb.)
+        #     size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.action_space), # (bs, L, emb.)
         #     dtype=tokens[0].dtype,
         #     device=tokens[0].device
         # )
@@ -465,7 +465,7 @@ class DiffusionNavigator(nn.Module):
         self.noise_scheduler.set_timesteps(self.n_steps)
 
         pure_noise = torch.randn(
-            size=(len(tokens[0]),self.config.DIFFUSER.action_length,4), # (bs, L, 4)
+            size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.action_space), # (bs, L, 4)
             dtype=tokens[0].dtype,
             device=tokens[0].device
         )

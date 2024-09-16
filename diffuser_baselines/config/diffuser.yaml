@@ -43,6 +43,7 @@ DIFFUSER:
   LR: 1.0e-4
   action_length: 3
   beta: 0.1
+  action_space: 4
 
 MODEL:
   policy_name: DiffusionPolicy
