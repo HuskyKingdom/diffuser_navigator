@@ -280,7 +280,7 @@ class DiffusionNavigator(nn.Module):
         print(f"GroundTruth Actions {observations['gt_actions'][0]}")
         
 
-        denoise_steps = list(range(999, -1, -1))
+        denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
 
         tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0),seq_leng_features[0].unsqueeze(0))
         intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
@@ -293,6 +293,7 @@ class DiffusionNavigator(nn.Module):
 
             # noise pred.
             with torch.no_grad():
+                print(f"tokens {tokens[0].shape,tokens[1].shape,tokens[2].shape,tokens[3].shape,intermidiate_noise.shape,pad_mask.shape}")
                 pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
             step_out = self.noise_scheduler.step(
@@ -463,9 +464,9 @@ class DiffusionNavigator(nn.Module):
             intermidiate_noise = step_out["prev_sample"]
 
 
-
+        denoised = step_out["prev_sample"]
         # return action index
-        actions = self.retrive_action_from_em(intermidiate_noise)
+        actions = self.retrive_action_from_em(denoised)
 
         return actions
 
