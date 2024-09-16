@@ -239,7 +239,7 @@ class DiffusionNavigator(nn.Module):
 
 
         encoded_actions = self.one_hot_encoding(observations["gt_actions"].long(),4)
-        print(encoded_actions)
+        print(encoded_actions.shape)
         assert 1==2
 
         
