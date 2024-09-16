@@ -454,7 +454,6 @@ class DiffusionNavigator(nn.Module):
             
             # noise pred.
             with torch.no_grad():
-                print(f"tokens {tokens[0].shape,tokens[1].shape,tokens[2].shape,tokens[3].shape,intermidiate_noise.shape,mask.shape} | t {t}")
                 pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),mask)
 
             
