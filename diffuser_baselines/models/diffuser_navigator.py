@@ -249,8 +249,8 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
 
         noising_timesteps = torch.randint(
-            800,
-            900, # self.noise_scheduler.config.num_train_timesteps
+            999,
+            self.noise_scheduler.config.num_train_timesteps, # self.noise_scheduler.config.num_train_timesteps
             (len(noise),), device=noise.device
         ).long()
 
@@ -270,17 +270,17 @@ class DiffusionNavigator(nn.Module):
         # evaluations ____
 
 
-        # noised_orc_action_tokens = torch.randn(
-        #     size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.embedding_dim), # (bs, L, emb.)
-        #     dtype=tokens[0].dtype,
-        #     device=tokens[0].device
-        # )
+        noised_orc_action_tokens = torch.randn(
+            size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.embedding_dim), # (bs, L, emb.)
+            dtype=tokens[0].dtype,
+            device=tokens[0].device
+        )
 
 
         print(f"GroundTruth Actions {observations['gt_actions'][0]}")
         
 
-        denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
+        denoise_steps = list(range(999, -1, -1))
 
         tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0),seq_leng_features[0].unsqueeze(0))
         intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
