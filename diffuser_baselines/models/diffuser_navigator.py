@@ -32,7 +32,8 @@ class DiffusionPolicy(Policy):
 
         import cv2
         cv2.imshow('Image Window', batch['rgb'].cpu().numpy())
-        cv2.waitKey(0) 
+        print( batch['rgb'].cpu().numpy())
+        cv2.waitKey(20) 
         cv2.destroyAllWindows()
 
 
