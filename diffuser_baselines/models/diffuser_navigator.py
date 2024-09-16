@@ -226,15 +226,14 @@ class DiffusionNavigator(nn.Module):
         return instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens,seq_leng_features
 
 
-    def one_hot_encoding(self,actions, n_classes):
-        bs = actions.shape[0]
-        one_hot_encoded = np.zeros((bs, 5, n_classes))
 
-        for i in range(bs):
-            one_hot_encoded[i, np.arange(5), actions[i].item()] = 1
+    def one_hot_encoding(actions, n_classes):
+
+        bs, seq_len = actions.shape
+        one_hot_encoded = torch.zeros(bs, seq_len, n_classes, device=actions.device)
+        one_hot_encoded.scatter_(2, actions.unsqueeze(-1), 1)
 
         return one_hot_encoded
-
 
     def forward(self, observations, run_inference=False):
 
