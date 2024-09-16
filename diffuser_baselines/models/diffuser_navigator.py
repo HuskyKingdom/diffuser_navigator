@@ -11,7 +11,7 @@ from diffuser_baselines.models.common.position_encodings import RotaryPositionEn
 
 from diffuser_baselines.models.encoders import resnet_encoders
 from gym import spaces
-
+import numpy as np
 
 @baseline_registry.register_policy
 class DiffusionPolicy(Policy):
@@ -226,9 +226,20 @@ class DiffusionNavigator(nn.Module):
         return instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens,seq_leng_features
 
 
+    def one_hot_encoding(self,actions, n_classes):
+        bs = actions.shape[0]
+        one_hot_encoded = np.zeros((bs, 5, n_classes))
+
+        for i in range(bs):
+            one_hot_encoded[i, np.arange(5), actions[i]] = 1
+
+        return one_hot_encoded
 
 
     def forward(self, observations, run_inference=False):
+
+
+
 
         
         # tokenlize
@@ -250,7 +261,7 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
 
         noising_timesteps = torch.randint(
-            999,
+            0,
             self.noise_scheduler.config.num_train_timesteps, # self.noise_scheduler.config.num_train_timesteps
             (len(noise),), device=noise.device
         ).long()
@@ -268,59 +279,59 @@ class DiffusionNavigator(nn.Module):
         pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps,pad_mask)
 
 
-        # evaluations ____
+        # # evaluations ____
 
 
-        noised_orc_action_tokens = torch.randn(
-            size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.embedding_dim), # (bs, L, emb.)
-            dtype=tokens[0].dtype,
-            device=tokens[0].device
-        )
+        # noised_orc_action_tokens = torch.randn(
+        #     size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.embedding_dim), # (bs, L, emb.)
+        #     dtype=tokens[0].dtype,
+        #     device=tokens[0].device
+        # )
 
 
-        print(f"GroundTruth Actions {observations['gt_actions'][0]}")
+        # print(f"GroundTruth Actions {observations['gt_actions'][0]}")
         
 
-        denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
+        # denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
 
-        tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0),seq_leng_features[0].unsqueeze(0))
-        intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
+        # tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0),seq_leng_features[0].unsqueeze(0))
+        # intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
 
 
         
-        pad_mask = pad_mask[0].unsqueeze(0)
+        # pad_mask = pad_mask[0].unsqueeze(0)
     
-        for t in denoise_steps:
+        # for t in denoise_steps:
 
-            # noise pred.
-            with torch.no_grad():
-                pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
+        #     # noise pred.
+        #     with torch.no_grad():
+        #         pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
-            step_out = self.noise_scheduler.step(
-                pred_noises, t, intermidiate_noise
-            )
+        #     step_out = self.noise_scheduler.step(
+        #         pred_noises, t, intermidiate_noise
+        #     )
 
-            intermidiate_noise = step_out["prev_sample"]
+        #     intermidiate_noise = step_out["prev_sample"]
 
   
-        denoised = step_out["prev_sample"]
-        pre_actions = self.retrive_action_from_em(denoised)
-        print(f"Predicted Actions {pre_actions}")
+        # denoised = step_out["prev_sample"]
+        # pre_actions = self.retrive_action_from_em(denoised)
+        # print(f"Predicted Actions {pre_actions}")
 
 
-        # analyzing
-        list1 = pre_actions.squeeze(0).cpu().tolist()
-        list2 = observations['gt_actions'][0].cpu().tolist()
+        # # analyzing
+        # list1 = pre_actions.squeeze(0).cpu().tolist()
+        # list2 = observations['gt_actions'][0].cpu().tolist()
 
-        same_index_count = sum(1 for a, b in zip(list1, list2) if a == b)
-        self.total_correct += same_index_count
+        # same_index_count = sum(1 for a, b in zip(list1, list2) if a == b)
+        # self.total_correct += same_index_count
 
-        if self.total_evaled < 100:
-            self.total_evaled += 3
-        else:
-            print(self.total_correct)
-            print(f"evaluated {self.total_evaled} | accuracy {self.total_correct / (self.total_evaled)}")
-            assert 1==2
+        # if self.total_evaled < 100:
+        #     self.total_evaled += 3
+        # else:
+        #     print(self.total_correct)
+        #     print(f"evaluated {self.total_evaled} | accuracy {self.total_correct / (self.total_evaled)}")
+        #     assert 1==2
 
 
         # compute loss
@@ -330,7 +341,7 @@ class DiffusionNavigator(nn.Module):
         # loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
         loss = mse_loss
 
-        loss = loss - loss # evaluation
+        # loss = loss - loss # evaluation
 
         return loss
 
@@ -351,9 +362,14 @@ class DiffusionNavigator(nn.Module):
 
         time_embeddings = self.time_emb(timesteps.float())
         
+        
+
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
         action_position = self.pe_layer(noisy_actions)
+
+        print(f"action {action_position.shape}")
+        assert 1==2
 
         # languege features
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=tokens[-1],
