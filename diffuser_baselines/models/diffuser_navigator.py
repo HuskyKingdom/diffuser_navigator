@@ -227,7 +227,7 @@ class DiffusionNavigator(nn.Module):
 
 
 
-    def one_hot_encoding(actions, n_classes):
+    def one_hot_encoding(self, actions, n_classes):
 
         bs, seq_len = actions.shape
         one_hot_encoded = torch.zeros(bs, seq_len, n_classes, device=actions.device)
