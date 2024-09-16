@@ -223,19 +223,7 @@ class DiffusionNavigator(nn.Module):
 
         seq_leng_features = self.seq_leng_emb(observations["seq_timesteps"])
 
-
-        if observations["gt_actions"] == None: # inference
-            oracle_action_tokens = None
-        else:
-            encoded_actions = self.one_hot_encoding(observations["gt_actions"].long(),4)
-            oracle_action_tokens = self.action_encoder(encoded_actions)
-            print(oracle_action_tokens.shape)
-            assert 1==2
-
-
-        
-
-        return instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens,seq_leng_features
+        return instr_tokens,rgb_tokens,depth_tokens,seq_leng_features
 
 
 
@@ -254,7 +242,8 @@ class DiffusionNavigator(nn.Module):
 
         
         # tokenlize
-        instr_tokens,rgb_tokens,depth_tokens,oracle_action_tokens,seq_leng_features = self.tokenlize_input(observations)
+        instr_tokens,rgb_tokens,depth_tokens,seq_leng_features = self.tokenlize_input(observations)
+
 
         # language padding mask
         pad_mask = (observations['instruction'] == 0)
@@ -268,8 +257,13 @@ class DiffusionNavigator(nn.Module):
 
         # train _____
 
+
+        # encode & tokenlize actions
+        encoded_actions = self.one_hot_encoding(observations["gt_actions"].long(),4)
+
+
         # noising oracle_action_tokens
-        noise = torch.randn(oracle_action_tokens.shape, device=oracle_action_tokens.device)
+        noise = torch.randn(encoded_actions.shape, device=encoded_actions.device)
 
         noising_timesteps = torch.randint(
             0,
@@ -279,11 +273,18 @@ class DiffusionNavigator(nn.Module):
 
  
         noised_orc_action_tokens = self.noise_scheduler.add_noise(
-            oracle_action_tokens, noise,
+            encoded_actions, noise,
             noising_timesteps
         )
 
+        print(f"actions {noised_orc_action_tokens.shape}")
+        assert 1==2
 
+        # tokenlize groundtruth actions 
+        noised_orc_action_tokens = self.action_encoder(noised_orc_action_tokens)
+
+
+        
 
         # predict noise
         tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features)
