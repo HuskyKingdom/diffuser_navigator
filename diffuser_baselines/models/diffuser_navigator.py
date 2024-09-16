@@ -277,6 +277,7 @@ class DiffusionNavigator(nn.Module):
             noising_timesteps
         )
 
+        print(noised_orc_action_tokens)
         print(f"actions {noised_orc_action_tokens.shape}")
         assert 1==2
 
