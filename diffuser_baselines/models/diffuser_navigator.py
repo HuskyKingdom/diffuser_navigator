@@ -272,23 +272,19 @@ class DiffusionNavigator(nn.Module):
         ).long()
 
  
-        noised_orc_action_tokens = self.noise_scheduler.add_noise(
+        noised_one_hot = self.noise_scheduler.add_noise(
             encoded_actions, noise,
             noising_timesteps
         )
 
-        print(noised_orc_action_tokens)
-        print(f"actions {noised_orc_action_tokens.shape}")
-        assert 1==2
-
-        # tokenlize groundtruth actions 
-        noised_orc_action_tokens = self.action_encoder(noised_orc_action_tokens)
-
-
         
+
+
 
         # predict noise
         tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features)
+        # tokenlize groundtruth actions 
+        noised_orc_action_tokens = self.encode_actions(noised_one_hot)
         pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps,pad_mask)
 
 
@@ -296,7 +292,7 @@ class DiffusionNavigator(nn.Module):
 
 
         # noised_orc_action_tokens = torch.randn(
-        #     size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.embedding_dim), # (bs, L, emb.)
+        #     size=(len(tokens[0]),self.config.DIFFUSER.action_length,4), # (bs, L, emb.)
         #     dtype=tokens[0].dtype,
         #     device=tokens[0].device
         # )
@@ -309,15 +305,13 @@ class DiffusionNavigator(nn.Module):
 
         # tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0),seq_leng_features[0].unsqueeze(0))
         # intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
-
-
-        
         # pad_mask = pad_mask[0].unsqueeze(0)
     
         # for t in denoise_steps:
 
         #     # noise pred.
         #     with torch.no_grad():
+        #         intermidiate_noise = self.encode_actions(intermidiate_noise)
         #         pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
         #     step_out = self.noise_scheduler.step(
@@ -370,6 +364,10 @@ class DiffusionNavigator(nn.Module):
         return feats
     
 
+    def encode_actions(self,hone_hot_actions):
+        return self.action_encoder(hone_hot_actions)
+
+
 
     def predict_noise(self, tokens, noisy_actions, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,seq_leng_features)
 
@@ -397,17 +395,17 @@ class DiffusionNavigator(nn.Module):
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
 
 
-        # action features
-        action_features, _ = self.traj_lang_attention[0](
-                seq1=action_position, seq1_key_padding_mask=None,
-                seq2=lan_features, seq2_key_padding_mask=pad_mask,
-                seq1_pos=None, seq2_pos=None,
-                seq1_sem_pos=None, seq2_sem_pos=None
-        )
+        # # action features
+        # action_features, _ = self.traj_lang_attention[0](
+        #         seq1=action_position, seq1_key_padding_mask=None,
+        #         seq2=lan_features, seq2_key_padding_mask=pad_mask,
+        #         seq1_pos=None, seq2_pos=None,
+        #         seq1_sem_pos=None, seq2_sem_pos=None
+        # )
 
 
         # final features
-        features = self.cross_attention_sec(query=action_features.transpose(0, 1),
+        features = self.cross_attention_sec(query=action_position.transpose(0, 1),
             value=context_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,
@@ -467,7 +465,7 @@ class DiffusionNavigator(nn.Module):
         self.noise_scheduler.set_timesteps(self.n_steps)
 
         pure_noise = torch.randn(
-            size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.embedding_dim), # (bs, L, emb.)
+            size=(len(tokens[0]),self.config.DIFFUSER.action_length,4), # (bs, L, 4)
             dtype=tokens[0].dtype,
             device=tokens[0].device
         )
@@ -481,6 +479,7 @@ class DiffusionNavigator(nn.Module):
             
             # noise pred.
             with torch.no_grad():
+                intermidiate_noise = self.encode_actions(intermidiate_noise)
                 pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),mask)
 
             
