@@ -698,8 +698,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
     ) -> None:
         
         policy = baseline_registry.get_policy(self.config.MODEL.policy_name)
-        print("asshole")
-        assert 1==2
         self.policy = policy(
             config,
             num_actions=num_actions,
