@@ -278,44 +278,6 @@ class DiffusionNavigator(nn.Module):
         )
 
 
-        
-
-        noise = torch.randn(encoded_actions[0].unsqueeze(0).shape, device=encoded_actions.device)
-
-        noising_timesteps = torch.randint(
-            999,
-            self.noise_scheduler.config.num_train_timesteps, # self.noise_scheduler.config.num_train_timesteps
-            (1,), device=noise.device
-        ).long()
-
-        noised_one_hot = self.noise_scheduler.add_noise(
-            encoded_actions[0].unsqueeze(0), noise,
-            noising_timesteps
-        )
-
-
-
-        print(f"original onehot {encoded_actions[0]}")
-        print(f"noised onehot {noised_one_hot[0]} | {F.softmax(noised_one_hot[0],dim=-1)} | {noised_one_hot[0].shape}")
-
-        denoise_steps = list(range(1, -1, -1))
-        intermidiate_noise = noised_one_hot
-        for t in denoise_steps: 
-
-            # noise pred.
-            with torch.no_grad():
-                pred_noises = noise
-
-            step_out = self.noise_scheduler.step(
-                pred_noises, t, intermidiate_noise
-            )
-
-            intermidiate_noise = step_out["prev_sample"]
-
-        print(f"denoised {intermidiate_noise}")
-
-        assert 1==2
-        
 
         # predict noise
         tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features)
@@ -442,17 +404,17 @@ class DiffusionNavigator(nn.Module):
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
 
 
-        # # action features
-        # action_features, _ = self.traj_lang_attention[0](
-        #         seq1=action_position, seq1_key_padding_mask=None,
-        #         seq2=lan_features, seq2_key_padding_mask=pad_mask,
-        #         seq1_pos=None, seq2_pos=None,
-        #         seq1_sem_pos=None, seq2_sem_pos=None
-        # )
+        # action features
+        action_features, _ = self.traj_lang_attention[0](
+                seq1=action_position, seq1_key_padding_mask=None,
+                seq2=lan_features, seq2_key_padding_mask=pad_mask,
+                seq1_pos=None, seq2_pos=None,
+                seq1_sem_pos=None, seq2_sem_pos=None
+        )
 
 
         # final features
-        features = self.cross_attention_sec(query=action_position.transpose(0, 1),
+        features = self.cross_attention_sec(query=action_features.transpose(0, 1),
             value=context_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,
