@@ -13,7 +13,7 @@ from diffuser_baselines.models.encoders import resnet_encoders
 from gym import spaces
 import numpy as np
 
-from common.discrete_scheduler import DiscreteDDPMScheduler
+from diffuser_baselines.models.common.discrete_scheduler import DiscreteDDPMScheduler
 
 @baseline_registry.register_policy
 class DiffusionPolicy(Policy):
