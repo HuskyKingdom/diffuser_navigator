@@ -311,10 +311,8 @@ class DiffusionNavigator(nn.Module):
 
             # noise pred.
             with torch.no_grad():
-                intermidiate_noise = self.encode_actions(intermidiate_noise)
-                print(f"int {intermidiate_noise.shape}")
-                assert 1==2
-                pred_noises = self.predict_noise(tokens,intermidiate_noise,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
+                encoded_noise_embedding = self.encode_actions(intermidiate_noise)
+                pred_noises = self.predict_noise(tokens,encoded_noise_embedding,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
             step_out = self.noise_scheduler.step(
                 pred_noises, t, intermidiate_noise
