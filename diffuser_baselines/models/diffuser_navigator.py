@@ -286,68 +286,68 @@ class DiffusionNavigator(nn.Module):
         pred = self.predict_noise(tokens,noised_orc_action_tokens,noising_timesteps,pad_mask)
 
 
-        # evaluations ____
+        # # evaluations ____
 
 
-        noise = torch.randn(encoded_actions[0].unsqueeze(0).shape, device=encoded_actions.device)
+        # noise = torch.randn(encoded_actions[0].unsqueeze(0).shape, device=encoded_actions.device)
 
-        noising_timesteps = torch.randint(
-            400,
-            500, # self.noise_scheduler.config.num_train_timesteps
-            (1,), device=noise.device
-        ).long()
+        # noising_timesteps = torch.randint(
+        #     400,
+        #     500, # self.noise_scheduler.config.num_train_timesteps
+        #     (1,), device=noise.device
+        # ).long()
 
  
-        noised_one_hot = self.noise_scheduler.add_noise(
-            encoded_actions[0].unsqueeze(0), noise,
-            noising_timesteps
-        )
+        # noised_one_hot = self.noise_scheduler.add_noise(
+        #     encoded_actions[0].unsqueeze(0), noise,
+        #     noising_timesteps
+        # )
 
-        noised_orc_action_tokens = noised_one_hot
+        # noised_orc_action_tokens = noised_one_hot
 
-        print(f"GroundTruth Actions {observations['gt_actions'][0]}")
+        # print(f"GroundTruth Actions {observations['gt_actions'][0]}")
         
 
-        denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
+        # denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
 
-        tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0),seq_leng_features[0].unsqueeze(0))
-        intermidiate_noise = noised_orc_action_tokens
-        pad_mask = pad_mask[0].unsqueeze(0)
+        # tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0),seq_leng_features[0].unsqueeze(0))
+        # intermidiate_noise = noised_orc_action_tokens
+        # pad_mask = pad_mask[0].unsqueeze(0)
     
-        for t in denoise_steps:
+        # for t in denoise_steps:
 
-            # noise pred.
-            with torch.no_grad():
-                encoded_noise_embedding = self.encode_actions(intermidiate_noise)
-                pred_noises = self.predict_noise(tokens,encoded_noise_embedding,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
+        #     # noise pred.
+        #     with torch.no_grad():
+        #         encoded_noise_embedding = self.encode_actions(intermidiate_noise)
+        #         pred_noises = self.predict_noise(tokens,encoded_noise_embedding,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
-            step_out = self.noise_scheduler.step(
-                pred_noises, t, intermidiate_noise
-            )
+        #     step_out = self.noise_scheduler.step(
+        #         pred_noises, t, intermidiate_noise
+        #     )
 
-            intermidiate_noise = step_out["prev_sample"]
+        #     intermidiate_noise = step_out["prev_sample"]
 
   
-        denoised = step_out["prev_sample"]
-        pre_actions = torch.argmax(denoised,dim=-1)
+        # denoised = step_out["prev_sample"]
+        # pre_actions = torch.argmax(denoised,dim=-1)
 
         
-        print(f"Predicted Actions {pre_actions} | {denoised.shape}")
+        # print(f"Predicted Actions {pre_actions} | {denoised.shape}")
 
 
-        # analyzing
-        list1 = pre_actions.squeeze(0).cpu().tolist()
-        list2 = observations['gt_actions'][0].cpu().tolist()
+        # # analyzing
+        # list1 = pre_actions.squeeze(0).cpu().tolist()
+        # list2 = observations['gt_actions'][0].cpu().tolist()
 
-        same_index_count = sum(1 for a, b in zip(list1, list2) if a == b)
-        self.total_correct += same_index_count
+        # same_index_count = sum(1 for a, b in zip(list1, list2) if a == b)
+        # self.total_correct += same_index_count
 
-        if self.total_evaled < 100:
-            self.total_evaled += 3
-        else:
-            print(self.total_correct)
-            print(f"evaluated {self.total_evaled} | accuracy {self.total_correct / (self.total_evaled)}")
-            assert 1==2
+        # if self.total_evaled < 100:
+        #     self.total_evaled += 3
+        # else:
+        #     print(self.total_correct)
+        #     print(f"evaluated {self.total_evaled} | accuracy {self.total_correct / (self.total_evaled)}")
+        #     assert 1==2
 
 
         # compute loss
@@ -357,7 +357,7 @@ class DiffusionNavigator(nn.Module):
         # loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
         loss = mse_loss
 
-        loss = loss - loss # evaluation
+        # loss = loss - loss # evaluation
 
         return loss
 
@@ -500,6 +500,7 @@ class DiffusionNavigator(nn.Module):
 
 
         denoised = step_out["prev_sample"]
+        print(f"denoised {denoised}")
         # return action index
         actions = torch.argmax(denoised,dim=-1)
 
