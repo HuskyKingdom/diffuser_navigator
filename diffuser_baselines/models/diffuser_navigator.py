@@ -500,7 +500,6 @@ class DiffusionNavigator(nn.Module):
 
 
         denoised = step_out["prev_sample"]
-        print(f"denoised {denoised}")
         # return action index
         actions = torch.argmax(denoised,dim=-1)
 

@@ -587,6 +587,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
             4, 
         )
 
+        self.policy.eval()
+        
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
             flush_secs=self.flush_secs,
