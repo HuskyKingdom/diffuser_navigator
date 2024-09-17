@@ -372,7 +372,9 @@ class BaseVLNCETrainer(BaseILTrainer):
                 ep_id = current_episodes[i].episode_id
                 stats_episodes[ep_id] = infos[i]
                 observations[i] = envs.reset_at(i)[0]
+                # reset
                 cur_seq_len[i] = 0
+                action_candidates = [[]]
 
                 if config.use_pbar:
                     pbar.update()
