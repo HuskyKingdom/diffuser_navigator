@@ -295,7 +295,7 @@ class DiffusionNavigator(nn.Module):
 
             intermidiate_noise = step_out["prev_sample"]
 
-        print(f"denoised {intermidiate_noise}")
+        print(f"denoised {intermidiate_noise[0]}")
 
         assert 1==2
         
