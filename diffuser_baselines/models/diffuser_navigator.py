@@ -298,13 +298,13 @@ class DiffusionNavigator(nn.Module):
         print(f"original onehot {encoded_actions[0]}")
         print(f"noised onehot {noised_one_hot[0]} | {F.softmax(noised_one_hot[0],dim=-1)} | {noised_one_hot[0].shape}")
 
-        denoise_steps = list(range(999, -1, -1))
+        denoise_steps = list(range(1, -1, -1))
         intermidiate_noise = noised_one_hot
         for t in denoise_steps: 
 
             # noise pred.
             with torch.no_grad():
-                pred_noises = noise[0].unsqueeze(0)
+                pred_noises = noise
 
             step_out = self.noise_scheduler.step(
                 pred_noises, t, intermidiate_noise
