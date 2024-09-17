@@ -28,9 +28,7 @@ class InstructionEncoder(nn.Module):
                     freeze=True,
         )
 
-        self.map_layer = nn.Sequential(
-            nn.Linear(50, embed_dim),
-        )
+        self.map_layer = nn.Linear(50, embed_dim)
 
     def _load_embeddings(self) -> Tensor:
         """Loads word embeddings from a pretrained embeddings file.
