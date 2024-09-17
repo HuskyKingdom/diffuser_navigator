@@ -322,7 +322,8 @@ class DiffusionNavigator(nn.Module):
 
   
         denoised = step_out["prev_sample"]
-        pre_actions = self.retrive_action_from_em(denoised)
+        pre_actions = denoised.argmax()
+    
         print(f"Predicted Actions {pre_actions}")
 
 
