@@ -322,7 +322,7 @@ class DiffusionNavigator(nn.Module):
 
   
         denoised = step_out["prev_sample"]
-        pre_actions = denoised.argmax()
+        pre_actions = torch.argmax(denoised,dim=-1)
     
         print(f"Predicted Actions {pre_actions}")
 
