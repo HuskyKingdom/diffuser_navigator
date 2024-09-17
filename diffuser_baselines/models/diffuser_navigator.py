@@ -266,8 +266,8 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(encoded_actions.shape, device=encoded_actions.device)
 
         noising_timesteps = torch.randint(
-            400,
-            500, # self.noise_scheduler.config.num_train_timesteps
+            0,
+            self.noise_scheduler.config.num_train_timesteps, # self.noise_scheduler.config.num_train_timesteps
             (len(noise),), device=noise.device
         ).long()
 
@@ -289,6 +289,20 @@ class DiffusionNavigator(nn.Module):
         # evaluations ____
 
 
+        noise = torch.randn(encoded_actions[0].unsqueeze(0).shape, device=encoded_actions.device)
+
+        noising_timesteps = torch.randint(
+            500,
+            600, # self.noise_scheduler.config.num_train_timesteps
+            (1,), device=noise.device
+        ).long()
+
+ 
+        noised_one_hot = self.noise_scheduler.add_noise(
+            encoded_actions[0].unsqueeze(0), noise,
+            noising_timesteps
+        )
+
         noised_orc_action_tokens = noised_one_hot
 
         print(f"GroundTruth Actions {observations['gt_actions'][0]}")
@@ -297,7 +311,7 @@ class DiffusionNavigator(nn.Module):
         denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
 
         tokens = (instr_tokens[0].unsqueeze(0),rgb_tokens[0].unsqueeze(0),depth_tokens[0].unsqueeze(0),seq_leng_features[0].unsqueeze(0))
-        intermidiate_noise = noised_orc_action_tokens[0].unsqueeze(0)
+        intermidiate_noise = noised_orc_action_tokens
         pad_mask = pad_mask[0].unsqueeze(0)
     
         for t in denoise_steps:
