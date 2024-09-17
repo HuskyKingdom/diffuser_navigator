@@ -266,7 +266,7 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(encoded_actions.shape, device=encoded_actions.device)
 
         noising_timesteps = torch.randint(
-            999,
+            0,
             self.noise_scheduler.config.num_train_timesteps, # self.noise_scheduler.config.num_train_timesteps
             (len(noise),), device=noise.device
         ).long()
@@ -277,11 +277,29 @@ class DiffusionNavigator(nn.Module):
             noising_timesteps
         )
 
+
+        
+
+        noise = torch.randn(encoded_actions[0].unsqueeze(0).shape, device=encoded_actions.device)
+
+        noising_timesteps = torch.randint(
+            999,
+            self.noise_scheduler.config.num_train_timesteps, # self.noise_scheduler.config.num_train_timesteps
+            (1,), device=noise.device
+        ).long()
+
+        noised_one_hot = self.noise_scheduler.add_noise(
+            encoded_actions[0].unsqueeze(0), noise,
+            noising_timesteps
+        )
+
+
+
         print(f"original onehot {encoded_actions[0]}")
         print(f"noised onehot {noised_one_hot[0]} | {F.softmax(noised_one_hot[0],dim=-1)} | {noised_one_hot[0].shape}")
 
         denoise_steps = list(range(999, -1, -1))
-        intermidiate_noise = noised_one_hot[0].unsqueeze(0)
+        intermidiate_noise = noised_one_hot
         for t in denoise_steps: 
 
             # noise pred.
@@ -294,7 +312,7 @@ class DiffusionNavigator(nn.Module):
 
             intermidiate_noise = step_out["prev_sample"]
 
-        print(f"denoised {intermidiate_noise[0]}")
+        print(f"denoised {intermidiate_noise}")
 
         assert 1==2
         
