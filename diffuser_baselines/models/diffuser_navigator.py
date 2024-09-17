@@ -204,7 +204,7 @@ class DiffusionNavigator(nn.Module):
         # )
 
         self.noise_scheduler = DiscreteDDPMScheduler(
-            num_train_timesteps=diffusion_timesteps,num_classes=4
+            num_train_timesteps=diffusion_timesteps,num_classes=4,device=self.device
         )
 
 
