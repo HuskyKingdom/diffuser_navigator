@@ -586,8 +586,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
             self.config.IL.load_from_ckpt,
             4, 
         )
-
-        self.policy.eval()
         
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
