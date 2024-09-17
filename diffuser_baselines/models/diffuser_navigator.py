@@ -261,8 +261,8 @@ class DiffusionNavigator(nn.Module):
         # 添加离散噪声
         batch_size = gt_actions.size(0)
         timesteps = torch.randint(
-            999,
-            self.noise_scheduler.num_train_timesteps,
+            100,
+            200,
             (batch_size,), device=gt_actions.device
         ).long()
 
