@@ -268,6 +268,7 @@ class DiffusionNavigator(nn.Module):
 
         noised_actions = self.noise_scheduler.add_noise(gt_actions, timesteps)
 
+        print(gt_actions)
         print(noised_actions)
         assert 1==2
 
