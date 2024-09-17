@@ -277,7 +277,7 @@ class DiffusionNavigator(nn.Module):
             noising_timesteps
         )
 
-        print(f"noised onehot {noised_one_hot[0]} | {noised_one_hot[0].shape}")
+        print(f"noised onehot {F.softmax(noised_one_hot[0],dim=-1)} | {noised_one_hot[0].shape}")
         assert 1==2
         
 
