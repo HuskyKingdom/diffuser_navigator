@@ -318,7 +318,7 @@ class DiffusionNavigator(nn.Module):
         pre_actions = torch.argmax(denoised,dim=-1)
 
         
-        print(f"Predicted Actions {pre_actions} | {denoised}")
+        print(f"Predicted Actions {pre_actions} | {denoised.shape}")
 
 
         # analyzing
