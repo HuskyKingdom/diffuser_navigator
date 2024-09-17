@@ -13,8 +13,6 @@ from diffuser_baselines.models.encoders import resnet_encoders
 from gym import spaces
 import numpy as np
 
-from diffuser_baselines.models.common.discrete_scheduler import DiscreteDDPMScheduler
-
 @baseline_registry.register_policy
 class DiffusionPolicy(Policy):
     
@@ -198,13 +196,9 @@ class DiffusionNavigator(nn.Module):
         self.self_attention = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
         # Diffusion schedulers
-        # self.noise_scheduler = DDPMScheduler(
-        #     num_train_timesteps=diffusion_timesteps,
-        #     beta_schedule="scaled_linear",
-        # )
-
-        self.noise_scheduler = DiscreteDDPMScheduler(
-            num_train_timesteps=diffusion_timesteps,num_classes=4,device="cuda"
+        self.noise_scheduler = DDPMScheduler(
+            num_train_timesteps=diffusion_timesteps,
+            beta_schedule="scaled_linear",
         )
 
 
@@ -255,24 +249,6 @@ class DiffusionNavigator(nn.Module):
         pad_mask = (observations['instruction'] == 0)
 
 
-        # 获取动作索引
-        gt_actions = observations["gt_actions"].long()  # (batch_size, seq_len)
-
-        # 添加离散噪声
-        batch_size = gt_actions.size(0)
-        timesteps = torch.randint(
-            100,
-            200,
-            (batch_size,), device=gt_actions.device
-        ).long()
-
-        noised_actions = self.noise_scheduler.add_noise(gt_actions, timesteps)
-
-        print(gt_actions)
-        print(noised_actions)
-        assert 1==2
-
-
         # inference _____
         
         if run_inference:
@@ -301,6 +277,8 @@ class DiffusionNavigator(nn.Module):
             noising_timesteps
         )
 
+        print(f"noised onehot {noised_one_hot[0]} | {noised_one_hot[0].shape}")
+        assert 1==2
         
 
         # predict noise
