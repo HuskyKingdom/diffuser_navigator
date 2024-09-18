@@ -448,6 +448,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                             traj_obs,
                             np.array([step[1] for step in ep], dtype=np.int64),
                             np.array([step[2] for step in ep], dtype=np.int64),
+                            np.array([step[3] for step in ep], dtype=np.float32),
                         ]
                         txn.put(
                             str(start_id + collected_eps).encode(),
@@ -513,17 +514,13 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
                     pos = envs.call_at(i, "get_state", {"observations": {}})
 
-                    print(f"state {pos}")
-
-                    assert 1==2
                     
                     episodes[i].append(
                         (
                             observations[i],
                             prev_actions[i].item(),
                             batch[expert_uuid][i].item(),
-                            pos,
-                            head
+                            pos
                         )
                     )
 
