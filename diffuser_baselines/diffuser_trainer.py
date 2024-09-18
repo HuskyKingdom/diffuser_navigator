@@ -528,7 +528,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                 observations, _, dones, _ = [list(x) for x in zip(*outputs)]
 
                 
-                print(f"obs {envs.call(['is_done'] * 1)}")
+                print(f"obs {envs.call(['is_done'])}")
 
                 observations = extract_instruction_tokens(
                     observations,
