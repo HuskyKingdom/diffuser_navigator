@@ -513,7 +513,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
                     pos,head = envs.call_at(i, "get_state", {"observations": {}})
 
-                    print(f"state {head.tolist()}")
+                    print(f"state {head}")
                     assert 1==2
                     
                     episodes[i].append(
