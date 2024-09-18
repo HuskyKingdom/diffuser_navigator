@@ -365,6 +365,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         )
 
         observations = envs.reset()
+        print(f"obs {observations}")
         observations = extract_instruction_tokens(
             observations, self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID
         )
@@ -512,6 +513,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
 
                     state = envs.call_at(i, "get_state", {"observations": {}})
+                    
                     print(f"obs {state}")
                     assert 1==2
 
