@@ -510,6 +510,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         observations[i]["depth_features"] = depth_features[i]
                         del observations[i]["depth"]
 
+                    print(f"obs {observations[i]}")
+                    assert 1==2
                     episodes[i].append(
                         (
                             observations[i],
@@ -527,8 +529,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                 outputs = envs.step([a[0].item() for a in actions])
                 observations, _, dones, _ = [list(x) for x in zip(*outputs)]
 
-                print(f"obs {observations}")
-                assert 1==2
+                
 
                 observations = extract_instruction_tokens(
                     observations,
