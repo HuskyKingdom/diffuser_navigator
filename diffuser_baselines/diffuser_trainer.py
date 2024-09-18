@@ -510,6 +510,11 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         observations[i]["depth_features"] = depth_features[i]
                         del observations[i]["depth"]
 
+
+                    state = envs.call_at(i, "get_agent_state")
+                    print(f"obs {state}")
+                    assert 1==2
+
                     episodes[i].append(
                         (
                             observations[i],
@@ -528,14 +533,13 @@ class DiffuserTrainer(BaseVLNCETrainer):
                 observations, _, dones, _ = [list(x) for x in zip(*outputs)]
 
                 
-                print(f"obs {envs.call(['sim.get_agent_state'])}")
 
                 observations = extract_instruction_tokens(
                     observations,
                     self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID,
                 )
-                print(f"obs {observations}")
-                assert 1==2
+                
+                
 
                     
                 batch = batch_obs(observations, self.device)
