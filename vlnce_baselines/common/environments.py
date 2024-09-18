@@ -32,13 +32,13 @@ class VLNCEDaggerEnv(habitat.RLEnv):
         return self.habitat_env.get_metrics()
     
     def get_state(self, observations: Observations):
-        agent_state = self.habitat_env.sim.get_agent_state()
-        heading_vector = quaternion_rotate_vector(
-            agent_state.rotation.inverse(), np.array([0, 0, -1])
-        )
-        heading = cartesian_to_polar(-heading_vector[2], heading_vector[0])[1]
+        # agent_state = self.habitat_env.sim.get_agent_state()
+        # heading_vector = quaternion_rotate_vector(
+        #     agent_state.rotation.inverse(), np.array([0, 0, -1])
+        # )
+        # heading = cartesian_to_polar(-heading_vector[2], heading_vector[0])[1]
         
-        print(f"heading {heading}")
+        print(f"heading {1}")
         assert 1==2
         
 
