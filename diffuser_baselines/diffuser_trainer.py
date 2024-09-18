@@ -510,8 +510,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         observations[i]["depth_features"] = depth_features[i]
                         del observations[i]["depth"]
 
-                    print(f"obs {observations}")
-                    assert 1==2
                     episodes[i].append(
                         (
                             observations[i],
@@ -535,6 +533,9 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     observations,
                     self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID,
                 )
+                print(f"obs {observations}")
+                assert 1==2
+                    
                 batch = batch_obs(observations, self.device)
                 batch = apply_obs_transforms_batch(batch, self.obs_transforms)
 
