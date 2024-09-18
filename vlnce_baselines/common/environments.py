@@ -39,10 +39,10 @@ class VLNCEDaggerEnv(habitat.RLEnv):
         heading = cartesian_to_polar(-heading_vector[2], heading_vector[0])[1]
 
         pos = agent_state.position.tolist()
-        print(type(heading))
+        
 
 
-        return pos
+        return pos.append(heading)
 
     
 
