@@ -510,7 +510,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         observations[i]["depth_features"] = depth_features[i]
                         del observations[i]["depth"]
 
-                    print(f"obs {observations[i]}")
+                    print(f"obs {observations}")
                     assert 1==2
                     episodes[i].append(
                         (
