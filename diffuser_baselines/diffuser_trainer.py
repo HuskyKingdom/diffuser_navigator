@@ -365,7 +365,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
         )
 
         observations = envs.reset()
-        print(f"obs {observations}")
         observations = extract_instruction_tokens(
             observations, self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID
         )
@@ -511,10 +510,11 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         observations[i]["depth_features"] = depth_features[i]
                         del observations[i]["depth"]
 
-
+                    all_state = []
                     state = envs.call_at(i, "get_state", {"observations": {}})
                     
                     print(f"obs {state}")
+                    print(f"obs {batch[expert_uuid][i].item()}")
                     assert 1==2
 
                     episodes[i].append(
@@ -522,6 +522,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                             observations[i],
                             prev_actions[i].item(),
                             batch[expert_uuid][i].item(),
+                            state
                         )
                     )
 
