@@ -526,6 +526,10 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
                 outputs = envs.step([a[0].item() for a in actions])
                 observations, _, dones, _ = [list(x) for x in zip(*outputs)]
+
+                print(f"obs {observations}")
+                assert 1==2
+
                 observations = extract_instruction_tokens(
                     observations,
                     self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID,
