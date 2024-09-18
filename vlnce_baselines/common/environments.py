@@ -30,6 +30,12 @@ class VLNCEDaggerEnv(habitat.RLEnv):
 
     def get_info(self, observations: Observations) -> Dict[Any, Any]:
         return self.habitat_env.get_metrics()
+    
+    def get_state(self, observations: Observations):
+        agent_state = self.habitat_env.sim.get_agent_state()
+        return agent_state
+
+    
 
 
 @baseline_registry.register_env(name="VLNCEInferenceEnv")
