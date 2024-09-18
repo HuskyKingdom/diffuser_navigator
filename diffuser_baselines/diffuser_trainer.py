@@ -511,7 +511,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         del observations[i]["depth"]
 
 
-                    state = envs.call_at(i, "sim.get_agent_state")
+                    state = envs.call_at(i, "get_info", {"observations": {}})
                     print(f"obs {state}")
                     assert 1==2
 
