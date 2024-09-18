@@ -528,6 +528,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                 observations, _, dones, _ = [list(x) for x in zip(*outputs)]
 
                 
+                print(f"obs {observations}")
 
                 observations = extract_instruction_tokens(
                     observations,
@@ -535,6 +536,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                 )
                 print(f"obs {observations}")
                 assert 1==2
+
                     
                 batch = batch_obs(observations, self.device)
                 batch = apply_obs_transforms_batch(batch, self.obs_transforms)
