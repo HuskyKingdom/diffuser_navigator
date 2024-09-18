@@ -511,9 +511,9 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         del observations[i]["depth"]
 
 
-                    state = envs.call_at(i, "get_state", {"observations": {}})
+                    pos,head = envs.call_at(i, "get_state", {"observations": {}})
 
-                    print(f"state {state}")
+                    print(f"state {type(head)}")
                     assert 1==2
                     
                     episodes[i].append(
@@ -521,7 +521,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
                             observations[i],
                             prev_actions[i].item(),
                             batch[expert_uuid][i].item(),
-                            state,
+                            pos,
+                            head
                         )
                     )
 
