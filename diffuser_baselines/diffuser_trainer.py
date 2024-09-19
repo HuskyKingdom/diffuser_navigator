@@ -168,7 +168,7 @@ def collate_fn(batch):
     collected_data['seq_timesteps'] = torch.tensor(collected_data['seq_timesteps'])
     collected_data['trajectories'] = torch.stack(collected_data['trajectories'], dim=0)
 
-    print(f"trajectory {collected_data['trajectories'].shape}")
+    print(f"trajectory {collected_data['trajectories']}")
     assert 1==2
 
     return collected_data
