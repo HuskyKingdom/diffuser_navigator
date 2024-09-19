@@ -149,6 +149,7 @@ def collate_fn(batch):
             gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 0)])  # 用 STOP 动作填充
 
             gt_traj = sample[3][t:]
+            print(gt_traj.shape)
             gt_traj = np.concatenate([gt_traj, np.full(padding_size, 0.0)])  # 用 zero 动作填充
 
         collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
