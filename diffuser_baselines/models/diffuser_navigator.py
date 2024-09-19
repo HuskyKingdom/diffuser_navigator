@@ -41,6 +41,7 @@ class DiffusionPolicy(Policy):
         'depth_features': depth_features.to(batch['instruction'].device),
         'gt_actions': None,
         'seq_timesteps': torch.tensor(t).to(batch['instruction'].device),
+        'trajectories': None
         }
 
 
@@ -63,6 +64,7 @@ class DiffusionPolicy(Policy):
         'depth_features': depth_features.to(observations['instruction'].device),
         'gt_actions': observations['gt_actions'],
         'seq_timesteps': observations['seq_timesteps'].to(observations['instruction'].device),
+        'trajectories': observations['trajectories'].to(observations['instruction'].device)
         }
 
         loss = self.navigator(collected_data)
