@@ -118,6 +118,7 @@ def collate_fn(batch):
         'depth_features': [],         # 时间 t 的深度特征
         'gt_actions': [],             # 从 t 到 t+F 的专家动作
         'seq_timesteps': [],            # 历史序列的长度（t）
+        'trajectories':[]
     }
 
     t_list = []
@@ -141,11 +142,17 @@ def collate_fn(batch):
         # 从 t 到 t+F 的专家动作，必要时用 STOP(0) 填充
         if t + F < len_seq:
             gt_action_segment = sample[2][t:t+F+1]
+            gt_traj = sample[3][t:t+F+1]
         else:
             gt_action_segment = sample[2][t:]
             padding_size = (t + F + 1) - len_seq
             gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 0)])  # 用 STOP 动作填充
+
+            gt_traj = sample[3][t:]
+            gt_traj = np.concatenate([gt_traj, np.full(padding_size, 0.0)])  # 用 zero 动作填充
+
         collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
+        collected_data['trajectories'].append(torch.tensor(gt_traj))
 
         # 记录历史序列长度（t）
         collected_data['seq_timesteps'].append(t)
@@ -159,6 +166,10 @@ def collate_fn(batch):
     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
     collected_data['seq_timesteps'] = torch.tensor(collected_data['seq_timesteps'])
+    collected_data['trajectories'] = torch.stack(collected_data['trajectories'], dim=0)
+
+    print(f"trajectory {collected_data['trajectories'].shape}")
+    assert 1==2
 
     return collected_data
 
