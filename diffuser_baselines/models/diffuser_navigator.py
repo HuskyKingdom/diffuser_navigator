@@ -280,10 +280,6 @@ class DiffusionNavigator(nn.Module):
         # predict noise
         pred = self.predict_noise(tokens,noising_timesteps,pad_mask)
 
-        print(f"pred {pred.shape}")
-        assert 1==2
-
-
         # # evaluations ____
 
 

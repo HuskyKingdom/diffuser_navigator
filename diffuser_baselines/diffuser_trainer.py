@@ -110,7 +110,7 @@ def collate_fn(batch):
     ]
     """
 
-    F = 2  # 预测的未来动作数量
+    F = 2  # 预测的未来动作数量 - 1
 
     collected_data = {
         'instruction': [],            # 时间 t 的指令
