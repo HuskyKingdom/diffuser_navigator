@@ -107,6 +107,7 @@ def collate_fn(batch):
         },
         prev_actions: (len_seq),
         gt_actions: (len_seq),
+        trajectories: (len_seq,4)
     ]
     """
 
@@ -118,7 +119,8 @@ def collate_fn(batch):
         'depth_features': [],         # 时间 t 的深度特征
         'gt_actions': [],             # 从 t 到 t+F 的专家动作
         'seq_timesteps': [],            # 历史序列的长度（t）
-        'trajectories':[]
+        'trajectories':[],
+        'proprioceptions': []  # agent pose t -1
     }
 
     t_list = []
@@ -142,17 +144,26 @@ def collate_fn(batch):
         # 从 t 到 t+F 的专家动作，必要时用 STOP(0) 填充
         if t + F < len_seq:
             gt_action_segment = sample[2][t:t+F+1]
-            gt_traj = sample[3][t:t+F+1]
         else:
             gt_action_segment = sample[2][t:]
             padding_size = (t + F + 1) - len_seq
             gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 0)])  # 用 STOP 动作填充
 
-            gt_traj = sample[3][t:]
+        # 从 t+1 到 t+1+F 的trajectory，必要时用 STOP(0) 填充
+        if t+1 + F < len_seq:
+            gt_traj = sample[3][t+1:t+1+F+1]
+        else:
+            padding_size = (t + F + 2) - len_seq
+            gt_traj = sample[3][t+1:]
             gt_traj = np.concatenate([gt_traj, np.full((padding_size,4), 0.0)])  # 用 zero 动作填充
+
 
         collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
         collected_data['trajectories'].append(torch.tensor(gt_traj))
+
+
+        # pose at t
+        collected_data['proprioceptions'].append(torch.tensor(sample[3][t]))
 
         # 记录历史序列长度（t）
         collected_data['seq_timesteps'].append(t)
@@ -167,6 +178,10 @@ def collate_fn(batch):
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
     collected_data['seq_timesteps'] = torch.tensor(collected_data['seq_timesteps'])
     collected_data['trajectories'] = torch.stack(collected_data['trajectories'], dim=0)
+    collected_data['proprioceptions'] = torch.tensor(collected_data['proprioceptions'], dim=0)
+
+    print(collected_data['proprioceptions'])
+    assert 1==2
 
 
     return collected_data
