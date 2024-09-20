@@ -310,7 +310,7 @@ class DiffusionNavigator(nn.Module):
 
         denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
 
-        intermidiate_noise = noise
+        intermidiate_noise = noised_traj
     
         for t in denoise_steps:
 
