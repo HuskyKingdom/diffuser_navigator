@@ -291,7 +291,7 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(observations["trajectories"][0].unsqueeze(0).shape, device=observations["trajectories"].device)
 
         noising_timesteps = torch.randint(
-            0,
+            999,
             self.noise_scheduler.config.num_train_timesteps, # self.noise_scheduler.config.num_train_timesteps
             (1,), device=noise.device
         ).long()
@@ -305,16 +305,12 @@ class DiffusionNavigator(nn.Module):
         tokens = (tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0))
         pad_mask = pad_mask[0].unsqueeze(0)
 
-        for item in tokens:
-            print(item.shape)
-
-
         print(f"GroundTruth Trajectory {observations['trajectories'][0]}")
         
 
         denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
 
-        intermidiate_noise = None
+        intermidiate_noise = noise
         
     
         for t in denoise_steps:
