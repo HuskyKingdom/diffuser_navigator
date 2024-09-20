@@ -64,7 +64,8 @@ class DiffusionPolicy(Policy):
         'depth_features': depth_features.to(observations['instruction'].device),
         'gt_actions': observations['gt_actions'],
         'seq_timesteps': observations['seq_timesteps'].to(observations['instruction'].device),
-        'trajectories': observations['trajectories'].to(observations['instruction'].device)
+        'trajectories': observations['trajectories'].to(observations['instruction'].device),
+        'proprioceptions': observations['proprioceptions'].to(observations['instruction'].device)
         }
 
         loss = self.navigator(collected_data)
@@ -140,6 +141,12 @@ class DiffusionNavigator(nn.Module):
 
         # self.action_encoder = nn.Embedding(num_actions, embedding_dim)
         self.traj_encoder = nn.Sequential(
+            nn.Linear(self.config.DIFFUSER.traj_space, embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, embedding_dim)
+        )
+
+        self.pose_encoder = nn.Sequential(
             nn.Linear(self.config.DIFFUSER.traj_space, embedding_dim),
             nn.ReLU(),
             nn.Linear(embedding_dim, embedding_dim)
@@ -222,12 +229,12 @@ class DiffusionNavigator(nn.Module):
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
         rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, 2048, em)
         depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, 128, em)
-
+        
         seq_leng_features = self.seq_leng_emb(observations["seq_timesteps"])
-
         traj_tokens = self.traj_encoder(traj)
+        pose_feature = self.pose_encoder(observations["proprioceptions"]) 
 
-        tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features,traj_tokens)
+        tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features,traj_tokens,pose_feature)
 
         return tokens
 
@@ -356,20 +363,24 @@ class DiffusionNavigator(nn.Module):
 
 
 
-    def predict_noise(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,seq_leng_features,traj)
+    def predict_noise(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,seq_leng_features,traj,pose_feature)
 
         time_embeddings = self.time_emb(timesteps.float())
+
+        print(f"time emb {time_embeddings.shape} | pose feature {tokens[-1].shape}")
+        assert 1==2
         
 
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
-        traj_position = self.pe_layer(tokens[-1])
+        traj_position = self.pe_layer(tokens[4])
 
 
         # languege features
-        lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=tokens[-2],
+        lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=tokens[3],
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
+
         # observation features
         obs_features = self.cross_attention(query=tokens[1].transpose(0, 1),
             value=tokens[2].transpose(0, 1),
@@ -381,7 +392,7 @@ class DiffusionNavigator(nn.Module):
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
 
 
-        # action features
+        # trajectory features
         traj_features, _ = self.traj_lang_attention[0](
                 seq1=traj_position, seq1_key_padding_mask=None,
                 seq2=lan_features, seq2_key_padding_mask=pad_mask,

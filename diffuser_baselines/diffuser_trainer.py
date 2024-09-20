@@ -179,11 +179,7 @@ def collate_fn(batch):
     collected_data['seq_timesteps'] = torch.tensor(collected_data['seq_timesteps'])
     collected_data['trajectories'] = torch.stack(collected_data['trajectories'], dim=0)
     collected_data['proprioceptions'] = torch.tensor(collected_data['proprioceptions'])
-
-    print(collected_data['proprioceptions'])
-    assert 1==2
-
-
+    
     return collected_data
 
 
