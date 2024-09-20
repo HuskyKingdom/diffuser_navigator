@@ -297,7 +297,7 @@ class DiffusionNavigator(nn.Module):
         ).long()
 
         noised_traj = self.noise_scheduler.add_noise(
-            observations["trajectories"], noise,
+            observations["trajectories"][0].unsqueeze(0), noise,
             noising_timesteps
         )
 
