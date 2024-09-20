@@ -367,7 +367,7 @@ class DiffusionNavigator(nn.Module):
 
         time_embeddings = self.time_emb(timesteps.float())
 
-        x = time_embeddings+tokens[-1].shape
+        x = time_embeddings+tokens[-1]
 
         print(f"time emb {time_embeddings.shape} | pose feature {tokens[-1].shape}  | {x}")
         assert 1==2
