@@ -323,7 +323,7 @@ class DiffusionNavigator(nn.Module):
             )
 
 
-            intermidiate_noise = step_out["prev_sample"]
+            intermidiate_noise = step_out["pred_original_sample"]
 
         
         print(f"Predicted Actions {intermidiate_noise}")
