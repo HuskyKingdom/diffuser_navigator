@@ -163,7 +163,7 @@ def collate_fn(batch):
 
 
         # pose at t
-        collected_data['proprioceptions'].append(torch.tensor(sample[3][t]))
+        collected_data['proprioceptions'].append(sample[3][t])
 
         # 记录历史序列长度（t）
         collected_data['seq_timesteps'].append(t)
