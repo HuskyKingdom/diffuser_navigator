@@ -305,7 +305,7 @@ class DiffusionNavigator(nn.Module):
         tokens = (tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0))
         pad_mask = pad_mask[0].unsqueeze(0)
 
-        print(f"GroundTruth Trajectory {observations['trajectories'][0]}")
+        print(f"GroundTruth Trajectory {observations['trajectories'][0]} | nosed {noised_traj}")
         
 
         denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
