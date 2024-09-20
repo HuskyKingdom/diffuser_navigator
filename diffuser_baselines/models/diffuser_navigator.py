@@ -305,7 +305,7 @@ class DiffusionNavigator(nn.Module):
         tokens = (tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0))
         pad_mask = pad_mask[0].unsqueeze(0)
 
-        print(f"GroundTruth Trajectory {observations['trajectories'][0]} | nosed {noised_traj}")
+        print(f"GroundTruth Trajectory {observations['trajectories'][0]}")
         
 
         denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
@@ -321,6 +321,8 @@ class DiffusionNavigator(nn.Module):
             step_out = self.noise_scheduler.step(
                 pred_noises, t, intermidiate_noise
             )
+
+            print(f" pred noise {pred_noises} | ture noise {noise}")
 
             intermidiate_noise = step_out["prev_sample"]
 
