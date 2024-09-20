@@ -311,7 +311,6 @@ class DiffusionNavigator(nn.Module):
         denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
 
         intermidiate_noise = noise
-        
     
         for t in denoise_steps:
 
@@ -329,7 +328,7 @@ class DiffusionNavigator(nn.Module):
         denoised = step_out["prev_sample"]
 
         
-        print(f"Predicted Actions {denoised} | {denoised.shape}")
+        print(f"Predicted Actions {denoised}")
 
 
         # analyzing
