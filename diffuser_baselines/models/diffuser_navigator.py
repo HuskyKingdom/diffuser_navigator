@@ -292,7 +292,7 @@ class DiffusionNavigator(nn.Module):
 
         noising_timesteps = torch.randint(
             0,
-            10, # self.noise_scheduler.config.num_train_timesteps
+            1, # self.noise_scheduler.config.num_train_timesteps
             (1,), device=noise.device
         ).long()
 
@@ -319,10 +319,9 @@ class DiffusionNavigator(nn.Module):
                 pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
             step_out = self.noise_scheduler.step(
-                pred_noises, t, intermidiate_noise
+                noise, t, intermidiate_noise
             )
 
-            print(f" pred noise {pred_noises} | ture noise {noise}")
 
             intermidiate_noise = step_out["prev_sample"]
 
