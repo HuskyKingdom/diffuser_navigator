@@ -221,10 +221,22 @@ class DiffusionNavigator(nn.Module):
         self.n_steps = diffusion_timesteps
     
 
-    def normalize(tensor, mean=0.4419, std=68.62):
+    def normalize(self,tensor, min_val=-74.19, max_val=70.04, feature_range=(-1, 1)):
+
+        norm_tensor = (tensor - min_val) / (max_val - min_val + 1e-8)  # 加上 1e-8 避免除以零
+        scale = feature_range[1] - feature_range[0]
+        norm_tensor = norm_tensor * scale + feature_range[0]
         
-        normalized_tensor = (tensor - mean) / std
-        return normalized_tensor, mean, std
+        return norm_tensor
+    
+
+    def denormalize(self,tensor, min_val=-74.19, max_val=70.04, feature_range=(-1, 1)):
+
+        scale = feature_range[1] - feature_range[0]
+        tensor = (tensor - feature_range[0]) / scale
+ 
+        return tensor * (max_val - min_val) + min_val
+
 
 
     def tokenlize_input(self,observations,traj):
@@ -239,6 +251,9 @@ class DiffusionNavigator(nn.Module):
         seq_leng_features = self.seq_leng_emb(observations["seq_timesteps"])
         traj_tokens = self.traj_encoder(traj)
         pose_feature = self.pose_encoder(observations["proprioceptions"]) 
+
+        print(f"pose {observations["proprioceptions"]} | norm {self.normalize(observations["proprioceptions"])} | denorm {self.denormalize(observations["proprioceptions"])}")
+        assert 1==2
 
         tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features,traj_tokens,pose_feature)
 
