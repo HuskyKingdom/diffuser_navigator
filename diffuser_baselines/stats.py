@@ -19,6 +19,7 @@ for key, value in data_from_file.items():
 # Convert locations to a numpy array for calculation
 locations_np_from_file = np.array(all_locations_from_file)
 
+print("wocaonima")
 print(locations_np_from_file)
 
 # Calculate mean and variance for x, y, z
