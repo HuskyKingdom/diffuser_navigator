@@ -246,7 +246,7 @@ class DiffusionNavigator(nn.Module):
         if max_val is None:
             max_val = torch.tensor([[[70.04, 7.46, 46.58, 3.15]]], dtype=torch.float32,device = tensor.device) 
 
-            
+
         scale = feature_range[1] - feature_range[0]
         tensor = (tensor - feature_range[0]) / scale
 
@@ -275,14 +275,9 @@ class DiffusionNavigator(nn.Module):
 
     def forward(self, observations, run_inference=False):
 
-        # normalize input
-        ori = observations['proprioceptions']
+        # normalize input alone dimensions
         observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions'])
         observations["trajectories"] = self.normalize_dim(observations["trajectories"])
-
-        print(f"original {ori} | normed {observations['proprioceptions']} | denormed {self.denormalize_dim(observations['proprioceptions'])}")
-
-        assert 1==2
 
         # inference _____
         

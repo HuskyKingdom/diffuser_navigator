@@ -169,6 +169,7 @@ def collate_fn(batch):
         collected_data['seq_timesteps'].append(t)
 
 
+    collected_data['proprioceptions'] = np.array(collected_data['proprioceptions'])
 
 
     # 将收集的数据堆叠成批量张量
