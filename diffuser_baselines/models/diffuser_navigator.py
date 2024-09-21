@@ -221,21 +221,36 @@ class DiffusionNavigator(nn.Module):
         self.n_steps = diffusion_timesteps
     
 
-    def normalize(self,tensor, min_val=-74.19, max_val=70.04, feature_range=(-1, 1)):
 
-        norm_tensor = (tensor - min_val) / (max_val - min_val + 1e-8)  # 加上 1e-8 避免除以零
+    def normalize_dim(self, tensor, min_val=None, max_val=None, feature_range=(-1, 1)):
+
+        if min_val is None:
+            min_val = torch.tensor([[[-32.31, -5.96, -74.19, -3.15]]], dtype=torch.float32,device = tensor.device)
+        if max_val is None:
+            max_val = torch.tensor([[[70.04, 7.46, 46.58, 3.15]]], dtype=torch.float32,device = tensor.device) 
+        
+        # norm to [0, 1]
+        norm_tensor = (tensor - min_val) / (max_val - min_val + 1e-8)
+        
+        # map to feature range
         scale = feature_range[1] - feature_range[0]
         norm_tensor = norm_tensor * scale + feature_range[0]
         
-        return norm_tensor
-    
+        return norm_tensor, min_val, max_val
 
-    def denormalize(self,tensor, min_val=-74.19, max_val=70.04, feature_range=(-1, 1)):
 
+    def denormalize_dim(self, tensor, min_val=None, max_val=None, feature_range=(-1, 1)):
+
+        if min_val is None:
+            min_val = torch.tensor([[[4, 5, 6, 8]]], dtype=torch.float32,device = tensor.device)
+        if max_val is None:
+            max_val = torch.tensor([[[4, 5, 6, 8]]], dtype=torch.float32,device = tensor.device) 
+        
         scale = feature_range[1] - feature_range[0]
         tensor = (tensor - feature_range[0]) / scale
- 
+
         return tensor * (max_val - min_val) + min_val
+
 
 
 
@@ -260,8 +275,13 @@ class DiffusionNavigator(nn.Module):
     def forward(self, observations, run_inference=False):
 
         # normalize input
+        ori = observations['proprioceptions']
         observations['proprioceptions'] = self.normalize(observations['proprioceptions'])
         observations["trajectories"] = self.normalize(observations["trajectories"])
+
+        print(f"original {ori} | normed {observations['proprioceptions']} | denormed {self.denormalize_dim(observations['proprioceptions'])}")
+
+        assert 1==2
 
         # inference _____
         
