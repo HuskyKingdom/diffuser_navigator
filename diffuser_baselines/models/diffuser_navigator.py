@@ -242,10 +242,11 @@ class DiffusionNavigator(nn.Module):
     def denormalize_dim(self, tensor, min_val=None, max_val=None, feature_range=(-1, 1)):
 
         if min_val is None:
-            min_val = torch.tensor([[[4, 5, 6, 8]]], dtype=torch.float32,device = tensor.device)
+            min_val = torch.tensor([[[-32.31, -5.96, -74.19, -3.15]]], dtype=torch.float32,device = tensor.device)
         if max_val is None:
-            max_val = torch.tensor([[[4, 5, 6, 8]]], dtype=torch.float32,device = tensor.device) 
-        
+            max_val = torch.tensor([[[70.04, 7.46, 46.58, 3.15]]], dtype=torch.float32,device = tensor.device) 
+
+            
         scale = feature_range[1] - feature_range[0]
         tensor = (tensor - feature_range[0]) / scale
 
