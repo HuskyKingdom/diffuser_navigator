@@ -27,4 +27,7 @@ print(flattened_locations.shape)
 means_from_file = np.mean(flattened_locations, axis=0)
 variances_from_file = np.var(flattened_locations, axis=0)
 
-print(means_from_file, variances_from_file)
+max_ = np.max(flattened_locations, axis=0)
+min_ = np.min(flattened_locations, axis=0)
+
+print(max_, min_)
