@@ -19,15 +19,8 @@ for key, value in data_from_file.items():
 # Convert locations to a numpy array for calculation
 locations_np_from_file = np.array(all_locations_from_file)
 
-flattened_locations = locations_np_from_file.flatten()
-
-print(flattened_locations.shape)
-
 # Calculate mean and variance for x, y, z
-means_from_file = np.mean(flattened_locations, axis=0)
-variances_from_file = np.var(flattened_locations, axis=0)
+min_values = np.min(locations_np_from_file, axis=0)
+max_values = np.max(locations_np_from_file, axis=0)
 
-max_ = np.max(flattened_locations, axis=0)
-min_ = np.min(flattened_locations, axis=0)
-
-print(max_, min_)
+print(min_values, max_values)
