@@ -19,7 +19,7 @@ for key, value in data_from_file.items():
 # Convert locations to a numpy array for calculation
 locations_np_from_file = np.array(all_locations_from_file)
 
-print(all_locations_from_file.shape)
+print(all_locations_from_file)
 
 # Calculate mean and variance for x, y, z
 means_from_file = np.mean(locations_np_from_file, axis=0)
