@@ -236,7 +236,7 @@ class DiffusionNavigator(nn.Module):
         scale = feature_range[1] - feature_range[0]
         norm_tensor = norm_tensor * scale + feature_range[0]
         
-        return norm_tensor, min_val, max_val
+        return norm_tensor
 
 
     def denormalize_dim(self, tensor, min_val=None, max_val=None, feature_range=(-1, 1)):
