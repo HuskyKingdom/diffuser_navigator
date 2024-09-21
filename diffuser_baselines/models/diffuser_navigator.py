@@ -223,7 +223,7 @@ class DiffusionNavigator(nn.Module):
 
     def normalize(self,tensor, min_val=-74.19, max_val=70.04, feature_range=(-1, 1)):
 
-        norm_tensor = (tensor - min_val) / (max_val - min_val + 1e-8)  # 加上 1e-8 避免除以零
+        norm_tensor = (tensor - min_val) / (max_val - min_val)  # 加上 1e-8 避免除以零
         scale = feature_range[1] - feature_range[0]
         norm_tensor = norm_tensor * scale + feature_range[0]
         
