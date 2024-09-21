@@ -252,7 +252,7 @@ class DiffusionNavigator(nn.Module):
         traj_tokens = self.traj_encoder(traj)
         pose_feature = self.pose_encoder(observations["proprioceptions"]) 
 
-        print(f"pose {observations["proprioceptions"]} | norm {self.normalize(observations["proprioceptions"])} | denorm {self.denormalize(observations["proprioceptions"])}")
+        print(f"pose {observations['proprioceptions']} | norm {self.normalize(observations['proprioceptions'])} | denorm {self.denormalize(observations['proprioceptions'])}")
         assert 1==2
 
         tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features,traj_tokens,pose_feature)
