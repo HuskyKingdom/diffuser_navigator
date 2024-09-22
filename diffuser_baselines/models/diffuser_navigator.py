@@ -336,11 +336,13 @@ class DiffusionNavigator(nn.Module):
         )
 
         tokens = self.tokenlize_input(observations,noised_traj)
-        tokens = (tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0))
-        pad_mask = pad_mask[0].unsqueeze(0)
 
         for item in tokens:
             print(item.shape)
+        tokens = (tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0))
+        pad_mask = pad_mask[0].unsqueeze(0)
+
+
 
         print(f"GroundTruth Trajectory {observations['trajectories'][0]}")
         
