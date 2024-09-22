@@ -279,7 +279,10 @@ class DiffusionNavigator(nn.Module):
         print(f" pose {observations['proprioceptions'].shape}")
         observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions'])
         print(f" pose {observations['proprioceptions'].shape}")
+
+        print(f" traj {observations['trajectories'].shape}")
         observations["trajectories"] = self.normalize_dim(observations["trajectories"])
+        print(f" traj {observations['trajectories'].shape}")
 
         # inference _____
         
