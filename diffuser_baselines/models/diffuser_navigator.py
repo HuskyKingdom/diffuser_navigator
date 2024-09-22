@@ -399,9 +399,6 @@ class DiffusionNavigator(nn.Module):
         time_embeddings = self.time_emb(timesteps.float())
         time_embeddings = time_embeddings+tokens[-1] # fused
 
-        print(f"time shape {time_embeddings.shape}")
-        assert 1==2
-
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
         traj_position = self.pe_layer(tokens[4])
