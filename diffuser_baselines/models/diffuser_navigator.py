@@ -277,10 +277,9 @@ class DiffusionNavigator(nn.Module):
 
         # normalize input alone dimensions
         print(f" pose {observations['proprioceptions']}")
-        observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions'])
+        observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions']).squeeze(0)
         print(f" pose {observations['proprioceptions']}")
 
-        print(f" denorm {self.denormalize_dim(observations['proprioceptions'])}")
 
         observations["trajectories"] = self.normalize_dim(observations["trajectories"])
 
