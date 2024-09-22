@@ -276,11 +276,7 @@ class DiffusionNavigator(nn.Module):
     def forward(self, observations, run_inference=False):
 
         # normalize input alone dimensions
-        print(f" pose {observations['proprioceptions']}")
         observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions']).squeeze(0)
-        print(f" pose {observations['proprioceptions']}")
-
-
         observations["trajectories"] = self.normalize_dim(observations["trajectories"])
 
 
@@ -402,6 +398,9 @@ class DiffusionNavigator(nn.Module):
 
         time_embeddings = self.time_emb(timesteps.float())
         time_embeddings = time_embeddings+tokens[-1] # fused
+
+        print(f"time shape {time_embeddings.shape}")
+        assert 1==2
 
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
