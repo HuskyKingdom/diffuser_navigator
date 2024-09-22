@@ -276,7 +276,9 @@ class DiffusionNavigator(nn.Module):
     def forward(self, observations, run_inference=False):
 
         # normalize input alone dimensions
+        print(f" pose {observations['proprioceptions'].shape}")
         observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions'])
+        print(f" pose {observations['proprioceptions'].shape}")
         observations["trajectories"] = self.normalize_dim(observations["trajectories"])
 
         # inference _____
@@ -336,8 +338,6 @@ class DiffusionNavigator(nn.Module):
         )
 
         tokens = self.tokenlize_input(observations,noised_traj)
-
-        print(f" pose {observations['proprioceptions'].shape}")
 
         tokens = (tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0))
         pad_mask = pad_mask[0].unsqueeze(0)
