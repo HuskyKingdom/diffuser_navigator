@@ -276,13 +276,14 @@ class DiffusionNavigator(nn.Module):
     def forward(self, observations, run_inference=False):
 
         # normalize input alone dimensions
-        print(f" pose {observations['proprioceptions'].shape}")
+        print(f" pose {observations['proprioceptions']}")
         observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions'])
-        print(f" pose {observations['proprioceptions'].shape}")
+        print(f" pose {observations['proprioceptions']}")
 
-        print(f" traj {observations['trajectories'].shape}")
+        print(f" denorm {self.denormalize_dim(observations['proprioceptions'])}")
+
         observations["trajectories"] = self.normalize_dim(observations["trajectories"])
-        print(f" traj {observations['trajectories'].shape}")
+
 
         # inference _____
         
