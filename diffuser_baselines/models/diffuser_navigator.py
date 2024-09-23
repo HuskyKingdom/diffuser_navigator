@@ -326,8 +326,8 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(observations["trajectories"][0].unsqueeze(0).shape, device=observations["trajectories"].device)
 
         noising_timesteps = torch.randint(
-            900,
-            990, # self.noise_scheduler.config.num_train_timesteps
+            999,
+            999, # self.noise_scheduler.config.num_train_timesteps
             (1,), device=noise.device
         ).long()
 
@@ -341,7 +341,7 @@ class DiffusionNavigator(nn.Module):
 
         denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
 
-        intermidiate_noise = noised_traj
+        intermidiate_noise = noise
     
         for t in denoise_steps:
 
