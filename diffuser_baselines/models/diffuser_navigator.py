@@ -339,7 +339,7 @@ class DiffusionNavigator(nn.Module):
 
 
 
-        print(f"GroundTruth Trajectory {observations['trajectories'][0]}")
+        
         
 
         denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
@@ -364,8 +364,11 @@ class DiffusionNavigator(nn.Module):
 
             intermidiate_noise = step_out["prev_sample"]
 
-        
-        print(f"Predicted Actions {intermidiate_noise}")
+        denormed_groundtruth = self.denormalize_dim(observations['trajectories'][0])
+        denormed_pred = self.denormalize_dim(intermidiate_noise)
+
+        print(f"GroundTruth Trajectory {denormed_groundtruth}")
+        print(f"Predicted Actions {denormed_pred}")
 
 
         # analyzing
@@ -445,45 +448,6 @@ class DiffusionNavigator(nn.Module):
         noise_prediction = self.noise_predictor(features)
 
         return noise_prediction
-
-
-    # def retrive_action_from_em(self,embeddings):  # retrive action index from embedding
-        
-    #     target = self.action_em_targets.to(embeddings.device)
-    #     l1_dist = torch.abs(target.unsqueeze(1) - embeddings.unsqueeze(2)).sum(dim=-1)  # (B, L, A)
-
-    #     actions_indexs = torch.argmin(l1_dist, dim=-1)
-
-    #     return actions_indexs
-
-
-    def retrive_action_from_em(self, embeddings):  # retrieve action index from embedding
-        target = self.action_em_targets.to(embeddings.device)
-        
-        # Compute L2 distance (squared differences) instead of L1
-        l2_dist = torch.sqrt(torch.sum((target.unsqueeze(1) - embeddings.unsqueeze(2)) ** 2, dim=-1))  # (B, L, A)
-        
-        actions_indexs = torch.argmin(l2_dist, dim=-1)
-
-        return actions_indexs
-
-
-    # # consine sim
-    # def retrive_action_from_em(self, embeddings):  # retrieve action index from embedding
-    #     target = self.action_em_targets.to(embeddings.device)
-        
-    #     # Normalize the embeddings and targets
-    #     embeddings_norm = torch.nn.functional.normalize(embeddings, p=2, dim=-1)  # (B, L, D)
-    #     target_norm = torch.nn.functional.normalize(target, p=2, dim=-1)  # (A, D)
-        
-    #     # Compute cosine similarity
-    #     cos_sim = torch.matmul(embeddings_norm, target_norm.transpose(-1, -2))  # (B, L, A)
-        
-    #     # Since we want to retrieve the action index, use argmax to find the most similar action
-    #     actions_indexs = torch.argmax(cos_sim, dim=-1)
-        
-    #     return actions_indexs
-
 
 
     def inference_actions(self,tokens,mask): # pred_noises (B,N,D)
