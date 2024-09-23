@@ -337,9 +337,6 @@ class DiffusionNavigator(nn.Module):
         )
 
 
-
-
-        
         
 
         denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
