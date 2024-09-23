@@ -352,6 +352,9 @@ class DiffusionNavigator(nn.Module):
     
         for t in denoise_steps:
 
+            if t == 0:
+                break
+
             # noise pred.
             with torch.no_grad():
                 pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
