@@ -292,7 +292,7 @@ class DiffusionNavigator(nn.Module):
         noise = torch.randn(observations["trajectories"].shape, device=observations["trajectories"].device)
 
         noising_timesteps = torch.randint(
-            999,
+            0,
             self.noise_scheduler.config.num_train_timesteps, # self.noise_scheduler.config.num_train_timesteps
             (len(noise),), device=noise.device
         ).long()
@@ -336,10 +336,6 @@ class DiffusionNavigator(nn.Module):
             noising_timesteps
         )
 
-        tokens = self.tokenlize_input(observations,noised_traj)
-
-        tokens = (tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0))
-        pad_mask = pad_mask[0].unsqueeze(0)
 
 
 
@@ -352,11 +348,13 @@ class DiffusionNavigator(nn.Module):
     
         for t in denoise_steps:
 
-            if t == 0:
-                break
-
             # noise pred.
             with torch.no_grad():
+
+                tokens = self.tokenlize_input(observations,intermidiate_noise)
+                tokens = (tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0))
+                pad_mask = pad_mask[0].unsqueeze(0)
+
                 pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
             step_out = self.noise_scheduler.step(
