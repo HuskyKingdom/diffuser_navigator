@@ -703,7 +703,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         self.save_checkpoint(
                             f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
                         )
-                    print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
+                    else:
+                        print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
 
                     epoch_loss /= num_epoch_batch
                     epoch_loss = 0
