@@ -160,7 +160,6 @@ def collate_fn(batch):
             gt_traj = np.concatenate([gt_traj, padding_traj])
             # gt_traj = np.concatenate([gt_traj, np.full((padding_size,4), 0.0)])  # 用 zero 动作填充
 
-            print(f"t {t} | seq_len {len_seq} | padding {padding_size} | traj {gt_traj}")
 
 
         collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
