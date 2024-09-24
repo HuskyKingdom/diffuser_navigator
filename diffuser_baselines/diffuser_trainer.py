@@ -125,12 +125,12 @@ def collate_fn(batch):
 
     t_list = []
 
-    # 首先确定每个样本的 t，并找到最大的 t 以进行填充
+    # 首先确定每个样本的 t
     for sample in batch:
         len_seq = sample[0]['instruction'].shape[0]
         t = random.randint(0, len_seq - 1)
         t_list.append(t)
-    max_t = max(t_list)
+
 
     for idx, sample in enumerate(batch):
         len_seq = sample[0]['instruction'].shape[0]
@@ -153,9 +153,12 @@ def collate_fn(batch):
         if t+1 + F < len_seq:
             gt_traj = sample[3][t+1:t+1+F+1]
         else:
+            last_valid_traj = sample[3][-1]
             padding_size = (t + F + 2) - len_seq
             gt_traj = sample[3][t+1:]
-            gt_traj = np.concatenate([gt_traj, np.full((padding_size,4), 0.0)])  # 用 zero 动作填充
+            padding_traj = np.tile(last_valid_traj, (padding_size, 1))
+            gt_traj = np.concatenate([gt_traj, padding_traj])
+            # gt_traj = np.concatenate([gt_traj, np.full((padding_size,4), 0.0)])  # 用 zero 动作填充
 
 
         collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
@@ -180,6 +183,8 @@ def collate_fn(batch):
     collected_data['seq_timesteps'] = torch.tensor(collected_data['seq_timesteps'])
     collected_data['trajectories'] = torch.stack(collected_data['trajectories'], dim=0)
     collected_data['proprioceptions'] = torch.tensor(collected_data['proprioceptions'])
+
+    print(collected_data['trajectories'])
     
     return collected_data
 
@@ -621,7 +626,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
             4, 
         )
 
-        self.policy.eval()
+        # self.policy.eval()
         
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
