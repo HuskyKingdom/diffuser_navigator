@@ -698,10 +698,12 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         step_id += 1  # noqa: SIM113
                         num_epoch_batch += 1
 
+                    
                     if (diffuser_it * self.config.IL.epochs + epoch) % 300 == 0:
                         self.save_checkpoint(
                             f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
                         )
+                    print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
 
                     epoch_loss /= num_epoch_batch
                     epoch_loss = 0
