@@ -457,7 +457,7 @@ class DiffusionNavigator(nn.Module):
         print(f"pose {pose.shape} | traj {traj.shape}")
         print(f"pose {pose} | traj {traj}")
 
-        full_traj = torch.cat((pose,traj),1)
+        full_traj = torch.cat((pose.unsqueeze(0),traj),1)
         print(f"full traj {full_traj.shape} | traj {full_traj}")
 
         assert 1==2
