@@ -465,7 +465,7 @@ class DiffusionNavigator(nn.Module):
                 diff_position = torch.sum(torch.abs(next_traj - current_traj))
                 diff_heading = next_heading - current_heading
 
-                if diff_position < pose_threshold:
+                if diff_position <= pose_threshold:
                     actions[i, j] = 0
                 elif diff_heading >= head_threshold:
                     actions[i, j] = 2
@@ -482,7 +482,7 @@ class DiffusionNavigator(nn.Module):
         # param. pose in shape (B,4); traj in shape (B,L,4)
         # return. actions in shape (B,L)
 
-        pose_threshold = 0.30
+        pose_threshold = 0.2700
         head_threshold = 0.2618
 
         full_traj = torch.cat((pose,traj),1)
