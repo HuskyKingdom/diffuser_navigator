@@ -457,16 +457,15 @@ class DiffusionNavigator(nn.Module):
         for i in range(bs):
             for j in range(seq_len - 1):
 
-                current_traj = tensor[i, j, :3]  
-                next_traj = tensor[i, j + 1, :3]  
+                current_traj = tensor[i, j, 0:]  
+                next_traj = tensor[i, j + 1, 0:]  
                 current_heading = tensor[i, j, 3] 
                 next_heading = tensor[i, j + 1, 3] 
 
                 diff_position = torch.sum(torch.abs(next_traj - current_traj))
                 diff_heading = next_heading - current_heading
-                diff_heading_abs = torch.abs(next_heading - current_heading)
-
-                if diff_position <= pose_threshold and diff_heading_abs < head_threshold:
+  
+                if diff_position <= pose_threshold:
                     actions[i, j] = 0
                 elif diff_heading >= head_threshold:
                     actions[i, j] = 2
@@ -483,8 +482,9 @@ class DiffusionNavigator(nn.Module):
         # param. pose in shape (B,4); traj in shape (B,L,4)
         # return. actions in shape (B,L)
 
-        pose_threshold = 0.2700
+        pose_threshold = 0.3000
         head_threshold = 0.2618
+
 
         full_traj = torch.cat((pose,traj),1)
 
