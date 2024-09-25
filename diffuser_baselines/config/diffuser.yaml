@@ -5,7 +5,7 @@ TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 1
 TENSORBOARD_DIR: data/tensorboard_dirs/diffuser
 CHECKPOINT_FOLDER: data/checkpoints/diffuser
-EVAL_CKPT_PATH_DIR: data/checkpoints/diffuser/ckpt.1210.pth
+EVAL_CKPT_PATH_DIR: data/checkpoints/diffuser/ckpt.600.pth
 RESULTS_DIR: data/checkpoints/diffuser/evals
 
 EVAL:
@@ -15,8 +15,8 @@ EVAL:
   ACTION_POP: True
 
 IL:
-  ckpt_to_load: data/checkpoints/diffuser/ckpt.1210.pth
-  load_from_ckpt: False # for testing overfitting only
+  ckpt_to_load: data/checkpoints/diffuser/ckpt.600.pth
+  load_from_ckpt: True # for testing overfitting only
   epochs: 2000
   batch_size: 48
   
@@ -41,7 +41,7 @@ DIFFUSER:
   diffusion_timesteps: 1000
   logging_file: data/loggings/train.log
   LR: 1.0e-5
-  action_length: 3
+  traj_length: 3
   beta: 0.1
   action_space: 4
   traj_space: 4

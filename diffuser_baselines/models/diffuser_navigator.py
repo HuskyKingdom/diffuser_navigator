@@ -40,8 +40,9 @@ class DiffusionPolicy(Policy):
         'rgb_features': rgb_features.to(batch['instruction'].device),
         'depth_features': depth_features.to(batch['instruction'].device),
         'gt_actions': None,
-        'seq_timesteps': torch.tensor(t).to(batch['instruction'].device),
-        'trajectories': None
+        'seq_timesteps': batch['seq_timesteps'].to(batch['instruction'].device),
+        'trajectories': None,
+        'proprioceptions': batch['proprioceptions'].to(batch['instruction'].device)
         }
 
 
@@ -280,10 +281,13 @@ class DiffusionNavigator(nn.Module):
         observations["trajectories"] = self.normalize_dim(observations["trajectories"])
 
 
+        # language padding mask
+        pad_mask = (observations['instruction'] == 0)
+
         # inference _____
         
         if run_inference:
-            return self.inference_actions(tokens,pad_mask)
+            return self.inference_actions(observations,pad_mask)
 
         # train _____
 
@@ -305,8 +309,6 @@ class DiffusionNavigator(nn.Module):
         # tokenlize
         tokens = self.tokenlize_input(observations,noised_traj)
 
-        # language padding mask
-        pad_mask = (observations['instruction'] == 0)
 
         # predict noise
         pred = self.predict_noise(tokens,noising_timesteps,pad_mask)
@@ -319,60 +321,58 @@ class DiffusionNavigator(nn.Module):
         loss = mse_loss
 
 
-        # # # evaluations ____
+        # # evaluations ____
 
-        # loss = loss - loss # ignore update 
+        loss = loss - loss # ignore update 
 
-        # noise = torch.randn(observations["trajectories"][0].unsqueeze(0).shape, device=observations["trajectories"].device)
+        noise = torch.randn(observations["trajectories"][0].unsqueeze(0).shape, device=observations["trajectories"].device)
 
-        # noising_timesteps = torch.randint(
-        #     999,
-        #     1000, # self.noise_scheduler.config.num_train_timesteps
-        #     (1,), device=noise.device
-        # ).long()
+        noising_timesteps = torch.randint(
+            999,
+            1000, # self.noise_scheduler.config.num_train_timesteps
+            (1,), device=noise.device
+        ).long()
 
-        # noised_traj = self.noise_scheduler.add_noise(
-        #     observations["trajectories"][0].unsqueeze(0), noise,
-        #     noising_timesteps
-        # )
-
-
+        noised_traj = self.noise_scheduler.add_noise(
+            observations["trajectories"][0].unsqueeze(0), noise,
+            noising_timesteps
+        )
         
 
-        # denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
+        denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
 
-        # intermidiate_noise = noise
+        intermidiate_noise = noise
     
-        # for t in denoise_steps:
+        for t in denoise_steps:
 
-        #     # noise pred.
-        #     with torch.no_grad():
+            # noise pred.
+            with torch.no_grad():
 
-        #         tokens = self.tokenlize_input(observations,intermidiate_noise)
-        #         tokens = (tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0))
-        #         pad_mask = pad_mask[0].unsqueeze(0)
+                tokens = self.tokenlize_input(observations,intermidiate_noise)
+                tokens = (tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0))
+                pad_mask = pad_mask[0].unsqueeze(0)
 
-        #         pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
+                pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
-        #     step_out = self.noise_scheduler.step(
-        #         pred_noises, t, intermidiate_noise
-        #     )
-
-
-        #     intermidiate_noise = step_out["prev_sample"]
-
-        # denormed_groundtruth = self.denormalize_dim(observations['trajectories'][0])
-        # denormed_pred = self.denormalize_dim(intermidiate_noise)
-
-        # print(f"GroundTruth Trajectory {denormed_groundtruth}")
-        # print(f"Predicted Actions {denormed_pred}")
+            step_out = self.noise_scheduler.step(
+                pred_noises, t, intermidiate_noise
+            )
 
 
-        # # analyzing
-        # if self.total_evaled < 100:
-        #     self.total_evaled += 3
-        # else:
-        #     assert 1==2
+            intermidiate_noise = step_out["prev_sample"]
+
+        denormed_groundtruth = self.denormalize_dim(observations['trajectories'][0])
+        denormed_pred = self.denormalize_dim(intermidiate_noise)
+
+        print(f"GroundTruth Trajectory {denormed_groundtruth}")
+        print(f"Predicted Actions {denormed_pred}")
+
+
+        # analyzing
+        if self.total_evaled < 100:
+            self.total_evaled += 3
+        else:
+            assert 1==2
 
 
 
@@ -447,14 +447,22 @@ class DiffusionNavigator(nn.Module):
         return noise_prediction
 
 
-    def inference_actions(self,tokens,mask): # pred_noises (B,N,D)
+    def traj_to_action(self,pose,traj):
+
+        # param. pose in shape (B,); traj in shape (B,L,D)
+        # return. actions in shape (B,L)
+
+        return None
+
+
+    def inference_actions(self,observations,mask): # pred_noises (B,N,D)
 
         self.noise_scheduler.set_timesteps(self.n_steps)
 
         pure_noise = torch.randn(
-            size=(len(tokens[0]),self.config.DIFFUSER.action_length,self.config.DIFFUSER.action_space), # (bs, L, 4)
-            dtype=tokens[0].dtype,
-            device=tokens[0].device
+            size=(len(observations['instruction']),self.config.DIFFUSER.traj_length,self.config.DIFFUSER.traj_space), # (bs, L, 4)
+            dtype=observations['instruction'][0].dtype,
+            device=observations['instruction'][0].device
         )
 
         intermidiate_noise = pure_noise
@@ -466,10 +474,9 @@ class DiffusionNavigator(nn.Module):
             
             # noise pred.
             with torch.no_grad():
-                encoded_noise_embedding = self.encode_actions(intermidiate_noise)
-                pred_noises = self.predict_noise(tokens,encoded_noise_embedding,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),mask)
+                tokens = self.tokenlize_input(observations,intermidiate_noise)
+                pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),mask)
 
-            
             step_out = self.noise_scheduler.step(
                 pred_noises, t, intermidiate_noise
             )
@@ -477,9 +484,10 @@ class DiffusionNavigator(nn.Module):
             intermidiate_noise = step_out["prev_sample"]
 
 
-        denoised = step_out["prev_sample"]
+        denoised = intermidiate_noise
+
         # return action index
-        actions = torch.argmax(denoised,dim=-1)
+        actions = self.traj_to_action(observations['proprioceptions'], denoised)
 
         return actions
 
