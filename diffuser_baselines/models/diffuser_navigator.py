@@ -45,8 +45,6 @@ class DiffusionPolicy(Policy):
         'proprioceptions': torch.tensor(all_pose).to(batch['instruction'].device)
         }
 
-        print(collected_data['proprioceptions'].shape)
-        assert 1==2
 
         actions = self.navigator(collected_data,run_inference = True)
 
@@ -495,7 +493,8 @@ class DiffusionNavigator(nn.Module):
         denoised = intermidiate_noise
 
         # return action index
-        actions = self.traj_to_action(observations['proprioceptions'], denoised)
+        denomed_pose = self.denormalize_dim(observations['proprioceptions'])
+        actions = self.traj_to_action(denomed_pose, denoised)
 
         return actions
 
