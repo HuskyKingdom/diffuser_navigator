@@ -285,7 +285,6 @@ class BaseVLNCETrainer(BaseILTrainer):
         batch = batch_obs(observations, self.device)
         batch = apply_obs_transforms_batch(batch, self.obs_transforms)
 
-
         stats_episodes = {}
 
         rgb_frames = [[] for _ in range(envs.num_envs)]
@@ -309,9 +308,12 @@ class BaseVLNCETrainer(BaseILTrainer):
 
 
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
-            current_episodes = envs.current_episodes()
             
+            pos = envs.call_at(i, "get_state", {"observations": {}})
+            print(f"pos {pos.shape}")
 
+            assert 1==2
+            current_episodes = envs.current_episodes()
             if config.EVAL.ACTION_POP: # forward every F timesteps
 
                 if len(action_candidates[0]) == 0: 
@@ -336,7 +338,6 @@ class BaseVLNCETrainer(BaseILTrainer):
                 
 
             outputs = envs.step([a[0].item() for a in actions])
-            print(cur_seq_len)
             cur_seq_len = [x+1 for x in cur_seq_len]
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
 

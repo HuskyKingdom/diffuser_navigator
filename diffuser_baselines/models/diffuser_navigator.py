@@ -40,7 +40,7 @@ class DiffusionPolicy(Policy):
         'rgb_features': rgb_features.to(batch['instruction'].device),
         'depth_features': depth_features.to(batch['instruction'].device),
         'gt_actions': None,
-        'seq_timesteps': batch['seq_timesteps'].to(batch['instruction'].device),
+        'seq_timesteps': torch.tensor(t).to(batch['instruction'].device),
         'trajectories': None,
         'proprioceptions': batch['proprioceptions'].to(batch['instruction'].device)
         }
@@ -451,6 +451,12 @@ class DiffusionNavigator(nn.Module):
 
         # param. pose in shape (B,); traj in shape (B,L,D)
         # return. actions in shape (B,L)
+
+        left_turn = 0.2618
+        right_turn = -0.2618
+
+        print(f"pose {pose.shape} | traj {traj.shape}")
+        assert 1==2
 
         return None
 
