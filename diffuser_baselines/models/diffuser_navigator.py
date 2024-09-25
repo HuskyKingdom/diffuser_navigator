@@ -448,7 +448,7 @@ class DiffusionNavigator(nn.Module):
 
     def traj_to_action(self,pose,traj):
 
-        # param. pose in shape (B,); traj in shape (B,L,D)
+        # param. pose in shape (B,4); traj in shape (B,L,4)
         # return. actions in shape (B,L)
 
         left_turn = 0.2618
@@ -456,6 +456,9 @@ class DiffusionNavigator(nn.Module):
 
         print(f"pose {pose.shape} | traj {traj.shape}")
         print(f"pose {pose} | traj {traj}")
+
+        full_traj = torch.cat((pose,traj),1)
+        print(f"full traj {full_traj.shape} | traj {full_traj}")
 
         assert 1==2
 
