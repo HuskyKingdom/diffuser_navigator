@@ -488,6 +488,7 @@ class DiffusionNavigator(nn.Module):
         full_traj = torch.cat((pose,traj),1)
 
         actions = self.calculate_actions(full_traj,pose_threshold, head_threshold)
+        print(full_traj)
         print(actions)
 
         assert 1==2
