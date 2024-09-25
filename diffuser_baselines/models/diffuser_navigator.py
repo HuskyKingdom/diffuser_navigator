@@ -276,10 +276,8 @@ class DiffusionNavigator(nn.Module):
 
     def forward(self, observations, run_inference=False):
 
-        # normalize input alone dimensions
-        observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions']).squeeze(0)
-        if observations["trajectories"] != None:
-            observations["trajectories"] = self.normalize_dim(observations["trajectories"])
+        
+        observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions']).squeeze(0) # normalize input alone dimensions
 
 
         # language padding mask
@@ -291,7 +289,7 @@ class DiffusionNavigator(nn.Module):
             return self.inference_actions(observations,pad_mask)
 
         # train _____
-
+        observations["trajectories"] = self.normalize_dim(observations["trajectories"]) # normalize input alone dimensions
 
         # buiding noise
         noise = torch.randn(observations["trajectories"].shape, device=observations["trajectories"].device)
