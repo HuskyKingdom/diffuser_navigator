@@ -224,6 +224,8 @@ class DiffusionNavigator(nn.Module):
 
 
     def normalize_dim(self, tensor, min_val=None, max_val=None, feature_range=(-1, 1)):
+    
+        # this function and denorm function would automatically extend the input tensor to shape [bs,len,4]
 
         if min_val is None:
             min_val = torch.tensor([[[-32.31, -5.96, -74.19, -3.15]]], dtype=torch.float32,device = tensor.device)
@@ -446,19 +448,47 @@ class DiffusionNavigator(nn.Module):
         return noise_prediction
 
 
+    def calculate_actions(self, tensor, pose_threshold, head_threshold):
+
+        bs, seq_len, dim = tensor.shape
+
+        actions = torch.zeros((bs, seq_len - 1), dtype=torch.int)
+
+        for i in range(bs):
+            for j in range(seq_len - 1):
+
+                current_traj = tensor[i, j, :3]  
+                next_traj = tensor[i, j + 1, :3]  
+                current_heading = tensor[i, j, 3] 
+                next_heading = tensor[i, j + 1, 3] 
+
+                diff_position = torch.sum(torch.abs(next_traj - current_traj))
+                diff_heading = next_heading - current_heading
+
+                if diff_position < pose_threshold:
+                    actions[i, j] = 0
+                elif diff_heading >= head_threshold:
+                    actions[i, j] = 2
+                elif diff_heading <= -head_threshold:
+                    actions[i, j] = 3
+                else:
+                    actions[i, j] = 1
+
+        return actions
+
+
     def traj_to_action(self,pose,traj):
 
         # param. pose in shape (B,4); traj in shape (B,L,4)
         # return. actions in shape (B,L)
 
-        left_turn = 0.2618
-        right_turn = -0.2618
+        pose_threshold = 0.8
+        head_threshold = 0.2618
 
-        print(f"pose {pose.shape} | traj {traj.shape}")
-        print(f"pose {pose} | traj {traj}")
+        full_traj = torch.cat((pose,traj),1)
 
-        full_traj = torch.cat((pose.unsqueeze(0),traj),1)
-        print(f"full traj {full_traj.shape} | traj {full_traj}")
+        actions = self.calculate_actions(full_traj,pose_threshold, head_threshold)
+        print(actions)
 
         assert 1==2
 
@@ -497,7 +527,7 @@ class DiffusionNavigator(nn.Module):
         denoised = intermidiate_noise
 
         # return action index
-        denomed_pose = self.denormalize_dim(observations['proprioceptions']).squeeze(0)
+        denomed_pose = self.denormalize_dim(observations['proprioceptions'])
         denormed_denoised = self.denormalize_dim(denoised)
         actions = self.traj_to_action(denomed_pose, denormed_denoised)
 
