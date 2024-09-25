@@ -455,6 +455,8 @@ class DiffusionNavigator(nn.Module):
         right_turn = -0.2618
 
         print(f"pose {pose.shape} | traj {traj.shape}")
+        print(f"pose {pose} | traj {traj}")
+
         assert 1==2
 
         return None
@@ -492,7 +494,7 @@ class DiffusionNavigator(nn.Module):
         denoised = intermidiate_noise
 
         # return action index
-        denomed_pose = self.denormalize_dim(observations['proprioceptions'])
+        denomed_pose = self.denormalize_dim(observations['proprioceptions']).squeeze(0)
         denormed_denoised = self.denormalize_dim(denoised)
         actions = self.traj_to_action(denomed_pose, denormed_denoised)
 
