@@ -42,7 +42,7 @@ class DiffusionPolicy(Policy):
         'gt_actions': None,
         'seq_timesteps': torch.tensor(t).to(batch['instruction'].device),
         'trajectories': None,
-        'proprioceptions': torch.tensor(all_pose).to(batch['instruction'].device)
+        'proprioceptions': torch.tensor(all_pose,dtype=torch.float32).to(batch['instruction'].device)
         }
 
 
@@ -464,7 +464,6 @@ class DiffusionNavigator(nn.Module):
 
         self.noise_scheduler.set_timesteps(self.n_steps)
 
-        print(observations['proprioceptions'].dtype)
         pure_noise = torch.randn(
             size=(len(observations['proprioceptions']),self.config.DIFFUSER.traj_length,self.config.DIFFUSER.traj_space), # (bs, L, 4)
             dtype=observations['proprioceptions'].dtype,
