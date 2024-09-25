@@ -493,7 +493,8 @@ class DiffusionNavigator(nn.Module):
 
         # return action index
         denomed_pose = self.denormalize_dim(observations['proprioceptions'])
-        actions = self.traj_to_action(denomed_pose, denoised)
+        denormed_denoised = self.denormalize_dim(denoised)
+        actions = self.traj_to_action(denomed_pose, denormed_denoised)
 
         return actions
 
