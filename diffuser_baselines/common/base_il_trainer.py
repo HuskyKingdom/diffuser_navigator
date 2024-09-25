@@ -314,7 +314,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             for i in range(envs.num_envs):
                 pos = envs.call_at(i, "get_state", {"observations": {}})
                 all_pose.append(pos)
-                print(f"pos {pos.shape}")
+                print(f"pos {pos}")
 
             assert 1==2
             current_episodes = envs.current_episodes()
