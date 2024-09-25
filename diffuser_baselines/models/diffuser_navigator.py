@@ -278,7 +278,8 @@ class DiffusionNavigator(nn.Module):
 
         # normalize input alone dimensions
         observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions']).squeeze(0)
-        observations["trajectories"] = self.normalize_dim(observations["trajectories"])
+        if observations["trajectories"] != None:
+            observations["trajectories"] = self.normalize_dim(observations["trajectories"])
 
 
         # language padding mask
