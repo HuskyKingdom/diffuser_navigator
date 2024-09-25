@@ -482,18 +482,14 @@ class DiffusionNavigator(nn.Module):
         # param. pose in shape (B,4); traj in shape (B,L,4)
         # return. actions in shape (B,L)
 
-        pose_threshold = 0.8
+        pose_threshold = 0.30
         head_threshold = 0.2618
 
         full_traj = torch.cat((pose,traj),1)
 
         actions = self.calculate_actions(full_traj,pose_threshold, head_threshold)
-        print(full_traj)
-        print(actions)
 
-        assert 1==2
-
-        return None
+        return actions
 
 
     def inference_actions(self,observations,mask): # pred_noises (B,N,D)
