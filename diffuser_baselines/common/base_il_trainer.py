@@ -314,15 +314,13 @@ class BaseVLNCETrainer(BaseILTrainer):
             for i in range(envs.num_envs):
                 pos = envs.call_at(i, "get_state", {"observations": {}})
                 all_pose.append(pos)
-                print(f"pos {pos}")
-
-            assert 1==2
+            
             current_episodes = envs.current_episodes()
             if config.EVAL.ACTION_POP: # forward every F timesteps
 
                 if len(action_candidates[0]) == 0: 
                     with torch.no_grad():
-                        out = self.policy.act(batch,cur_seq_len)
+                        out = self.policy.act(batch,cur_seq_len,all_pose)
                         action_candidates = out.cpu().tolist()
                 
                 # pop actions
@@ -333,7 +331,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             else:
 
                 with torch.no_grad():
-                    out = self.policy.act(batch,cur_seq_len)
+                    out = self.policy.act(batch,cur_seq_len,all_pose)
                     # action_candidates = out.cpu().tolist()
                     # actions = torch.tensor(out).to(self.device)
                     actions = out

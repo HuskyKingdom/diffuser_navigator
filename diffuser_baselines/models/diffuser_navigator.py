@@ -25,7 +25,7 @@ class DiffusionPolicy(Policy):
         self.navigator = DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.config = config
 
-    def act(self,batch,t=None,encode_only=False):
+    def act(self,batch,t=None,all_pose=None, encode_only=False):
 
         
         rgb_features,depth_features = self.navigator.encode_visions(batch,self.config) # raw batch
@@ -42,9 +42,11 @@ class DiffusionPolicy(Policy):
         'gt_actions': None,
         'seq_timesteps': torch.tensor(t).to(batch['instruction'].device),
         'trajectories': None,
-        'proprioceptions': batch['proprioceptions'].to(batch['instruction'].device)
+        'proprioceptions': torch.tensor(all_pose).to(batch['instruction'].device)
         }
 
+        print(collected_data['proprioceptions'].shape)
+        assert 1==2
 
         actions = self.navigator(collected_data,run_inference = True)
 
