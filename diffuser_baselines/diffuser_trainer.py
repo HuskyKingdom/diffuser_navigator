@@ -107,8 +107,12 @@ def collate_fn(batch):
 
 
         # history RGB observations from 0 to t
-        history = torch.tensor(sample[0]['rgb_features'][:t+1]) 
-        history = history.view(history.size(0), -1)
+        if t == 0:
+            feature_dim = sample[0]['rgb_features'].shape[1] * sample[0]['rgb_features'].shape[2] * sample[0]['rgb_features'].shape[3]
+            history = torch.zeros((1, feature_dim))
+        else:
+            history = torch.tensor(sample[0]['rgb_features'][:t]) 
+            history = history.view(history.size(0), -1)
         collected_data['histories'].append(history)
         his_len = sample[0]['rgb_features'][:t].shape[0]
         collected_data['his_len'].append(his_len)
