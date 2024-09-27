@@ -441,8 +441,10 @@ class DiffusionNavigator(nn.Module):
         # final_features = self.self_attention(features.transpose(0,1), diff_ts=time_embeddings,
         #         query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
         
-        print(features.shape)
-        print(tokens[-3].unsqueeze(1).expand(-1,features.shape[1],-1).shape)
+        # fuse with history
+        history_feature = tokens[-3].unsqueeze(1).expand(-1,features.shape[1],-1)
+        fused_feature = torch.cat((features,history_feature),dim=-1)
+        print(fused_feature.shape)
         assert 1==2
 
         noise_prediction = self.noise_predictor(features)
