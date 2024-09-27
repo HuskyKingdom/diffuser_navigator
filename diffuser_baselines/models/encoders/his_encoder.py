@@ -14,9 +14,9 @@ class HistoryGRU(nn.Module):
         # lengths: (batch_size) 每个序列的实际长度
 
         packed_input = pack_padded_sequence(x, lengths.cpu(), batch_first=True, enforce_sorted=False)
-        packed_output, hidden = self.gru(packed_input)
+        packed_output, hiddens = self.gru(packed_input)
         # 解包序列
-        output, hiddens = pad_packed_sequence(packed_output, batch_first=True, total_length=x.size(1))
+        output, _ = pad_packed_sequence(packed_output, batch_first=True, total_length=x.size(1))
 
         # 根据序列长度获取每个序列的最后一个有效时间步的输出
         idx = (lengths - 1).unsqueeze(1).unsqueeze(2).expand(output.size(0), 1, output.size(2))
