@@ -64,6 +64,7 @@ def collate_fn(batch):
         'depth_features': [],         # 时间 t 的深度特征
         'gt_actions': [],             # 从 t 到 t+F 的专家动作
         'histories': [],            # 历史序列的长度（t）
+        'his_len': [],
         'trajectories':[],
         'proprioceptions': []  # agent pose t -1
     }
@@ -106,8 +107,10 @@ def collate_fn(batch):
 
 
         # history RGB observations from 0 to t
-        history = torch.tensor(sample[0]['rgb_features'][:t+1])  # shape (t+1, ...)
+        history = torch.tensor(sample[0]['rgb_features'][:t]) 
+        his_len = sample[0]['rgb_features'][:t].shape[0]
         collected_data['histories'].append(history)
+        collected_data['his_len'].append(his_len)
 
         collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
         collected_data['trajectories'].append(torch.tensor(gt_traj))
@@ -117,7 +120,6 @@ def collate_fn(batch):
         collected_data['proprioceptions'].append(sample[3][t])
 
     
-    print(f"his {collected_data['histories'].shape}")
 
     # Pad histories to the same length
     collected_data['histories'] = torch.nn.utils.rnn.pad_sequence(
@@ -134,8 +136,10 @@ def collate_fn(batch):
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
     collected_data['trajectories'] = torch.stack(collected_data['trajectories'], dim=0)
     collected_data['proprioceptions'] = torch.tensor(collected_data['proprioceptions'])
+    collected_data['his_len'] = torch.tensor(collected_data['his_len'])
 
     print(f"his {collected_data['histories'].shape}")
+    print(collected_data['his_len'])
     assert 1==2
 
 
