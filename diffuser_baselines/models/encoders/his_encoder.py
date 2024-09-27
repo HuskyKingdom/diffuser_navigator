@@ -16,12 +16,15 @@ class HistoryGRU(nn.Module):
         packed_input = pack_padded_sequence(x, lengths.cpu(), batch_first=True, enforce_sorted=False)
         packed_output, hidden = self.gru(packed_input)
         # 解包序列
-        output, _ = pad_packed_sequence(packed_output, batch_first=True, total_length=x.size(1))
+        output, hiddens = pad_packed_sequence(packed_output, batch_first=True, total_length=x.size(1))
 
         # 根据序列长度获取每个序列的最后一个有效时间步的输出
         idx = (lengths - 1).unsqueeze(1).unsqueeze(2).expand(output.size(0), 1, output.size(2))
         idx = idx.to(torch.long)
         last_output = output.gather(1, idx).squeeze(1)
+
+        print(hiddens.shape)
+        assert 1==2
 
         out = self.fc(last_output)
         return out
