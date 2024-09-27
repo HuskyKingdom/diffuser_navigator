@@ -10,6 +10,8 @@ from diffuser_baselines.models.encoders.instruction_encoder import InstructionEn
 from diffuser_baselines.models.common.position_encodings import RotaryPositionEncoding,SinusoidalPosEmb, PositionalEncoding
 
 from diffuser_baselines.models.encoders import resnet_encoders
+from diffuser_baselines.models.encoders.his_encoder import HistoryGRU
+
 from gym import spaces
 import numpy as np
 
@@ -64,7 +66,8 @@ class DiffusionPolicy(Policy):
         'rgb_features': rgb_features.to(observations['instruction'].device),
         'depth_features': depth_features.to(observations['instruction'].device),
         'gt_actions': observations['gt_actions'],
-        'seq_timesteps': observations['seq_timesteps'].to(observations['instruction'].device),
+        'histories': observations['histories'].to(observations['instruction'].device),           
+        'his_len': observations['his_len'].to(observations['instruction'].device),
         'trajectories': observations['trajectories'].to(observations['instruction'].device),
         'proprioceptions': observations['proprioceptions'].to(observations['instruction'].device)
         }
@@ -98,7 +101,7 @@ class DiffusionNavigator(nn.Module):
         self.total_correct = 0
 
 
-        # Vision Encoders
+        # Vision Encoders _____________________
         obs_space = spaces.Dict({
             "rgb": spaces.Box(low=0, high=255, shape=(224, 224, 3), dtype='float32'),
             "depth": spaces.Box(low=0, high=255, shape=(256, 256, 1), dtype='float32')
@@ -161,12 +164,7 @@ class DiffusionNavigator(nn.Module):
             nn.Linear(embedding_dim, embedding_dim)
         )
 
-        self.seq_leng_emb = nn.Sequential(
-            SinusoidalPosEmb(embedding_dim),
-            nn.Linear(embedding_dim, embedding_dim),
-            nn.ReLU(),
-            nn.Linear(embedding_dim, embedding_dim)
-        )
+        self.his_encoder = HistoryGRU(32768,2048,embedding_dim,num_layers)
 
         # for param in self.action_encoder.parameters(): # freeze action representations
         #     param.requires_grad = False
@@ -178,7 +176,7 @@ class DiffusionNavigator(nn.Module):
         # positional embeddings
         self.pe_layer = PositionalEncoding(embedding_dim,0.2)
 
-        # Attention layers
+        # Attention layers _____________________
         layer = ParallelAttention(
             num_layers=num_layers,
             d_model=embedding_dim, n_heads=num_attention_heads,
@@ -270,6 +268,11 @@ class DiffusionNavigator(nn.Module):
         seq_leng_features = self.seq_leng_emb(observations["seq_timesteps"])
         traj_tokens = self.traj_encoder(traj)
         pose_feature = self.pose_encoder(observations["proprioceptions"]) 
+
+        history_tokens = self.his_encoder(observations["histories"],observations["his_len"])
+
+        print(f"his {history_tokens.shape}")
+        assert 1==2
    
         tokens = (instr_tokens,rgb_tokens,depth_tokens,seq_leng_features,traj_tokens,pose_feature)
 

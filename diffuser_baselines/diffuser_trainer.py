@@ -108,7 +108,7 @@ def collate_fn(batch):
 
         # history RGB observations from 0 to t
         if t == 0:
-            feature_dim = sample[0]['rgb_features'].shape[1] * sample[0]['rgb_features'].shape[2] * sample[0]['rgb_features'].shape[3] # 
+            feature_dim = sample[0]['rgb_features'].shape[1] * sample[0]['rgb_features'].shape[2] * sample[0]['rgb_features'].shape[3] # 32768
             history = torch.zeros((1, feature_dim))
         else:
             history = torch.tensor(sample[0]['rgb_features'][:t]) 
@@ -142,12 +142,6 @@ def collate_fn(batch):
     collected_data['trajectories'] = torch.stack(collected_data['trajectories'], dim=0)
     collected_data['proprioceptions'] = torch.tensor(collected_data['proprioceptions'])
     collected_data['his_len'] = torch.tensor(collected_data['his_len'])
-
-    print(f"his {collected_data['histories'].shape}")
-    print(t_list)
-    print(collected_data['his_len'])
-    assert 1==2
-
 
     return collected_data
 
