@@ -132,7 +132,7 @@ def collate_fn(batch):
     )
 
 
-
+    print(collected_data['his_len'])
     # stack to batched tensors
     collected_data['proprioceptions'] = np.array(collected_data['proprioceptions'])
     collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
