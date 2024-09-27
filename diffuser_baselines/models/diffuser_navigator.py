@@ -210,9 +210,9 @@ class DiffusionNavigator(nn.Module):
         )
 
 
-        # predictors
+        # predictors (history emb + current emb)
         self.noise_predictor = nn.Sequential(
-            nn.Linear(embedding_dim, embedding_dim),
+            nn.Linear(embedding_dim*2, embedding_dim),
             nn.ReLU(),
             nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
         )
@@ -437,17 +437,19 @@ class DiffusionNavigator(nn.Module):
             value_pos=None,
             diff_ts=time_embeddings)[-1].transpose(0,1)
         
-        
-        # final_features = self.self_attention(features.transpose(0,1), diff_ts=time_embeddings,
-        #         query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
-        
+
         # fuse with history
         history_feature = tokens[-3].unsqueeze(1).expand(-1,features.shape[1],-1)
         fused_feature = torch.cat((features,history_feature),dim=-1)
-        print(fused_feature.shape)
+
+                
+        final_features = self.self_attention(fused_feature.transpose(0,1), diff_ts=time_embeddings,
+                query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
+        
+        print(final_features.shape)
         assert 1==2
 
-        noise_prediction = self.noise_predictor(features)
+        noise_prediction = self.noise_predictor(final_features)
 
         return noise_prediction
 
