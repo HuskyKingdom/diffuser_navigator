@@ -443,13 +443,13 @@ class DiffusionNavigator(nn.Module):
         fused_feature = torch.cat((features,history_feature),dim=-1)
 
                 
-        final_features = self.self_attention(fused_feature.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
+        # final_features = self.self_attention(fused_feature.transpose(0,1), diff_ts=time_embeddings,
+        #         query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
         
-        print(final_features.shape)
-        assert 1==2
+        # print(final_features.shape)
+        # assert 1==2
 
-        noise_prediction = self.noise_predictor(final_features)
+        noise_prediction = self.noise_predictor(fused_feature)
 
         return noise_prediction
 
