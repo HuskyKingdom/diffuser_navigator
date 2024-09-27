@@ -420,8 +420,6 @@ class DiffusionNavigator(nn.Module):
         # context features 
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
 
-        print(context_features.shape)
-
 
         # trajectory features
         traj_features, _ = self.traj_lang_attention[0](
@@ -444,8 +442,8 @@ class DiffusionNavigator(nn.Module):
         #         query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
         
         # fuse with history
-        history_feature = tokens[-3].unsqueeze(1)
-        fused_feature = torch.cat((features,history_feature),dim=1)
+        history_feature = tokens[-3].unsqueeze(1).expand(-1,features.shape[1],-1)
+        fused_feature = torch.cat((features,history_feature),dim=-1)
         print(fused_feature.shape)
         assert 1==2
 
