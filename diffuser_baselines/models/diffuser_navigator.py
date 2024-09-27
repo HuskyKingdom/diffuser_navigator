@@ -442,8 +442,8 @@ class DiffusionNavigator(nn.Module):
         #         query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
         
         # fuse with history
-        history_feature = tokens[-3].unsqueeze(1).expand(-1,features.shape[1],-1)
-        fused_feature = torch.cat((features,history_feature),dim=-1)
+        history_feature = tokens[-3].unsqueeze(1)
+        fused_feature = torch.cat((features,history_feature),dim=1)
         print(fused_feature.shape)
         assert 1==2
 
