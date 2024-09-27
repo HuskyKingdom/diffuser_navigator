@@ -139,6 +139,7 @@ def collate_fn(batch):
     collected_data['his_len'] = torch.tensor(collected_data['his_len'])
 
     print(f"his {collected_data['histories'].shape}")
+    print(t_list)
     print(collected_data['his_len'])
     assert 1==2
 
