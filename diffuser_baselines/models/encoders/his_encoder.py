@@ -15,6 +15,7 @@ class HistoryGRU(nn.Module):
 
         # 使用pack_padded_sequence处理不等长序列
         # enforce_sorted=False表示序列不需要排序
+        print(lengths)
         packed_input = pack_padded_sequence(x, lengths.cpu(), batch_first=True, enforce_sorted=False)
         packed_output, hidden = self.gru(packed_input)
         # 解包序列
