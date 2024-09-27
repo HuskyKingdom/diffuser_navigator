@@ -37,62 +37,7 @@ class ObservationsDict(dict):
             self[k] = v.pin_memory()
 
         return self
-
-
-# make input into batched tensors & -1 pad on the oracle actions
-# def collate_fn(batch):    
-#     """
-#     [
-#     {instruction:(len_seq,200); progress:(len_seq,1); rgb_features:(len_seq,2048,4,4); depth_features:(len_seq,128,4,4)},
-#     prev_actions:(len_seq),
-#     gt_actions:(len_seq),
-#     ]
-#     """
-
-#     # num of feature timestep prediction
-
     
-
-#     F = 2 # action_lenth - 1
-
-#     collected_data = {
-#         'instruction': [],
-#         'rgb_features': [],
-#         'depth_features': [],
-#         'gt_actions': []
-#     }
-    
-#     for sample in batch:
-#         len_seq = sample[0]['instruction'].shape[0]
-        
-#         # randomly sample timestep t in the range [0, len_seq-1]
-#         t = random.randint(0, len_seq - 1)
-        
-#         # Handle instruction, rgb_features, depth_features
-#         collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t]))
-#         collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t]))
-#         collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t]))
-        
-#         # Handle gt_actions by selecting from t to t+F, padding with STOP(0) if out of bounds
-#         if t + F < len_seq:
-#             gt_action_segment = sample[2][t:t+F+1]
-#         else:
-#             gt_action_segment = sample[2][t:] 
-#             padding_size = (t + F + 1) - len_seq 
-#             gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 0)]) # padding with STOP action if exceed
-
-#         collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
-    
-#     # Stack into batched tensors
-#     collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
-#     collected_data['rgb_features'] = torch.stack(collected_data['rgb_features'], dim=0)
-#     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
-#     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
-
-
-#     return collected_data
-    
-
 
 def collate_fn(batch):
     """
@@ -161,8 +106,8 @@ def collate_fn(batch):
 
 
         # history RGB observations from 0 to t
-        collected_data['histories'].append(torch.tensor(sample[0]['rgb_features'][:t+1]))
-
+        history = torch.tensor(sample[0]['rgb_features'][:t+1])  # shape (t+1, ...)
+        collected_data['histories'].append(history)
 
         collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
         collected_data['trajectories'].append(torch.tensor(gt_traj))
@@ -172,23 +117,13 @@ def collate_fn(batch):
         collected_data['proprioceptions'].append(sample[3][t])
 
         # histories
-        
-
-
-    # padding histories
-    max_history_len = max([hist.shape[0] for hist in collected_data['histories']])
-    padded_histories = []
-    for hist in collected_data['histories']:
-        pad_size = max_history_len - hist.shape[0]
-        if pad_size > 0:
-            padded_hist = torch.nn.functional.pad(hist, (0, 0, 0, 0, 0, pad_size))  # 在时间维度上进行填充
-        else:
-            padded_hist = hist
-        padded_histories.append(padded_hist)
     
-    collected_data['histories'] = torch.stack(padded_histories, dim=0)
 
-    
+    # Pad histories to the same length
+    collected_data['histories'] = torch.nn.utils.rnn.pad_sequence(
+        collected_data['histories'], batch_first=True
+    )
+
 
 
     # stack to batched tensors
@@ -200,9 +135,10 @@ def collate_fn(batch):
     collected_data['trajectories'] = torch.stack(collected_data['trajectories'], dim=0)
     collected_data['proprioceptions'] = torch.tensor(collected_data['proprioceptions'])
 
-    print(f"histories {collected_data['histories'].shape}")
+    print(f"his {collected_data['histories'].shape}")
     assert 1==2
-    
+
+
     return collected_data
 
 
