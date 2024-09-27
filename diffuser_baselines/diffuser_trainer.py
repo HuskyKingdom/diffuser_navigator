@@ -125,14 +125,14 @@ def collate_fn(batch):
         collected_data['proprioceptions'].append(sample[3][t])
 
     
-
+    print(t_list)
     # Pad histories to the same length
     collected_data['histories'] = torch.nn.utils.rnn.pad_sequence(
         collected_data['histories'], batch_first=True
     )
 
 
-    print(collected_data['his_len'])
+
     # stack to batched tensors
     collected_data['proprioceptions'] = np.array(collected_data['proprioceptions'])
     collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
