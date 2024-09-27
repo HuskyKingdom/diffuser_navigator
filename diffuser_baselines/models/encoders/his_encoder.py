@@ -10,21 +10,17 @@ class HistoryGRU(nn.Module):
         self.fc = nn.Linear(hidden_size, output_size)
         
     def forward(self, x, lengths):
-        # x: (batch_size, seq_len, input_size)
+         # x: (batch_size, seq_len, input_size)
         # lengths: (batch_size) 每个序列的实际长度
 
+        # 使用 pack_padded_sequence 处理不等长序列
         packed_input = pack_padded_sequence(x, lengths.cpu(), batch_first=True, enforce_sorted=False)
         packed_output, hiddens = self.gru(packed_input)
-        # 解包序列
-        output, _ = pad_packed_sequence(packed_output, batch_first=True, total_length=x.size(1))
+        # hiddens: (num_layers, batch_size, hidden_size)
 
-        # 根据序列长度获取每个序列的最后一个有效时间步的输出
-        idx = (lengths - 1).unsqueeze(1).unsqueeze(2).expand(output.size(0), 1, output.size(2))
-        idx = idx.to(torch.long)
-        last_output = output.gather(1, idx).squeeze(1)
+        # 提取最后一层的隐藏状态
+        last_hidden = hiddens[-1]  # (batch_size, hidden_size)
 
-        print(hiddens.shape)
-        assert 1==2
-
-        out = self.fc(last_output)
+        # 通过全连接层
+        out = self.fc(last_hidden)
         return out
