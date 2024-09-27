@@ -164,7 +164,7 @@ class DiffusionNavigator(nn.Module):
             nn.Linear(embedding_dim, embedding_dim)
         )
 
-        self.his_encoder = HistoryGRU(32768,2048,embedding_dim,num_layers)
+        self.his_encoder = HistoryGRU(32768,2048,embedding_dim,2)
 
         # for param in self.action_encoder.parameters(): # freeze action representations
         #     param.requires_grad = False
