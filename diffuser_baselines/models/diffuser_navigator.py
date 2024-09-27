@@ -442,6 +442,7 @@ class DiffusionNavigator(nn.Module):
         #         query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
         
         print(features.shape)
+        print(tokens[-3].shape)
         assert 1==2
 
         noise_prediction = self.noise_predictor(features)
