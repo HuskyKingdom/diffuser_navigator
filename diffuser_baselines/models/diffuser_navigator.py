@@ -420,6 +420,8 @@ class DiffusionNavigator(nn.Module):
         # context features 
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
 
+        print(context_features.shape)
+
 
         # trajectory features
         traj_features, _ = self.traj_lang_attention[0](
