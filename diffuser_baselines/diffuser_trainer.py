@@ -118,30 +118,29 @@ def collate_fn(batch):
         'rgb_features': [],           # 时间 t 的 RGB 特征
         'depth_features': [],         # 时间 t 的深度特征
         'gt_actions': [],             # 从 t 到 t+F 的专家动作
-        'seq_timesteps': [],            # 历史序列的长度（t）
+        'histories': [],            # 历史序列的长度（t）
         'trajectories':[],
         'proprioceptions': []  # agent pose t -1
     }
 
     t_list = []
 
-    # 首先确定每个样本的 t
+    # sampling t for each samples
     for sample in batch:
         len_seq = sample[0]['instruction'].shape[0]
         t = random.randint(0, len_seq - 1)
         t_list.append(t)
 
-
     for idx, sample in enumerate(batch):
         len_seq = sample[0]['instruction'].shape[0]
         t = t_list[idx]
 
-        # 时间 t 的当前观测
+        # observations at t
         collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t]))
         collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t]))
         collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t]))
 
-        # 从 t 到 t+F 的专家动作，必要时用 STOP(0) 填充
+        # actions from t to t+F
         if t + F < len_seq:
             gt_action_segment = sample[2][t:t+F+1]
         else:
@@ -149,7 +148,7 @@ def collate_fn(batch):
             padding_size = (t + F + 1) - len_seq
             gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 0)])  # 用 STOP 动作填充
 
-        # 从 t+1 到 t+1+F 的trajectory，必要时用 STOP(0) 填充
+        # trajectories from t+1 to t+1+F 
         if t+1 + F < len_seq:
             gt_traj = sample[3][t+1:t+1+F+1]
         else:
@@ -161,6 +160,9 @@ def collate_fn(batch):
             # gt_traj = np.concatenate([gt_traj, np.full((padding_size,4), 0.0)])  # 用 zero 动作填充
 
 
+        # history RGB observations from 0 to t
+        collected_data['histories'].append(torch.tensor(sample[0]['rgb_features'][:t+1]))
+
 
         collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
         collected_data['trajectories'].append(torch.tensor(gt_traj))
@@ -169,23 +171,37 @@ def collate_fn(batch):
         # pose at t
         collected_data['proprioceptions'].append(sample[3][t])
 
-        # 记录历史序列长度（t）
-        collected_data['seq_timesteps'].append(t)
+        # histories
+        
 
 
+    # padding histories
+    max_history_len = max([hist.shape[0] for hist in collected_data['histories']])
+    padded_histories = []
+    for hist in collected_data['histories']:
+        pad_size = max_history_len - hist.shape[0]
+        if pad_size > 0:
+            padded_hist = torch.nn.functional.pad(hist, (0, 0, 0, 0, 0, pad_size))  # 在时间维度上进行填充
+        else:
+            padded_hist = hist
+        padded_histories.append(padded_hist)
+    
+    collected_data['histories'] = torch.stack(padded_histories, dim=0)
+
+    
+
+
+    # stack to batched tensors
     collected_data['proprioceptions'] = np.array(collected_data['proprioceptions'])
-
-
-    # 将收集的数据堆叠成批量张量
     collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
     collected_data['rgb_features'] = torch.stack(collected_data['rgb_features'], dim=0)
     collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
     collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
-    collected_data['seq_timesteps'] = torch.tensor(collected_data['seq_timesteps'])
     collected_data['trajectories'] = torch.stack(collected_data['trajectories'], dim=0)
     collected_data['proprioceptions'] = torch.tensor(collected_data['proprioceptions'])
 
-    
+    print(f"histories {collected_data['histories'].shape}")
+    assert 1==2
     
     return collected_data
 
