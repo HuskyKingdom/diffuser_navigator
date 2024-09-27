@@ -264,8 +264,6 @@ class DiffusionNavigator(nn.Module):
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
         rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, 2048, em)
         depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, 128, em)
-        
-        seq_leng_features = self.seq_leng_emb(observations["seq_timesteps"])
         traj_tokens = self.traj_encoder(traj)
         pose_feature = self.pose_encoder(observations["proprioceptions"]) 
 
