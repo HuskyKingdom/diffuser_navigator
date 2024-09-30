@@ -146,7 +146,7 @@ class TorchVisionResNet(nn.Module):
             self.output_shape = (output_size,)
             self.fc = nn.Sequential(
                 nn.Flatten(),
-                nn.Linear(self.resnet_layer_size*16, output_size),
+                nn.Linear(self.resnet_layer_size, output_size),
                 nn.ReLU(),
             )
         else:

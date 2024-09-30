@@ -475,7 +475,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         break
 
                 rgb_features,depth_features = self.policy.act(
-                    batch,[1],encode_only = True
+                    batch,encode_only = True
                 ) # inference for getting features only
 
                 actions = batch[expert_uuid].long() # oracle actions only
