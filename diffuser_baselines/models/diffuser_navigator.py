@@ -263,7 +263,7 @@ class DiffusionNavigator(nn.Module):
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
 
         rgb_features =  observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1).permute(0,2,1)
-        depth_features =  observations["depth_features"].view(bs,observations["rgb_features"].size(1),-1).permute(0,2,1)
+        depth_features =  observations["depth_features"].view(bs,observations["depth_features"].size(1),-1).permute(0,2,1)
 
         print(rgb_features.shape)
         assert 1==2
