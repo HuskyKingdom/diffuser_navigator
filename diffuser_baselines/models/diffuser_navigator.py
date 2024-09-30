@@ -57,6 +57,7 @@ class DiffusionPolicy(Policy):
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
 
+        test = self.navigator.rgb_encoder.fc(observations['histories'])
         print(observations['histories'].shape)
         assert 1==2
 
