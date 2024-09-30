@@ -52,8 +52,8 @@ class InstructionEncoder(nn.Module):
 
         input = observations.long()
 
-        print(self.embedding_layer(input).shape)
-        print(self.embedding_layer(input))
+        print( self.map_layer(self.embedding_layer(input)).shape)
+        print( self.map_layer(self.embedding_layer(input)))
         assert 1==2
 
         out = self.map_layer(self.embedding_layer(input))
