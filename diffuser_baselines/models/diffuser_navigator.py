@@ -268,7 +268,7 @@ class DiffusionNavigator(nn.Module):
         pose_feature = self.pose_encoder(observations["proprioceptions"]) 
 
         if inference: # dont pack
-            input_x = observations["rgb_features"] # take current as input and reshape to (bs,len,d)
+            input_x = observations["rgb_features"][:, :2048, :, :].view(observations["rgb_features"].shape[0],-1).unsqueeze(1) # take current as input and reshape to (bs,len,d)
             print(input_x.shape)
             history_tokens, next_hiddens = self.his_encoder(input_x,hiddens,inference=True)
         else:
