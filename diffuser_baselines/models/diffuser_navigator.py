@@ -136,8 +136,8 @@ class DiffusionNavigator(nn.Module):
 
         # Other Encoders
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
-        self.rgb_linear = nn.Linear(16,embedding_dim)
-        self.depth_linear = nn.Linear(16,embedding_dim)
+        self.rgb_linear = nn.Linear(2112,embedding_dim)
+        self.depth_linear = nn.Linear(192,embedding_dim)
 
         # self.action_encoder = nn.Embedding(num_actions, embedding_dim)
         self.traj_encoder = nn.Sequential(
@@ -265,11 +265,13 @@ class DiffusionNavigator(nn.Module):
         rgb_features =  observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1).permute(0,2,1)
         depth_features =  observations["depth_features"].view(bs,observations["depth_features"].size(1),-1).permute(0,2,1)
 
+
+        rgb_tokens = self.rgb_linear(rgb_features)  # (bs, 16, em)
+        depth_tokens = self.depth_linear(depth_features) # (bs, 16, em)s
+
         print(rgb_features.shape,depth_features.shape)
         assert 1==2
 
-        rgb_tokens = self.rgb_linear(rgb_features)  # (bs, 2048, em)
-        depth_tokens = self.depth_linear(depth_features) # (bs, 128, em)s
 
 
 
