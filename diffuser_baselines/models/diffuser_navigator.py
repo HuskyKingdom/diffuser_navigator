@@ -32,9 +32,6 @@ class DiffusionPolicy(Policy):
         
         rgb_features,depth_features = self.navigator.encode_visions(batch,self.config) # raw batch
 
-        print(rgb_features.shape)
-        assert 1==2
-        
         if encode_only:
             return rgb_features,depth_features
 

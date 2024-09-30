@@ -364,28 +364,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
         ensure_unique_episodes = beta == 1.0
 
-        def hook_builder(tgt_tensor):
-            def hook(m, i, o):
-                tgt_tensor.set_(o.cpu())
-
-            return hook
-
-        rgb_features = None
-        rgb_hook = None
-        if not self.config.MODEL.RGB_ENCODER.trainable:
-            rgb_features = torch.zeros((1,), device="cpu")
-            rgb_hook = self.policy.navigator.rgb_encoder.cnn.register_forward_hook(
-                hook_builder(rgb_features)
-            )
-
-        depth_features = None
-        depth_hook = None
-        if not self.config.MODEL.DEPTH_ENCODER.trainable:
-            depth_features = torch.zeros((1,), device="cpu")
-            depth_hook = self.policy.navigator.depth_encoder.visual_encoder.register_forward_hook(
-                hook_builder(depth_features)
-            )
-
         collected_eps = 0
         ep_ids_collected = None
         if ensure_unique_episodes:
@@ -535,10 +513,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
         envs.close()
         envs = None
 
-        if rgb_hook is not None:
-            rgb_hook.remove()
-        if depth_hook is not None:
-            depth_hook.remove()
 
     def train(self) -> None:
         """Main method for training DAgger."""
