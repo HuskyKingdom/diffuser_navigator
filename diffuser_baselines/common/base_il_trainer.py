@@ -304,9 +304,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         start_time = time.time()
 
         action_candidates = [[]]
-        cur_seq_len = [0 for i in range(envs.num_envs)] # modif
-        histories = [[] for i in range(envs.num_envs)]
-        hiddens = [None for i in range(envs.num_envs)]
+        hiddens = None
 
 
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
@@ -316,9 +314,6 @@ class BaseVLNCETrainer(BaseILTrainer):
             for i in range(envs.num_envs):
                 pos = envs.call_at(i, "get_state", {"observations": {}})
                 all_pose.append(pos)
-
-                histories[i].append(batch[i]['rgb'])
-                assert 1==2
             
             
             current_episodes = envs.current_episodes()
@@ -326,7 +321,7 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                 if len(action_candidates[0]) == 0: 
                     with torch.no_grad():
-                        out = self.policy.act(batch,cur_seq_len,all_pose)
+                        out,hiddens = self.policy.act(batch,all_pose,hiddens)
                         action_candidates = out.cpu().tolist()
                 
                 # pop actions
@@ -337,7 +332,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             else:
 
                 with torch.no_grad():
-                    out = self.policy.act(batch,cur_seq_len,all_pose)
+                    out,hiddens = self.policy.act(batch,all_pose,hiddens)
                     # action_candidates = out.cpu().tolist()
                     # actions = torch.tensor(out).to(self.device)
                     actions = out
@@ -346,7 +341,6 @@ class BaseVLNCETrainer(BaseILTrainer):
                 
 
             outputs = envs.step([a[0].item() for a in actions])
-            cur_seq_len = [x+1 for x in cur_seq_len]
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
 
             # import cv2
@@ -382,7 +376,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 stats_episodes[ep_id] = infos[i]
                 observations[i] = envs.reset_at(i)[0]
                 # reset
-                cur_seq_len[i] = 0
+                hiddens = None
                 action_candidates = [[]]
 
                 if config.use_pbar:

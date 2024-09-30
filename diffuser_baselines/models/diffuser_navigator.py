@@ -27,7 +27,7 @@ class DiffusionPolicy(Policy):
         self.navigator = DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.config = config
 
-    def act(self,batch,t=None,all_pose=None, histories = None, encode_only=False):
+    def act(self,batch, all_pose=None, hiddens = None, encode_only=False):
 
         
         rgb_features,depth_features = self.navigator.encode_visions(batch,self.config) # raw batch
@@ -41,17 +41,14 @@ class DiffusionPolicy(Policy):
         'instruction': batch['instruction'],
         'rgb_features': rgb_features.to(batch['instruction'].device),
         'depth_features': depth_features.to(batch['instruction'].device),
-        'gt_actions': None,
-        'histories': None,   
-        'trajectories': None,
         'proprioceptions': torch.tensor(all_pose,dtype=torch.float32).to(batch['instruction'].device)
         }
 
 
-        actions = self.navigator(collected_data,run_inference = True)
+        actions, next_hidden = self.navigator(collected_data,run_inference = True,hiddens=hiddens)
 
         print(f"final actions {actions}")
-        return actions
+        return actions, next_hidden
         
     
 
@@ -254,9 +251,12 @@ class DiffusionNavigator(nn.Module):
         return tensor * (max_val - min_val) + min_val
 
 
+    def encode_trajectories(self,traj):
+        traj_tokens = self.traj_encoder(traj)
+        return traj_tokens
 
 
-    def tokenlize_input(self,observations,traj):
+    def tokenlize_input(self,observations,hiddens,inference=False):
 
         bs = observations["instruction"].size(0)
         
@@ -264,18 +264,21 @@ class DiffusionNavigator(nn.Module):
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
         rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, 2048, em)
         depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, 128, em)
-        traj_tokens = self.traj_encoder(traj)
+        traj_tokens = None # will be encoded later
         pose_feature = self.pose_encoder(observations["proprioceptions"]) 
 
-        history_tokens = self.his_encoder(observations["histories"],observations["his_len"])
+        if inference: # dont pack
+            history_tokens, next_hiddens = self.his_encoder(observations["histories"],hiddens,inference=True)
+        else:
+            history_tokens, next_hiddens = self.his_encoder(observations["histories"],hiddens,observations["his_len"],inference = False)
 
    
         tokens = (instr_tokens,rgb_tokens,depth_tokens,history_tokens,traj_tokens,pose_feature)
 
-        return tokens
+        return tokens, next_hiddens
 
 
-    def forward(self, observations, run_inference=False):
+    def forward(self, observations, run_inference=False,hiddens=None):
 
         
         observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions']).squeeze(0) # normalize input alone dimensions
@@ -287,7 +290,7 @@ class DiffusionNavigator(nn.Module):
         # inference _____
         
         if run_inference:
-            return self.inference_actions(observations,pad_mask)
+            return self.inference_actions(observations,pad_mask,hiddens)
 
         # train _____
         observations["trajectories"] = self.normalize_dim(observations["trajectories"]) # normalize input alone dimensions
@@ -496,7 +499,7 @@ class DiffusionNavigator(nn.Module):
         return actions
 
 
-    def inference_actions(self,observations,mask): # pred_noises (B,N,D)
+    def inference_actions(self,observations,mask,hiddens): # pred_noises (B,N,D)
 
         self.noise_scheduler.set_timesteps(self.n_steps)
 
@@ -511,11 +514,16 @@ class DiffusionNavigator(nn.Module):
         # Iterative denoising
         timesteps = self.noise_scheduler.timesteps
 
+        # tokenlize input
+        with torch.no_grad():
+            tokens, next_hiddens = self.tokenlize_input(observations,hiddens,True) # dont pack
+
         for t in timesteps:
             
             # noise pred.
             with torch.no_grad():
-                tokens = self.tokenlize_input(observations,intermidiate_noise)
+                # encode traj and predict noise
+                tokens[4] = self.encode_trajectories(intermidiate_noise) # dont pack
                 pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),mask)
 
             step_out = self.noise_scheduler.step(
@@ -532,7 +540,7 @@ class DiffusionNavigator(nn.Module):
         denormed_denoised = self.denormalize_dim(denoised)
         actions = self.traj_to_action(denomed_pose, denormed_denoised)
 
-        return actions
+        return actions,next_hiddens
 
 
     def encode_visions(self,batch,config):
