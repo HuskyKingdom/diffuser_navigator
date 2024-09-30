@@ -56,8 +56,7 @@ class DiffusionPolicy(Policy):
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
 
-        print( observations['histories'].shape)
-        assert 1==2
+
 
         # format batch data
         collected_data = {
@@ -115,7 +114,7 @@ class DiffusionNavigator(nn.Module):
             checkpoint=config.MODEL.DEPTH_ENCODER.ddppo_checkpoint,
             backbone=config.MODEL.DEPTH_ENCODER.backbone,
             trainable=config.MODEL.DEPTH_ENCODER.trainable,
-            spatial_output=False,
+            spatial_output=True,
         )
 
         # init the RGB visual encoder
@@ -129,7 +128,7 @@ class DiffusionNavigator(nn.Module):
             config.MODEL.RGB_ENCODER.output_size,
             normalize_visual_inputs=config.MODEL.normalize_rgb,
             trainable=config.MODEL.RGB_ENCODER.trainable,
-            spatial_output=False,
+            spatial_output=True,
         )
 
         self.depth_encoder.to(next(self.parameters()).device).train()
@@ -265,10 +264,18 @@ class DiffusionNavigator(nn.Module):
         # tokenlize
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
 
+        rgb_features =  observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1).permute(0,1,3,2)
+        depth_features =  observations["depth_features"].view(bs,observations["rgb_features"].size(1),-1).permute(0,1,3,2)
+
+        print(rgb_features.shape)
+        assert 1==2
+
+        rgb_tokens = self.rgb_linear(rgb_features)  # (bs, 2048, em)
+        depth_tokens = self.depth_linear(depth_features) # (bs, 128, em)s
 
 
-        rgb_tokens = self.rgb_linear(observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1))  # (bs, 2048, em)
-        depth_tokens = self.depth_linear(observations["depth_features"].view(bs,observations["depth_features"].size(1),-1)) # (bs, 128, em)
+
+
         traj_tokens = None # will be encoded later
         pose_feature = self.pose_encoder(observations["proprioceptions"]) 
 
@@ -316,7 +323,7 @@ class DiffusionNavigator(nn.Module):
         )
 
         # tokenlize
-        tokens = self.tokenlize_input(observations,noised_traj)
+        tokens = self.tokenlize_input(observations,noised_traj,hiddens)
 
 
         # predict noise
