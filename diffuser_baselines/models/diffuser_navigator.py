@@ -53,7 +53,7 @@ class DiffusionPolicy(Policy):
 
     def build_loss(self,observations):
 
-
+        print(observations["rgb_features"].shape)
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
 
 
@@ -557,8 +557,6 @@ class DiffusionNavigator(nn.Module):
 
 
     def encode_visions(self,batch,config):
-
-        print(batch["rgb_features"].shape)
 
         depth_embedding = self.depth_encoder(batch)
         rgb_embedding = self.rgb_encoder(batch)
