@@ -56,7 +56,6 @@ class DiffusionPolicy(Policy):
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
 
 
-
         # format batch data
         collected_data = {
         'instruction': observations['instruction'],
