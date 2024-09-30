@@ -376,7 +376,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 stats_episodes[ep_id] = infos[i]
                 observations[i] = envs.reset_at(i)[0]
                 # reset
-                hiddens = None
+                hiddens = None # modif
                 action_candidates = [[]]
 
                 if config.use_pbar:
