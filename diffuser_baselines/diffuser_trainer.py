@@ -474,7 +474,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     if envs.num_envs == 0:
                         break
 
-                actions = self.policy.act(
+                rgb_features,depth_features = self.policy.act(
                     batch,[1],encode_only = True
                 ) # inference for getting features only
 

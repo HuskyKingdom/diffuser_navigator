@@ -32,9 +32,11 @@ class DiffusionPolicy(Policy):
         
         rgb_features,depth_features = self.navigator.encode_visions(batch,self.config) # raw batch
 
-
+        print(rgb_features.shape)
+        assert 1==2
+        
         if encode_only:
-            return None
+            return rgb_features,depth_features
 
         # format batch data
         collected_data = {
@@ -66,7 +68,7 @@ class DiffusionPolicy(Policy):
         'rgb_features': rgb_features.to(observations['instruction'].device),
         'depth_features': depth_features.to(observations['instruction'].device),
         'gt_actions': observations['gt_actions'],
-        'histories': observations['histories'].to(observations['instruction'].device),           
+        'histories': observations['histories'].to(observations['instruction'].device),     # (bs,max_seq_len,32768)      
         'his_len': observations['his_len'].to(observations['instruction'].device),
         'trajectories': observations['trajectories'].to(observations['instruction'].device),
         'proprioceptions': observations['proprioceptions'].to(observations['instruction'].device)
