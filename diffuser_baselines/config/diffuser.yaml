@@ -18,7 +18,7 @@ IL:
   ckpt_to_load: data/checkpoints/diffuser/ckpt.600.pth
   load_from_ckpt: False # for testing overfitting only
   epochs: 2000
-  batch_size: 32
+  batch_size: 48
   
 
   RECOLLECT_TRAINER:
@@ -37,8 +37,8 @@ IL:
 DIFFUSER:
   embedding_dim: 64
   num_attention_heads: 2
-  num_layers: 4
-  diffusion_timesteps: 1000
+  num_layers: 2
+  diffusion_timesteps: 100
   logging_file: data/loggings/train.log
   LR: 1.0e-5
   traj_length: 3

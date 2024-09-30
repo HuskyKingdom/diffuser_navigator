@@ -202,7 +202,7 @@ class DiffusionNavigator(nn.Module):
         # Diffusion schedulers
         self.noise_scheduler = DDPMScheduler(
             num_train_timesteps=diffusion_timesteps,
-            beta_schedule="scaled_linear",
+            beta_schedule="squaredcos_cap_v2",
         )
 
 
@@ -281,9 +281,6 @@ class DiffusionNavigator(nn.Module):
             history_tokens, next_hiddens = self.his_encoder(observations["histories"],hiddens,observations["his_len"],inference = False)
 
 
-        print(observations["histories"].shape,history_tokens.shape)
-        assert 1==2
-
    
         tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,traj_tokens,pose_feature]
 
@@ -323,7 +320,8 @@ class DiffusionNavigator(nn.Module):
 
         # tokenlize
         tokens = self.tokenlize_input(observations,hiddens)
-
+        # encode traj
+        tokens[4] = self.encode_trajectories(noised_traj)
 
         # predict noise
         pred = self.predict_noise(tokens,noising_timesteps,pad_mask)
@@ -402,11 +400,6 @@ class DiffusionNavigator(nn.Module):
         return feats
     
 
-    def encode_actions(self,hone_hot_actions):
-        return self.action_encoder(hone_hot_actions)
-
-
-
     def predict_noise(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,history_tokens,traj,pose_feature)
 
         time_embeddings = self.time_emb(timesteps.float())
@@ -447,7 +440,7 @@ class DiffusionNavigator(nn.Module):
             value=context_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,
-            diff_ts=time_embeddings)[-1].transpose(0,1)
+            diff_ts=time_embeddings)[-1].transpose(0,1) # (bs,3,64)
         
 
         # fuse with history
