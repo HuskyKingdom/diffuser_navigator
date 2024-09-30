@@ -269,7 +269,7 @@ class DiffusionNavigator(nn.Module):
         rgb_tokens = self.rgb_linear(rgb_features)  # (bs, 16, em)
         depth_tokens = self.depth_linear(depth_features) # (bs, 16, em)s
 
-        print(rgb_features.shape,depth_features.shape)
+        print(rgb_tokens.shape,depth_tokens.shape)
         assert 1==2
 
 
