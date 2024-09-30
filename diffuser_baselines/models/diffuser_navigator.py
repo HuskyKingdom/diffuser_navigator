@@ -289,8 +289,7 @@ class DiffusionNavigator(nn.Module):
 
     def forward(self, observations, run_inference=False,hiddens=None):
 
-        print(self.normalize_dim(observations['proprioceptions']).shape)
-        assert 1==2
+
         observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions']).squeeze(0) # normalize input alone dimensions
 
 
