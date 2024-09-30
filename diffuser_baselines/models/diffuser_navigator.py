@@ -273,7 +273,7 @@ class DiffusionNavigator(nn.Module):
         traj_tokens = None # will be encoded later
         pose_feature = self.pose_encoder(observations["proprioceptions"]) 
 
-        print(observations["histories"].shape,history_tokens.shape)
+        print(observations["histories"].shape)
         print(hiddens.shape)
         assert 1==2
 
