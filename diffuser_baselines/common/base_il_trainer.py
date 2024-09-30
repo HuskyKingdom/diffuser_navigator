@@ -305,15 +305,21 @@ class BaseVLNCETrainer(BaseILTrainer):
 
         action_candidates = [[]]
         cur_seq_len = [0 for i in range(envs.num_envs)] # modif
+        histories = [[] for i in range(envs.num_envs)]
+        hiddens = [None for i in range(envs.num_envs)]
 
 
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
             
-            # retrive pose
+            # retrive pose & append history rgb
             all_pose = []
             for i in range(envs.num_envs):
                 pos = envs.call_at(i, "get_state", {"observations": {}})
                 all_pose.append(pos)
+
+                histories[i].append(batch[i]['rgb'])
+                assert 1==2
+            
             
             current_episodes = envs.current_episodes()
             if config.EVAL.ACTION_POP: # forward every F timesteps
