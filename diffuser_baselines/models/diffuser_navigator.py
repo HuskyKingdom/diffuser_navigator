@@ -266,14 +266,8 @@ class DiffusionNavigator(nn.Module):
         depth_features =  observations["depth_features"].view(bs,observations["depth_features"].size(1),-1).permute(0,2,1)
 
 
-        rgb_tokens = self.rgb_linear(rgb_features)  # (bs, 16, em)
-        depth_tokens = self.depth_linear(depth_features) # (bs, 16, em)s
-
-        print(rgb_tokens.shape,depth_tokens.shape)
-        assert 1==2
-
-
-
+        rgb_tokens = self.rgb_linear(rgb_features)  # (bs, 16, 2112) -> (bs, 16, em)
+        depth_tokens = self.depth_linear(depth_features) # (bs, 16, 192) -> (bs, 16, em)
 
 
         traj_tokens = None # will be encoded later
@@ -284,6 +278,10 @@ class DiffusionNavigator(nn.Module):
             history_tokens, next_hiddens = self.his_encoder(input_x,hiddens,inference=True)
         else:
             history_tokens, next_hiddens = self.his_encoder(observations["histories"],hiddens,observations["his_len"],inference = False)
+
+
+        print(observations["histories"].shape,history_tokens.shape)
+        assert 1==2
 
    
         tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,traj_tokens,pose_feature]
