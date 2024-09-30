@@ -265,7 +265,7 @@ class DiffusionNavigator(nn.Module):
         rgb_features =  observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1).permute(0,2,1)
         depth_features =  observations["depth_features"].view(bs,observations["depth_features"].size(1),-1).permute(0,2,1)
 
-        print(rgb_features.shape)
+        print(rgb_features.shape,depth_features.shape)
         assert 1==2
 
         rgb_tokens = self.rgb_linear(rgb_features)  # (bs, 2048, em)
