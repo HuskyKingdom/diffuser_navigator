@@ -273,9 +273,6 @@ class DiffusionNavigator(nn.Module):
         traj_tokens = None # will be encoded later
         pose_feature = self.pose_encoder(observations["proprioceptions"]) 
 
-        print(hiddens.shape)
-        assert 1==2
-
 
         if inference: # dont pack
             input_x = observations["rgb_features"][:, :2048, :, :].view(observations["rgb_features"].shape[0],-1).unsqueeze(1) # take current as input and reshape to (bs,len,d)
@@ -325,7 +322,7 @@ class DiffusionNavigator(nn.Module):
         )
 
         # tokenlize
-        tokens = self.tokenlize_input(observations,noised_traj,hiddens)
+        tokens = self.tokenlize_input(observations,hiddens)
 
 
         # predict noise
