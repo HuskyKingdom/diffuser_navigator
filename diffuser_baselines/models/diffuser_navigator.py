@@ -319,7 +319,7 @@ class DiffusionNavigator(nn.Module):
         )
 
         # tokenlize
-        tokens = self.tokenlize_input(observations,hiddens)
+        tokens, _ = self.tokenlize_input(observations,hiddens)
         # encode traj
         tokens[4] = self.encode_trajectories(noised_traj)
 
