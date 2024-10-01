@@ -355,19 +355,18 @@ class DiffusionNavigator(nn.Module):
         intermidiate_noise = noise
 
         with torch.no_grad():
-            tokens, next_hiddens = self.tokenlize_input(observations,hiddens) # dont pack
+            tokens, _ = self.tokenlize_input(observations,hiddens) # dont pack
         
         
 
         for t in denoise_steps:
             # noise pred.
             with torch.no_grad():
-                print(type(tokens))
 
                 # encode traj and predict noise
                 tokens[4] = self.encode_trajectories(intermidiate_noise) # dont pack
 
-                tokens = (tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0))
+                tokens = [tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0)]
                 pad_mask = pad_mask[0].unsqueeze(0)
 
                 pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
