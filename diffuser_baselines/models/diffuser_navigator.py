@@ -340,6 +340,7 @@ class DiffusionNavigator(nn.Module):
         
         # compute loss
         mse_loss = F.mse_loss(pred_noise, noise)
+        print(pred_termination,target_terminations)
         bin_crossentro_loss = F.binary_cross_entropy(pred_termination, target_terminations)
 
         # loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
