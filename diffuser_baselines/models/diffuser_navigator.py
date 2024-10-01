@@ -215,9 +215,9 @@ class DiffusionNavigator(nn.Module):
             nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
         )
         self.termination_predictor = nn.Sequential(
-            nn.Linear(embedding_dim, embedding_dim),
+            nn.Linear(embedding_dim, embedding_dim), # (bs,3,64)
             nn.ReLU(),
-            nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space),
+            nn.Linear(embedding_dim, 1-), # (bs,3,1)
             nn.Sigmoid()
         )
 
