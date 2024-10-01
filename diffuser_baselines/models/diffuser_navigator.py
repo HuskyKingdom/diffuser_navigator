@@ -340,7 +340,6 @@ class DiffusionNavigator(nn.Module):
         
         # compute loss
         mse_loss = F.mse_loss(pred_noise, noise)
-        print(pred_termination.view(pred_termination.shape[0],-1).shape,target_terminations.shape)
         bin_crossentro_loss = F.binary_cross_entropy(pred_termination, target_terminations)
 
         # loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
@@ -481,7 +480,7 @@ class DiffusionNavigator(nn.Module):
 
         noise_prediction = self.noise_predictor(fused_feature) # (bs,seq_len,traj_space)
 
-        termination_prediction = self.termination_predictor(termination_feature) # (bs,seq_len,1)
+        termination_prediction = self.termination_predictor(termination_feature).view(termination_feature.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
 
         return noise_prediction,termination_prediction
 
