@@ -337,7 +337,7 @@ class DiffusionNavigator(nn.Module):
 
         # compute loss
 
-        target_terminations = observations["gt_actions"]
+        target_terminations = torch.where(observations["gt_actions"] == 0, torch.tensor(1, device=observations["gt_actions"].device), torch.tensor(0, device=observations["gt_actions"].device))
 
         print(target_terminations,target_terminations.shape)
         assert 1==2
