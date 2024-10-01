@@ -335,17 +335,16 @@ class DiffusionNavigator(nn.Module):
         pred_noise, pred_termination = self.predict_noise(tokens,noising_timesteps,pad_mask)
 
 
-        # compute loss
-        print(observations["gt_actions"])
+        
         target_terminations = torch.where(observations["gt_actions"] == 0, torch.tensor(1, device=observations["gt_actions"].device), torch.tensor(0, device=observations["gt_actions"].device))
-
-        print(target_terminations,target_terminations.shape)
-        assert 1==2
-
+        
+        # compute loss
         mse_loss = F.mse_loss(pred_noise, noise)
+        print(pred_termination.shape,target_terminations.shape)
+        bin_crossentro_loss = F.binary_cross_entropy(pred_termination, target_terminations)
 
         # loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
-        loss = mse_loss
+        loss = mse_loss + bin_crossentro_loss
 
 
         # # # evaluations ____
