@@ -214,7 +214,12 @@ class DiffusionNavigator(nn.Module):
             nn.ReLU(),
             nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
         )
-        self.termination_predictor = nn.Sigmoid()
+        self.termination_predictor = nn.Sequential(
+            nn.Linear(embedding_dim, embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space),
+            nn.Sigmoid()
+        )
 
         self.n_steps = diffusion_timesteps
     
