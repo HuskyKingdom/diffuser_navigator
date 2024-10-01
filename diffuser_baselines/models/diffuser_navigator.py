@@ -355,7 +355,7 @@ class DiffusionNavigator(nn.Module):
         intermidiate_noise = noise
 
         with torch.no_grad():
-            tokens, next_hiddens = self.tokenlize_input(observations,hiddens,True) # dont pack
+            tokens, next_hiddens = self.tokenlize_input(observations,hiddens) # dont pack
     
         for t in denoise_steps:
             # noise pred.
