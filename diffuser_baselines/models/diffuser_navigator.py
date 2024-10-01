@@ -198,7 +198,6 @@ class DiffusionNavigator(nn.Module):
         self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.cross_attention_sec = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.self_attention = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
-
         self.term_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
         # Diffusion schedulers
@@ -209,6 +208,7 @@ class DiffusionNavigator(nn.Module):
 
 
         # predictors (history emb + current emb)
+        self.term_projctor = nn.Linear(embedding_dim*2, embedding_dim)
         self.noise_predictor = nn.Sequential(
             nn.Linear(embedding_dim*2, embedding_dim),
             nn.ReLU(),
@@ -457,8 +457,9 @@ class DiffusionNavigator(nn.Module):
         history_feature = tokens[-3].unsqueeze(1).expand(-1,features.shape[1],-1)
         fused_feature = torch.cat((features,history_feature),dim=-1) # (bs,seq_len,d*2)
 
-        # predicting termination
-        termination_feature  = self.term_self_atten(fused_feature.transpose(0,1), diff_ts=time_embeddings,
+        # predicting terminationx
+        termination_feature = self.term_projctor(fused_feature)
+        termination_feature  = self.term_self_atten(termination_feature.transpose(0,1), diff_ts=time_embeddings,
                                                                     query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
 
                 
