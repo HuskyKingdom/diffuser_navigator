@@ -357,10 +357,12 @@ class DiffusionNavigator(nn.Module):
         with torch.no_grad():
             tokens, next_hiddens = self.tokenlize_input(observations,hiddens) # dont pack
         
-        print(type(tokens))
+        
+
         for t in denoise_steps:
             # noise pred.
             with torch.no_grad():
+                print(type(tokens))
 
                 # encode traj and predict noise
                 tokens[4] = self.encode_trajectories(intermidiate_noise) # dont pack
