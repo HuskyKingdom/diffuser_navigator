@@ -472,6 +472,7 @@ class DiffusionNavigator(nn.Module):
 
         termination_prediction = self.termination_predictor(termination_feature)
 
+
         print(termination_prediction)
         assert 1==2
 
