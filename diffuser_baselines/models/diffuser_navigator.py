@@ -332,11 +332,17 @@ class DiffusionNavigator(nn.Module):
         tokens[4] = self.encode_trajectories(noised_traj)
 
         # predict noise
-        pred = self.predict_noise(tokens,noising_timesteps,pad_mask)
+        pred_noise, pred_termination = self.predict_noise(tokens,noising_timesteps,pad_mask)
+
 
         # compute loss
-        # kl_loss = F.kl_div(pred.log_softmax(dim=-1), noise.softmax(dim=-1), reduction='batchmean')
-        mse_loss = F.mse_loss(pred, noise)
+
+        target_terminations = observations["gt_actions"]
+
+        print(target_terminations,target_terminations.shape)
+        assert 1==2
+
+        mse_loss = F.mse_loss(pred_noise, noise)
 
         # loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
         loss = mse_loss
@@ -474,15 +480,11 @@ class DiffusionNavigator(nn.Module):
         # print(final_features.shape)
         # assert 1==2
 
-        noise_prediction = self.noise_predictor(fused_feature)
+        noise_prediction = self.noise_predictor(fused_feature) # (bs,seq_len,traj_space)
 
-        termination_prediction = self.termination_predictor(termination_feature)
+        termination_prediction = self.termination_predictor(termination_feature) # (bs,seq_len,1)
 
-
-        print(termination_prediction)
-        assert 1==2
-
-        return noise_prediction
+        return noise_prediction,termination_prediction
 
 
     def calculate_actions(self, tensor, pose_threshold, head_threshold):
