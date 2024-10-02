@@ -509,7 +509,7 @@ class DiffusionNavigator(nn.Module):
         return actions
 
 
-    def traj_to_action(self,pose,traj):
+    def traj_to_action(self,pose,traj,terminations):
 
         # param. pose in shape (B,4); traj in shape (B,L,4)
         # return. actions in shape (B,L)
@@ -520,6 +520,8 @@ class DiffusionNavigator(nn.Module):
         full_traj = torch.cat((pose,traj),1)
 
         actions = self.calculate_actions(full_traj, head_threshold)
+        sampled_mask = torch.bernoulli(1 - terminations)  # prob. of not terminates
+        actions[sampled_mask == 0] = 0 
 
         return actions
 
@@ -563,12 +565,8 @@ class DiffusionNavigator(nn.Module):
         # return action index
         denomed_pose = self.denormalize_dim(observations['proprioceptions'])
         denormed_denoised = self.denormalize_dim(denoised)
-        actions = self.traj_to_action(denomed_pose, denormed_denoised)
+        actions = self.traj_to_action(denomed_pose, denormed_denoised,pred_terminations)
 
-        # apply termination predictions
-        actions[pred_terminations == 0] = 0
-
-        print(pred_terminations)
 
         return actions,next_hiddens
 
