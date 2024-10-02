@@ -526,10 +526,10 @@ class DiffusionNavigator(nn.Module):
         sampled_mask[high_prob_mask] = torch.bernoulli(1 - terminations[high_prob_mask]) # prob. of not terminates
 
         # sampled_mask = torch.bernoulli(1 - terminations)  # prob. of not terminates
-        
+
         actions[sampled_mask == 0] = 0 
 
-        print(f"final actions {actions} | t {terminations}")
+        
         return actions
 
 

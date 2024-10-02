@@ -339,6 +339,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                     # actions = torch.tensor(out).to(self.device)
                     actions = out
 
+            print(f"final actions {actions}")
             outputs = envs.step([a[0].item() for a in actions])
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
 
