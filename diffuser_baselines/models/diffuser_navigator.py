@@ -568,6 +568,8 @@ class DiffusionNavigator(nn.Module):
         # apply termination predictions
         actions[pred_terminations == 0] = 0
 
+        print(pred_terminations)
+
         return actions,next_hiddens
 
 
