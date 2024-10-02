@@ -172,14 +172,25 @@ class DiffusionNavigator(nn.Module):
         self.pe_layer = PositionalEncoding(embedding_dim,0.2)
 
         # Attention layers _____________________
-        layer = ParallelAttention(
+        vl_attd_layer = ParallelAttention(
             num_layers=num_layers,
             d_model=embedding_dim, n_heads=num_attention_heads,
             self_attention1=False, self_attention2=False,
             cross_attention1=True, cross_attention2=False
         )
         self.vl_attention = nn.ModuleList([
-            layer
+            vl_attd_layer
+            for _ in range(1)
+            for _ in range(1)
+        ])
+        rgb_depth_attd_layer = ParallelAttention(
+            num_layers=num_layers,
+            d_model=embedding_dim, n_heads=num_attention_heads,
+            self_attention1=True, self_attention2=True,
+            cross_attention1=True, cross_attention2=True
+        )
+        self.rd_attention = nn.ModuleList([
+            rgb_depth_attd_layer
             for _ in range(1)
             for _ in range(1)
         ])
@@ -194,7 +205,6 @@ class DiffusionNavigator(nn.Module):
         ])
 
         self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.cross_attention_sec = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.self_attention = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.term_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
@@ -415,6 +425,15 @@ class DiffusionNavigator(nn.Module):
         )
         return feats
     
+    def rgb_depth_attention(self, feats, instr_feats,seq1_pad=None,seq2_pad=None):
+        feats, _ = self.rd_attention[0](
+            seq1=feats, seq1_key_padding_mask=seq1_pad,
+            seq2=instr_feats, seq2_key_padding_mask=seq2_pad,
+            seq1_pos=None, seq2_pos=None,
+            seq1_sem_pos=None, seq2_sem_pos=None
+        )
+        return feats
+    
 
     def predict_noise(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,history_tokens,traj,pose_feature)
 
@@ -434,27 +453,23 @@ class DiffusionNavigator(nn.Module):
         
 
         # observation features
-        obs_features = self.cross_attention(query=rgb_position.transpose(0, 1),
-            value=depth_position.transpose(0, 1),
-            query_pos=None,
-            value_pos=None,
-            diff_ts=time_embeddings)[-1].transpose(0,1) # takes last layer and return to (B,L,D)
-        
+        obs_features = self.rgb_depth_attention(rgb_position,depth_position)
+
         # context features 
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
 
 
-        # trajectory features
-        traj_features, _ = self.traj_lang_attention[0](
-                seq1=traj_position, seq1_key_padding_mask=None,
-                seq2=lan_features, seq2_key_padding_mask=pad_mask,
-                seq1_pos=None, seq2_pos=None,
-                seq1_sem_pos=None, seq2_sem_pos=None
-        )
+        # # trajectory features
+        # traj_features, _ = self.traj_lang_attention[0](
+        #         seq1=traj_position, seq1_key_padding_mask=None,
+        #         seq2=lan_features, seq2_key_padding_mask=pad_mask,
+        #         seq1_pos=None, seq2_pos=None,
+        #         seq1_sem_pos=None, seq2_sem_pos=None
+        # )
 
 
         # final features
-        features = self.cross_attention_sec(query=traj_features.transpose(0, 1),
+        features = self.cross_attention_sec(query=traj_position.transpose(0, 1),
             value=context_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,
@@ -465,7 +480,9 @@ class DiffusionNavigator(nn.Module):
 
         # predicting termination
         termination_feature  = self.term_self_atten(features.transpose(0,1), diff_ts=time_embeddings,
-                                                                    query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
+                                                                    query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)#
+        termination_prediction = self.termination_predictor(termination_feature).view(termination_feature.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
+
 
                 
         # final_features = self.self_attention(fused_feature.transpose(0,1), diff_ts=time_embeddings,
@@ -474,10 +491,10 @@ class DiffusionNavigator(nn.Module):
         # print(final_features.shape)
         # assert 1==2
 
+        # predicting noise
         noise_prediction = self.noise_predictor(features) # (bs,seq_len,traj_space)
 
-        termination_prediction = self.termination_predictor(termination_feature).view(termination_feature.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
-
+        
         return noise_prediction,termination_prediction
 
 
