@@ -578,7 +578,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
             4, 
         )
 
-        self.policy.eval()
+        # self.policy.eval()
         
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
@@ -677,11 +677,11 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
 
         loss = loss / loss_accumulation_scalar
-        # loss.backward()
+        loss.backward()
 
-        # if step_grad:
-        #     self.optimizer.step()
-        #     self.optimizer.zero_grad()
+        if step_grad:
+            self.optimizer.step()
+            self.optimizer.zero_grad()
 
 
 
