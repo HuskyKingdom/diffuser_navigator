@@ -207,7 +207,6 @@ class DiffusionNavigator(nn.Module):
 
 
         # predictors (history emb + current emb)
-        self.term_projctor = nn.Linear(embedding_dim*2, embedding_dim)
         self.noise_predictor = nn.Sequential(
             nn.Linear(embedding_dim*2, embedding_dim),
             nn.ReLU(),
@@ -465,8 +464,7 @@ class DiffusionNavigator(nn.Module):
 
 
         # predicting termination
-        termination_feature = self.term_projctor(features)
-        termination_feature  = self.term_self_atten(termination_feature.transpose(0,1), diff_ts=time_embeddings,
+        termination_feature  = self.term_self_atten(features.transpose(0,1), diff_ts=time_embeddings,
                                                                     query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
 
                 
