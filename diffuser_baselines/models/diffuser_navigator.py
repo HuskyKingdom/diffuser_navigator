@@ -519,7 +519,7 @@ class DiffusionNavigator(nn.Module):
 
         actions = self.calculate_actions(full_traj, head_threshold)
 
-        high_prob_mask = terminations >= 0.5
+        high_prob_mask = terminations >= 0.1
         sampled_mask = torch.ones_like(terminations)  # 初始化全 1 的 mask
 
 
