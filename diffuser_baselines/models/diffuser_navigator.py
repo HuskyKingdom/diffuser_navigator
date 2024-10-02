@@ -27,7 +27,7 @@ class DiffusionPolicy(Policy):
         self.navigator = DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.config = config
 
-    def act(self,batch, all_pose=None, hiddens = None, encode_only=False):
+    def act(self,batch, all_pose=None, hiddens = None, encode_only=False,print_info=False):
 
         
         rgb_features,depth_features = self.navigator.encode_visions(batch,self.config) # raw batch
@@ -44,7 +44,7 @@ class DiffusionPolicy(Policy):
         }
 
 
-        actions, next_hidden = self.navigator(collected_data,run_inference = True,hiddens=hiddens)
+        actions, next_hidden = self.navigator(collected_data,run_inference = True,hiddens=hiddens,print_info=print_info)
 
         return actions, next_hidden
         
@@ -294,7 +294,7 @@ class DiffusionNavigator(nn.Module):
         return tokens, next_hiddens
 
 
-    def forward(self, observations, run_inference=False,hiddens=None):
+    def forward(self, observations, run_inference=False,hiddens=None, print_info = False):
 
 
         observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions']).squeeze(0) # normalize input alone dimensions
@@ -305,7 +305,7 @@ class DiffusionNavigator(nn.Module):
 
         # inference _____
         if run_inference:
-            return self.inference_actions(observations,pad_mask,hiddens)
+            return self.inference_actions(observations,pad_mask,hiddens,print_info)
 
         # train _____
         observations["trajectories"] = self.normalize_dim(observations["trajectories"]) # normalize input alone dimensions
@@ -533,7 +533,7 @@ class DiffusionNavigator(nn.Module):
         return actions
 
 
-    def inference_actions(self,observations,mask,hiddens): # pred_noises (B,N,D)
+    def inference_actions(self,observations,mask,hiddens,print_info): # pred_noises (B,N,D)
 
         self.noise_scheduler.set_timesteps(self.n_steps)
 
@@ -574,6 +574,8 @@ class DiffusionNavigator(nn.Module):
         denormed_denoised = self.denormalize_dim(denoised)
         actions = self.traj_to_action(denomed_pose, denormed_denoised,pred_terminations)
 
+        if print_info:
+            print(f"final actions {actions} | t {pred_terminations}")
 
         return actions,next_hiddens
 
