@@ -282,7 +282,7 @@ class DiffusionNavigator(nn.Module):
 
 
         if inference: # dont pack
-            input_x = observations["rgb_features"][:, :2048, :, :].view(observations["rgb_features"].shape[0],-1).unsqueeze(1) # take current as input and reshape to (bs,len,d)
+            input_x = observations["rgb_features"][:, :2048, :, :].view(observations["rgb_features"].shape[0],-1).unsqueeze(1) # take current as input and reshape to (bs,1,d)
             history_tokens, next_hiddens = self.his_encoder(input_x,hiddens,inference=True)
         else:
             history_tokens, next_hiddens = self.his_encoder(observations["histories"],hiddens,observations["his_len"],inference = False)
@@ -425,16 +425,18 @@ class DiffusionNavigator(nn.Module):
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
         traj_position = self.pe_layer(tokens[4])
+        rgb_position = self.pe_layer(tokens[1])
+        depth_position = self.pe_layer(tokens[2])
 
 
-        # languege features
-        lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
+        # languege features - ALNormed by the history
+        lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=tokens[-3],
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
 
         # observation features
-        obs_features = self.cross_attention(query=tokens[1].transpose(0, 1),
-            value=tokens[2].transpose(0, 1),
+        obs_features = self.cross_attention(query=rgb_position.transpose(0, 1),
+            value=depth_position.transpose(0, 1),
             query_pos=None,
             value_pos=None,
             diff_ts=time_embeddings)[-1].transpose(0,1) # takes last layer and return to (B,L,D)
@@ -460,12 +462,10 @@ class DiffusionNavigator(nn.Module):
             diff_ts=time_embeddings)[-1].transpose(0,1) # (bs,3,64)
         
 
-        # fuse with history
-        history_feature = tokens[-3].unsqueeze(1).expand(-1,features.shape[1],-1)
-        fused_feature = torch.cat((features,history_feature),dim=-1) # (bs,seq_len,d*2)
 
-        # predicting terminationx
-        termination_feature = self.term_projctor(fused_feature)
+
+        # predicting termination
+        termination_feature = self.term_projctor(features)
         termination_feature  = self.term_self_atten(termination_feature.transpose(0,1), diff_ts=time_embeddings,
                                                                     query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
 
@@ -476,7 +476,7 @@ class DiffusionNavigator(nn.Module):
         # print(final_features.shape)
         # assert 1==2
 
-        noise_prediction = self.noise_predictor(fused_feature) # (bs,seq_len,traj_space)
+        noise_prediction = self.noise_predictor(features) # (bs,seq_len,traj_space)
 
         termination_prediction = self.termination_predictor(termination_feature).view(termination_feature.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
 

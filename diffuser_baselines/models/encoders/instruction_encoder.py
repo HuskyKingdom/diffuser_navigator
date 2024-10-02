@@ -6,6 +6,8 @@ import torch.nn as nn
 from habitat import Config
 from torch import Tensor
 
+from transformers import BertTokenizer, BertModel
+
 
 class InstructionEncoder(nn.Module):
     def __init__(self, config: Config,embed_dim) -> None:
