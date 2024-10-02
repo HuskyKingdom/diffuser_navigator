@@ -260,7 +260,7 @@ class DiffusionNavigator(nn.Module):
     def encode_trajectories(self,traj):
         traj_tokens = self.traj_encoder(traj)
         return traj_tokens
-    
+
 
     def tokenlize_input(self,observations,hiddens,inference=False):
 
@@ -518,7 +518,15 @@ class DiffusionNavigator(nn.Module):
         full_traj = torch.cat((pose,traj),1)
 
         actions = self.calculate_actions(full_traj, head_threshold)
-        sampled_mask = torch.bernoulli(1 - terminations)  # prob. of not terminates
+
+        high_prob_mask = terminations >= 0.5
+        sampled_mask = torch.ones_like(terminations)  # 初始化全 1 的 mask
+
+
+        sampled_mask[high_prob_mask] = torch.bernoulli(1 - terminations[high_prob_mask]) # prob. of not terminates
+
+        # sampled_mask = torch.bernoulli(1 - terminations)  # prob. of not terminates
+        
         actions[sampled_mask == 0] = 0 
 
         print(f"final actions {actions} | t {terminations}")
