@@ -399,6 +399,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                     )
                     del stats_episodes[ep_id]["top_down_map_vlnce"]
                     rgb_frames[i] = []
+                    print("fku")
 
                 print(f"infos: {infos[i]}")
 
