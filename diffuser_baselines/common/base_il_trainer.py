@@ -321,7 +321,7 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                 if len(action_candidates[0]) == 0: 
                     with torch.no_grad():
-                        out,hiddens = self.policy.act(batch,all_pose,hiddens,True) # print prediction info
+                        out,hiddens = self.policy.act(batch,all_pose,hiddens,print_info=True) # print prediction info
                         action_candidates = out.cpu().tolist()
                 
                 # pop actions & update hidden
@@ -334,7 +334,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             else:
 
                 with torch.no_grad():
-                    out,hiddens = self.policy.act(batch,all_pose,hiddens,True)
+                    out,hiddens = self.policy.act(batch,all_pose,hiddens,print_info=True)
                     # action_candidates = out.cpu().tolist()
                     # actions = torch.tensor(out).to(self.device)
                     actions = out
