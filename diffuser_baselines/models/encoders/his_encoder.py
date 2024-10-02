@@ -19,7 +19,7 @@ class HistoryGRU(nn.Module):
             _, hiddens = self.gru(packed_input,hiddens)
             # hiddens: (num_layers, batch_size, hidden_size)
         else:
-            _, hiddens = self.gru(x,hiddens)
+            _, hiddens = self.gru(x,hiddens, batch_first=True)
 
         last_hidden = hiddens[-1]  # (batch_size, hidden_size)
 
