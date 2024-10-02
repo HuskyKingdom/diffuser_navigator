@@ -393,8 +393,8 @@ class DiffusionNavigator(nn.Module):
         denormed_groundtruth = self.denormalize_dim(observations['trajectories'][0])
         denormed_pred = self.denormalize_dim(intermidiate_noise)
 
-        print(f"GroundTruth Trajectory {denormed_groundtruth} | ground truth actions {observations['gt_actions'][0]}")
-        print(f"Predicted Actions {denormed_pred}")
+        print(f"GroundTruth Trajectory {denormed_groundtruth} | Predicted Actions {denormed_pred}")
+        print(f"ground truth actions {target_terminations[0]} | predicted terminations {pred_termination}")
 
 
         # analyzing
