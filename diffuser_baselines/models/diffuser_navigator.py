@@ -398,7 +398,7 @@ class DiffusionNavigator(nn.Module):
 
 
         # analyzing
-        if self.total_evaled < 100:
+        if self.total_evaled < 200:
             self.total_evaled += 3
         else:
             assert 1==2
