@@ -46,7 +46,6 @@ class DiffusionPolicy(Policy):
 
         actions, next_hidden = self.navigator(collected_data,run_inference = True,hiddens=hiddens)
 
-        print(f"final actions {actions}")
         return actions, next_hidden
         
     
