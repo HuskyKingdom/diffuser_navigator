@@ -346,62 +346,62 @@ class DiffusionNavigator(nn.Module):
         loss = mse_loss + bin_crossentro_loss
 
 
-        # # # evaluations ____
+        # # evaluations ____
 
-        # loss = loss - loss # ignore update 
-        # noise = torch.randn(observations["trajectories"][0].unsqueeze(0).shape, device=observations["trajectories"].device)
+        loss = loss - loss # ignore update 
+        noise = torch.randn(observations["trajectories"][0].unsqueeze(0).shape, device=observations["trajectories"].device)
 
-        # noising_timesteps = torch.randint(
-        #     99,
-        #     100, # self.noise_scheduler.config.num_train_timesteps
-        #     (1,), device=noise.device
-        # ).long()
+        noising_timesteps = torch.randint(
+            99,
+            100, # self.noise_scheduler.config.num_train_timesteps
+            (1,), device=noise.device
+        ).long()
 
-        # noised_traj = self.noise_scheduler.add_noise(
-        #     observations["trajectories"][0].unsqueeze(0), noise,
-        #     noising_timesteps
-        # )
+        noised_traj = self.noise_scheduler.add_noise(
+            observations["trajectories"][0].unsqueeze(0), noise,
+            noising_timesteps
+        )
         
 
-        # denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
-        # intermidiate_noise = noise
+        denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
+        intermidiate_noise = noise
 
-        # with torch.no_grad():
-        #     tokens, _ = self.tokenlize_input(observations,hiddens) # dont pack
+        with torch.no_grad():
+            tokens, _ = self.tokenlize_input(observations,hiddens) # dont pack
         
         
 
-        # for t in denoise_steps:
-        #     # noise pred.
-        #     with torch.no_grad():
+        for t in denoise_steps:
+            # noise pred.
+            with torch.no_grad():
 
-        #         # encode traj and predict noise
-        #         tokens[4] = self.encode_trajectories(intermidiate_noise) # dont pack
+                # encode traj and predict noise
+                tokens[4] = self.encode_trajectories(intermidiate_noise) # dont pack
 
-        #         tokens = [tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0)]
-        #         pad_mask = pad_mask[0].unsqueeze(0)
+                tokens = [tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0)]
+                pad_mask = pad_mask[0].unsqueeze(0)
 
-        #         pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
+                pred_noises,pred_termination = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
-        #     step_out = self.noise_scheduler.step(
-        #         pred_noises, t, intermidiate_noise
-        #     )
-
-
-        #     intermidiate_noise = step_out["prev_sample"]
-
-        # denormed_groundtruth = self.denormalize_dim(observations['trajectories'][0])
-        # denormed_pred = self.denormalize_dim(intermidiate_noise)
-
-        # print(f"GroundTruth Trajectory {denormed_groundtruth} | ground truth actions {observations['gt_actions'][0]}")
-        # print(f"Predicted Actions {denormed_pred}")
+            step_out = self.noise_scheduler.step(
+                pred_noises, t, intermidiate_noise
+            )
 
 
-        # # analyzing
-        # if self.total_evaled < 100:
-        #     self.total_evaled += 3
-        # else:
-        #     assert 1==2
+            intermidiate_noise = step_out["prev_sample"]
+
+        denormed_groundtruth = self.denormalize_dim(observations['trajectories'][0])
+        denormed_pred = self.denormalize_dim(intermidiate_noise)
+
+        print(f"GroundTruth Trajectory {denormed_groundtruth} | ground truth actions {observations['gt_actions'][0]}")
+        print(f"Predicted Actions {denormed_pred}")
+
+
+        # analyzing
+        if self.total_evaled < 100:
+            self.total_evaled += 3
+        else:
+            assert 1==2
 
 
 
