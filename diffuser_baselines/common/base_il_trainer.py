@@ -319,16 +319,18 @@ class BaseVLNCETrainer(BaseILTrainer):
             current_episodes = envs.current_episodes()
             if config.EVAL.ACTION_POP: # forward every F timesteps
 
-                if len(action_candidates[0]) == 0: 
+                if len(action_candidates[0]) == 0: # forward & update action candidates
                     with torch.no_grad():
                         out,hiddens = self.policy.act(batch,all_pose,hiddens,print_info=True) # print prediction info
                         action_candidates = out.cpu().tolist()
+                else: # forward ONLY
+                    with torch.no_grad():
+                        _, hiddens = self.policy.act(batch,all_pose,hiddens)
                 
                 # pop actions & update hidden
                 actions = [[env_index.pop(0)] for env_index in action_candidates]
                 actions = torch.tensor(actions).to(self.device)
-                with torch.no_grad():
-                    _, hiddens = self.policy.act(batch,all_pose,hiddens)
+                
                 
 
             else:
