@@ -44,10 +44,10 @@ class DiffusionPolicy(Policy):
         }
 
 
-        actions, next_hidden, terminations = self.navigator(collected_data,run_inference = True,hiddens=hiddens)
+        actions, next_hidden = self.navigator(collected_data,run_inference = True,hiddens=hiddens)
 
         print(f"final actions {actions}")
-        return actions, next_hidden, terminations
+        return actions, next_hidden
         
     
 
@@ -565,7 +565,10 @@ class DiffusionNavigator(nn.Module):
         denormed_denoised = self.denormalize_dim(denoised)
         actions = self.traj_to_action(denomed_pose, denormed_denoised)
 
-        return actions,next_hiddens,pred_terminations
+        # apply termination predictions
+        actions[pred_terminations == 0] = 0
+
+        return actions,next_hiddens
 
 
     def encode_visions(self,batch,config):
