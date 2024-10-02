@@ -324,9 +324,10 @@ class BaseVLNCETrainer(BaseILTrainer):
                         out,hiddens = self.policy.act(batch,all_pose,hiddens)
                         action_candidates = out.cpu().tolist()
                 
-                # pop actions
+                # pop actions & update hidden
                 actions = [[env_index.pop(0)] for env_index in action_candidates]
                 actions = torch.tensor(actions).to(self.device)
+                _, hiddens = self.policy.act(batch,all_pose,hiddens)
                 
 
             else:
@@ -339,16 +340,6 @@ class BaseVLNCETrainer(BaseILTrainer):
 
             outputs = envs.step([a[0].item() for a in actions])
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
-
-            # import cv2
-            # import numpy as np
-    
-            # img = observations[0]['rgb'].astype(np.uint8)
-            # img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
-            # cv2.imshow('Image Window', img)
-            
-            # cv2.waitKey(0) 
-            # cv2.destroyAllWindows()
 
 
             not_done_masks = torch.tensor(

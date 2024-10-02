@@ -260,7 +260,7 @@ class DiffusionNavigator(nn.Module):
     def encode_trajectories(self,traj):
         traj_tokens = self.traj_encoder(traj)
         return traj_tokens
-
+    
 
     def tokenlize_input(self,observations,hiddens,inference=False):
 
@@ -304,7 +304,6 @@ class DiffusionNavigator(nn.Module):
         pad_mask = (observations['instruction'] == 0)
 
         # inference _____
-        
         if run_inference:
             return self.inference_actions(observations,pad_mask,hiddens)
 
