@@ -208,7 +208,7 @@ class DiffusionNavigator(nn.Module):
 
         # predictors (history emb + current emb)
         self.noise_predictor = nn.Sequential(
-            nn.Linear(embedding_dim*2, embedding_dim),
+            nn.Linear(embedding_dim, embedding_dim),
             nn.ReLU(),
             nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
         )
