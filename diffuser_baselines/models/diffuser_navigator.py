@@ -212,12 +212,12 @@ class DiffusionNavigator(nn.Module):
 
         # predictors (history emb + current emb)
         self.noise_predictor = nn.Sequential(
-            nn.Linear(embedding_dim, embedding_dim),
+            nn.Linear(embedding_dim*2, embedding_dim),
             nn.ReLU(),
             nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
         )
         self.termination_predictor = nn.Sequential(
-            nn.Linear(embedding_dim, embedding_dim), # (bs,3,64)
+            nn.Linear(embedding_dim*2, embedding_dim), # (bs,3,64)
             nn.ReLU(),
             nn.Linear(embedding_dim, 1), # (bs,3,1)
             nn.Sigmoid()
@@ -449,10 +449,6 @@ class DiffusionNavigator(nn.Module):
             diff_ts=time_embeddings)[-1].transpose(0,1)
         
 
-        # fusing with history
-        history_feature = tokens[-3].unsqueeze(1) # (bs,emb) -> (bs,1,emb)
-        obs_features = torch.cat((history_feature,obs_features),dim=1)
-
 
         # context features 
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr. (bs,seq,emb)
@@ -475,14 +471,16 @@ class DiffusionNavigator(nn.Module):
             diff_ts=time_embeddings)[-1].transpose(0,1) # (bs,3,64)
         
 
+        # fuse with history
+        history_feature = tokens[-3].unsqueeze(1) # (bs,emb) -> (bs,1,emb)
+        fused_features = torch.cat((history_feature.expand(-1,final_features.shape[1],-1),final_features),dim=-1)
 
 
         # predicting termination
-        # termination_feature = torch.cat((history_feature.expand(-1,final_features.shape[1],-1),final_features),dim=-1)
-        termination_prediction = self.termination_predictor(final_features).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
+        termination_prediction = self.termination_predictor(fused_features).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
 
         # predicting noise
-        noise_prediction = self.noise_predictor(final_features) # (bs,seq_len,traj_space)
+        noise_prediction = self.noise_predictor(fused_features) # (bs,seq_len,traj_space)
 
         
         return noise_prediction,termination_prediction
