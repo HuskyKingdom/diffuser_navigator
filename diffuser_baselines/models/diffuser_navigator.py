@@ -480,7 +480,7 @@ class DiffusionNavigator(nn.Module):
 
 
         # predicting termination
-        termination_feature = torch.cat((history_feature.expand(-1,history_feature.shape[1],-1),final_features))
+        termination_feature = torch.cat((history_feature.expand(-1,final_features.shape[1],-1),final_features))
         termination_prediction = self.termination_predictor(termination_feature).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
 
         # predicting noise
