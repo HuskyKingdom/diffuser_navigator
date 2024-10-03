@@ -578,7 +578,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
             4, 
         )
 
-        # self.policy.eval()
+        self.policy.eval()
         
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
@@ -650,7 +650,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         num_epoch_batch += 1
 
                     
-                    if (diffuser_it * self.config.IL.epochs + epoch) % 200 == 0:
+                    if (diffuser_it * self.config.IL.epochs + epoch) % 100 == 0:
                         self.save_checkpoint(
                             f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
                         )
@@ -677,7 +677,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
 
         loss = loss / loss_accumulation_scalar
-        loss.backward()
+        # loss.backward()
 
         if step_grad:
             self.optimizer.step()
