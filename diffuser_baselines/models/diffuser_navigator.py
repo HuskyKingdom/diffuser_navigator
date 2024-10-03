@@ -184,18 +184,6 @@ class DiffusionNavigator(nn.Module):
             for _ in range(1)
         ])
 
-        rgb_depth_attd_layer = ParallelAttention(
-            num_layers=num_layers,
-            d_model=embedding_dim, n_heads=num_attention_heads,
-            self_attention1=True, self_attention2=True,
-            cross_attention1=True, cross_attention2=False,use_adaln=True
-        )
-        self.rd_attention = nn.ModuleList([
-            rgb_depth_attd_layer
-            for _ in range(1)
-            for _ in range(1)
-        ])
-
 
         self.traj_lang_attention = nn.ModuleList([
             ParallelAttention(
@@ -208,6 +196,7 @@ class DiffusionNavigator(nn.Module):
         ])
 
         self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        self.observation_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.contetual_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
         self.history_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
@@ -228,7 +217,7 @@ class DiffusionNavigator(nn.Module):
             nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
         )
         self.termination_predictor = nn.Sequential(
-            nn.Linear(embedding_dim, embedding_dim), # (bs,3,64)
+            nn.Linear(embedding_dim*2, embedding_dim), # (bs,3,64)
             nn.ReLU(),
             nn.Linear(embedding_dim, 1), # (bs,3,1)
             nn.Sigmoid()
@@ -430,14 +419,7 @@ class DiffusionNavigator(nn.Module):
         )
         return feats
     
-    def rgb_depth_attention(self, feats, instr_feats,seq1_pad=None,seq2_pad=None,ada=None):
-        feats, _ = self.rd_attention[0](
-            seq1=feats, seq1_key_padding_mask=seq1_pad,
-            seq2=instr_feats, seq2_key_padding_mask=seq2_pad,
-            seq1_pos=None, seq2_pos=None,
-            seq1_sem_pos=None, seq2_sem_pos=None,ada_sgnl=ada
-        )
-        return feats
+
     
 
     def predict_noise(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,history_tokens,traj,pose_feature)
@@ -450,10 +432,9 @@ class DiffusionNavigator(nn.Module):
         traj_position = self.pe_layer(tokens[4])
         rgb_position = self.pe_layer(tokens[1])
         depth_position = self.pe_layer(tokens[2])
-        history_tokens = tokens[-3] # (bs,emb)
 
 
-        # languege features - ALNormed by the history
+        # languege features
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
@@ -469,7 +450,11 @@ class DiffusionNavigator(nn.Module):
         
 
         # observation features
-        obs_features = self.rgb_depth_attention(rgb_position,depth_position,ada=time_embeddings)
+        obs_features = self.observation_crossattd(query=rgb_position.transpose(0, 1),
+            value=depth_position.transpose(0, 1),
+            query_pos=None,
+            value_pos=None,
+            diff_ts=time_embeddings)[-1].transpose(0,1)
 
         # context features 
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr. (bs,seq,emb)
@@ -495,7 +480,8 @@ class DiffusionNavigator(nn.Module):
 
 
         # predicting termination
-        termination_prediction = self.termination_predictor(final_features).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
+        termination_feature = torch.cat((history_feature.expand(-1,history_feature.shape[1],-1),final_features))
+        termination_prediction = self.termination_predictor(termination_feature).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
 
         # predicting noise
         noise_prediction = self.noise_predictor(final_features) # (bs,seq_len,traj_space)
