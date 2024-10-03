@@ -198,8 +198,7 @@ class DiffusionNavigator(nn.Module):
         self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.observation_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.contetual_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-
-        self.history_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        self.term_self_attd = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
 
 
@@ -216,8 +215,9 @@ class DiffusionNavigator(nn.Module):
             nn.ReLU(),
             nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
         )
+        self.termination_projector = nn.Linear(embedding_dim*2, embedding_dim)
         self.termination_predictor = nn.Sequential(
-            nn.Linear(embedding_dim*2, embedding_dim), # (bs,3,64)
+            nn.Linear(embedding_dim, embedding_dim), # (bs,3,64)
             nn.ReLU(),
             nn.Linear(embedding_dim, 1), # (bs,3,1)
             nn.Sigmoid()
@@ -477,7 +477,10 @@ class DiffusionNavigator(nn.Module):
 
 
         # predicting termination
-        termination_prediction = self.termination_predictor(fused_features).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
+        termination_feature = self.termination_projector(fused_features)
+        termination_feature = self.term_self_attd(termination_feature.transpose(0,1), diff_ts=time_embeddings,
+                query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
+        termination_prediction = self.termination_predictor(termination_feature).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
 
         # predicting noise
         noise_prediction = self.noise_predictor(fused_features) # (bs,seq_len,traj_space)
