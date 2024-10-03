@@ -432,14 +432,11 @@ class DiffusionNavigator(nn.Module):
         traj_position = self.pe_layer(tokens[4])
         
 
-  
-
         # languege features
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
         
-
 
         # observation features
         obs_features = self.observation_crossattd(query=tokens[1].transpose(0, 1),
@@ -455,16 +452,16 @@ class DiffusionNavigator(nn.Module):
 
 
         # # trajectory features
-        # traj_features, _ = self.traj_lang_attention[0](
-        #         seq1=traj_position, seq1_key_padding_mask=None,
-        #         seq2=lan_features, seq2_key_padding_mask=pad_mask,
-        #         seq1_pos=None, seq2_pos=None,
-        #         seq1_sem_pos=None, seq2_sem_pos=None
-        # )
+        traj_features, _ = self.traj_lang_attention[0](
+                seq1=traj_position, seq1_key_padding_mask=None,
+                seq2=lan_features, seq2_key_padding_mask=pad_mask,
+                seq1_pos=None, seq2_pos=None,
+                seq1_sem_pos=None, seq2_sem_pos=None
+        )
 
 
         # final features
-        final_features = self.contetual_crossattd(query=traj_position.transpose(0, 1),
+        final_features = self.contetual_crossattd(query=traj_features.transpose(0, 1),
             value=context_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,
