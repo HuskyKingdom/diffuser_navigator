@@ -479,7 +479,7 @@ class DiffusionNavigator(nn.Module):
         # predicting termination
         termination_feature = self.termination_projector(fused_features)
         termination_feature = self.term_self_attd(termination_feature.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
+                query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
         termination_prediction = self.termination_predictor(termination_feature).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
 
         # predicting noise
