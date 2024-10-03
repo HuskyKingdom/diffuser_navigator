@@ -217,7 +217,7 @@ class DiffusionNavigator(nn.Module):
             nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
         )
         self.termination_predictor = nn.Sequential(
-            nn.Linear(embedding_dim*2, embedding_dim), # (bs,3,64)
+            nn.Linear(embedding_dim, embedding_dim), # (bs,3,64)
             nn.ReLU(),
             nn.Linear(embedding_dim, 1), # (bs,3,1)
             nn.Sigmoid()
@@ -430,31 +430,29 @@ class DiffusionNavigator(nn.Module):
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
         traj_position = self.pe_layer(tokens[4])
-        rgb_position = self.pe_layer(tokens[1])
-        depth_position = self.pe_layer(tokens[2])
+        
 
+  
 
         # languege features
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
-        # fusing with history
-        history_feature = tokens[-3].unsqueeze(1) # (bs,emb) -> (bs,1,emb)
+        
 
-        lan_features = self.history_crossattd(query=lan_features.transpose(0, 1),
-            value=history_feature.transpose(0, 1),
-            query_pos=None,
-            value_pos=None,
-            diff_ts=time_embeddings)[-1].transpose(0,1) # (bs,3,64)
-        
-        
 
         # observation features
-        obs_features = self.observation_crossattd(query=rgb_position.transpose(0, 1),
-            value=depth_position.transpose(0, 1),
+        obs_features = self.observation_crossattd(query=tokens[1].transpose(0, 1),
+            value=tokens[2].transpose(0, 1),
             query_pos=None,
             value_pos=None,
             diff_ts=time_embeddings)[-1].transpose(0,1)
+        
+
+        # fusing with history
+        history_feature = tokens[-3].unsqueeze(1) # (bs,emb) -> (bs,1,emb)
+        obs_features = torch.cat((history_feature,obs_features),dim=1)
+
 
         # context features 
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr. (bs,seq,emb)
@@ -480,8 +478,8 @@ class DiffusionNavigator(nn.Module):
 
 
         # predicting termination
-        termination_feature = torch.cat((history_feature.expand(-1,final_features.shape[1],-1),final_features),dim=-1)
-        termination_prediction = self.termination_predictor(termination_feature).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
+        # termination_feature = torch.cat((history_feature.expand(-1,final_features.shape[1],-1),final_features),dim=-1)
+        termination_prediction = self.termination_predictor(final_features).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
 
         # predicting noise
         noise_prediction = self.noise_predictor(final_features) # (bs,seq_len,traj_space)
