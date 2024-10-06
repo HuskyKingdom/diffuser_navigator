@@ -159,14 +159,7 @@ class DiffusionNavigator(nn.Module):
             nn.Linear(embedding_dim, embedding_dim)
         )
 
-        self.his_encoder = HistoryGRU(32768,512,embedding_dim,2)
-
-        # for param in self.action_encoder.parameters(): # freeze action representations
-        #     param.requires_grad = False
-
-        # prepare action embedding targets for inference
-        # action_targets = torch.arange(self.config.DIFFUSER.action_space).unsqueeze(0)
-        # self.action_em_targets = self.action_encoder(action_targets)
+        self.history_projector = nn.Linear(32768, embedding_dim)
 
         # positional embeddings
         self.pe_layer = PositionalEncoding(embedding_dim,0.2)
@@ -284,13 +277,9 @@ class DiffusionNavigator(nn.Module):
         pose_feature = self.pose_encoder(observations["proprioceptions"]) 
 
 
-        if inference: # dont pack
-            input_x = observations["rgb_features"][:, :2048, :, :].view(observations["rgb_features"].shape[0],-1).unsqueeze(1) # take current as input and reshape to (bs,1,d)
-            history_tokens, next_hiddens = self.his_encoder(input_x,hiddens,inference=True)
-        else:
-            history_tokens, next_hiddens = self.his_encoder(observations["histories"],hiddens,observations["his_len"],inference = False)
-
-
+        history_features = self.history_projector(observations["histories"])
+        print(history_features.shape)
+        assert 1==2
    
         tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,traj_tokens,pose_feature]
 
@@ -312,9 +301,6 @@ class DiffusionNavigator(nn.Module):
 
         # train _____
         observations["trajectories"] = self.normalize_dim(observations["trajectories"]) # normalize input alone dimensions
-
-        print(observations["histories"].shape)
-        assert 1==2
 
         # buiding noise
         noise = torch.randn(observations["trajectories"].shape, device=observations["trajectories"].device)
