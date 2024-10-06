@@ -7,7 +7,7 @@ TENSORBOARD_DIR: data/tensorboard_dirs/diffuser
 CHECKPOINT_FOLDER: data/checkpoints/diffuser
 EVAL_CKPT_PATH_DIR: data/checkpoints/diffuser/ckpt.800.pth
 RESULTS_DIR: data/checkpoints/diffuser/evals
-VIDEO_OPTION: ["disk"]
+VIDEO_OPTION: []
 
 EVAL:
   USE_CKPT_CONFIG: False
@@ -17,7 +17,7 @@ EVAL:
 
 IL:
   ckpt_to_load: data/checkpoints/diffuser/ckpt.800.pth
-  load_from_ckpt: True # for testing overfitting only
+  load_from_ckpt: False # for testing overfitting only
   epochs: 2000
   batch_size: 128
   is_requeue: False # continuo training
