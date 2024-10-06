@@ -269,6 +269,7 @@ class DiffusionNavigator(nn.Module):
         
         # Create a range tensor (1D) of shape (max_seq_length)
         range_tensor = torch.arange(max_seq_length).expand(len(lengths), max_seq_length)
+        range_tensor.to(lengths.device)
         
         # Compare each value in range_tensor with lengths to create the mask
         mask = range_tensor >= lengths.unsqueeze(1)
