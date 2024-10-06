@@ -187,11 +187,14 @@ class DiffusionNavigator(nn.Module):
                 rotary_pe=False, apply_ffn=False
             )
         ])
-
+        
+        
+        self.history_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
+
+        self.lan_his_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.observation_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.contetual_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        self.term_self_attd = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
 
 
@@ -204,11 +207,10 @@ class DiffusionNavigator(nn.Module):
 
         # predictors (history emb + current emb)
         self.noise_predictor = nn.Sequential(
-            nn.Linear(embedding_dim*2, embedding_dim),
+            nn.Linear(embedding_dim, embedding_dim),
             nn.ReLU(),
             nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
         )
-        self.termination_projector = nn.Linear(embedding_dim*2, embedding_dim)
         self.termination_predictor = nn.Sequential(
             nn.Linear(embedding_dim, embedding_dim), # (bs,3,64)
             nn.ReLU(),
@@ -295,13 +297,11 @@ class DiffusionNavigator(nn.Module):
         pose_feature = self.pose_encoder(observations["proprioceptions"]) 
 
 
-        history_features = self.history_projector(observations["histories"])
+        history_tokens = self.history_projector(observations["histories"])
         his_padmask = self.create_padding_mask(observations["his_len"].long())
-        print(his_padmask.shape)
-        print(his_padmask)
-        assert 1==2
+    
    
-        tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,traj_tokens,pose_feature]
+        tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,his_padmask,traj_tokens,pose_feature]
 
         return tokens
 
@@ -339,7 +339,7 @@ class DiffusionNavigator(nn.Module):
         # tokenlize
         tokens, _ = self.tokenlize_input(observations)
         # encode traj
-        tokens[4] = self.encode_trajectories(noised_traj)
+        tokens[5] = self.encode_trajectories(noised_traj)
 
         # predict noise
         pred_noise, pred_termination = self.predict_noise(tokens,noising_timesteps,pad_mask)
@@ -386,7 +386,7 @@ class DiffusionNavigator(nn.Module):
         #     with torch.no_grad():
 
         #         # encode traj and predict noise
-        #         tokens[4] = self.encode_trajectories(intermidiate_noise) # dont pack
+        #         tokens[5] = self.encode_trajectories(intermidiate_noise) # dont pack
 
         #         tokens = [tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0)]
         #         pad_mask = pad_mask[0].unsqueeze(0)
@@ -431,21 +431,33 @@ class DiffusionNavigator(nn.Module):
 
     
 
-    def predict_noise(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,history_tokens,traj,pose_feature)
+    def predict_noise(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens, rgb, depth, history_tokens, his_pad, traj, pose_feature)
 
         time_embeddings = self.time_emb(timesteps.float())
         time_embeddings = time_embeddings + tokens[-1] # fused (48,64)
 
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
-        traj_position = self.pe_layer(tokens[4])
+        traj_position = self.pe_layer(tokens[5])
+        his_position = self.pe_layer(tokens[3])
+        his_pad = tokens[4]
+
+        # history features
+        history_feature = self.history_self_atten(his_position.transpose(0,1), diff_ts=time_embeddings,
+                query_pos=None, context=None, context_pos=None,pad_mask=his_pad)[-1].transpose(0,1)
         
 
         # languege features
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
-        
+
+        # lan-his cross attend
+        lan_features = self.lan_his_crossattd(query=lan_features.transpose(0, 1),
+            value=history_feature.transpose(0, 1),
+            query_pos=pad_mask,
+            value_pos=his_pad,
+            diff_ts=time_embeddings)[-1].transpose(0,1)
 
         # observation features
         obs_features = self.observation_crossattd(query=tokens[1].transpose(0, 1),
@@ -477,19 +489,12 @@ class DiffusionNavigator(nn.Module):
             diff_ts=time_embeddings)[-1].transpose(0,1) # (bs,3,64)
         
 
-        # fuse with history
-        history_feature = tokens[-3].unsqueeze(1) # (bs,emb) -> (bs,1,emb)
-        fused_features = torch.cat((history_feature.expand(-1,final_features.shape[1],-1),final_features),dim=-1)
-
 
         # predicting termination
-        termination_feature = self.termination_projector(fused_features)
-        termination_feature = self.term_self_attd(termination_feature.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
-        termination_prediction = self.termination_predictor(termination_feature).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
+        termination_prediction = self.termination_predictor(final_features).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
 
         # predicting noise
-        noise_prediction = self.noise_predictor(fused_features) # (bs,seq_len,traj_space)
+        noise_prediction = self.noise_predictor(final_features) # (bs,seq_len,traj_space)
 
         
         return noise_prediction,termination_prediction
@@ -569,7 +574,7 @@ class DiffusionNavigator(nn.Module):
             # noise pred.
             with torch.no_grad():
                 # encode traj and predict noise
-                tokens[4] = self.encode_trajectories(intermidiate_noise) # dont pack
+                tokens[5] = self.encode_trajectories(intermidiate_noise) # dont pack
                 pred_noises,pred_terminations = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),mask)
 
             step_out = self.noise_scheduler.step(
