@@ -258,6 +258,23 @@ class DiffusionNavigator(nn.Module):
         return traj_tokens
 
 
+    def create_padding_mask(self,lengths):
+        """
+        lengths: (bs,) tensor, representing the actual lengths of each sample
+        return: (bs, max_seq) boolean tensor, where positions within the actual length are False, and padding is True.
+                max_seq is automatically determined as the maximum value in lengths.
+        """
+        # Calculate the maximum sequence length from the input lengths
+        max_seq_length = lengths.max().item()
+        
+        # Create a range tensor (1D) of shape (max_seq_length)
+        range_tensor = torch.arange(max_seq_length).expand(len(lengths), max_seq_length)
+        
+        # Compare each value in range_tensor with lengths to create the mask
+        mask = range_tensor >= lengths.unsqueeze(1)
+
+        return mask
+
     def tokenlize_input(self,observations,inference=False):
 
         bs = observations["instruction"].size(0)
@@ -278,8 +295,9 @@ class DiffusionNavigator(nn.Module):
 
 
         history_features = self.history_projector(observations["histories"])
-        print(history_features.shape)
-        print(observations["his_len"].shape)
+        his_padmask = self.create_padding_mask(observations["his_len"])
+        print(his_padmask.shape)
+        print(his_padmask)
         assert 1==2
    
         tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,traj_tokens,pose_feature]
