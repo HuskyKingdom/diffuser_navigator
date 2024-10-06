@@ -295,7 +295,7 @@ class DiffusionNavigator(nn.Module):
 
 
         history_features = self.history_projector(observations["histories"])
-        his_padmask = self.create_padding_mask(observations["his_len"])
+        his_padmask = self.create_padding_mask(observations["his_len"].long)
         print(his_padmask.shape)
         print(his_padmask)
         assert 1==2
