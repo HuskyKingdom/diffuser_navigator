@@ -258,7 +258,7 @@ class DiffusionNavigator(nn.Module):
         return traj_tokens
 
 
-    def tokenlize_input(self,observations,hiddens,inference=False):
+    def tokenlize_input(self,observations,inference=False):
 
         bs = observations["instruction"].size(0)
         
@@ -279,14 +279,15 @@ class DiffusionNavigator(nn.Module):
 
         history_features = self.history_projector(observations["histories"])
         print(history_features.shape)
+        print(observations["his_len"].shape)
         assert 1==2
    
         tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,traj_tokens,pose_feature]
 
-        return tokens, next_hiddens
+        return tokens
 
 
-    def forward(self, observations, run_inference=False,hiddens=None, print_info = False):
+    def forward(self, observations, run_inference=False, print_info = False):
 
 
         observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions']).squeeze(0) # normalize input alone dimensions
@@ -297,7 +298,7 @@ class DiffusionNavigator(nn.Module):
 
         # inference _____
         if run_inference:
-            return self.inference_actions(observations,pad_mask,hiddens,print_info)
+            return self.inference_actions(observations,pad_mask,print_info)
 
         # train _____
         observations["trajectories"] = self.normalize_dim(observations["trajectories"]) # normalize input alone dimensions
@@ -317,7 +318,7 @@ class DiffusionNavigator(nn.Module):
         )
 
         # tokenlize
-        tokens, _ = self.tokenlize_input(observations,hiddens)
+        tokens, _ = self.tokenlize_input(observations)
         # encode traj
         tokens[4] = self.encode_trajectories(noised_traj)
 
