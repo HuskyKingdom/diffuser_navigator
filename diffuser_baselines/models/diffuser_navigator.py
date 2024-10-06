@@ -313,6 +313,9 @@ class DiffusionNavigator(nn.Module):
         # train _____
         observations["trajectories"] = self.normalize_dim(observations["trajectories"]) # normalize input alone dimensions
 
+        print(observations["histories"].shape)
+        assert 1==2
+
         # buiding noise
         noise = torch.randn(observations["trajectories"].shape, device=observations["trajectories"].device)
 
@@ -522,7 +525,7 @@ class DiffusionNavigator(nn.Module):
 
         actions = self.calculate_actions(full_traj, head_threshold)
 
-        high_prob_mask = terminations >= 0.9
+        high_prob_mask = terminations >= 0.1
         sampled_mask = torch.ones_like(terminations)  # 初始化全 1 的 mask
 
 
