@@ -473,9 +473,9 @@ class DiffusionNavigator(nn.Module):
         # lan-his cross attend
         lan_features = self.lan_his_crossattd(query=lan_features.transpose(0, 1),
             value=history_feature.transpose(0, 1),
-            query_pos=pad_mask,
-            value_pos=his_pad,
-            diff_ts=time_embeddings)[-1].transpose(0,1)
+            query_pos=None,
+            value_pos=None,
+            diff_ts=time_embeddings,pad_mask=pad_mask)[-1].transpose(0,1)
 
         # observation features
         obs_features = self.observation_crossattd(query=tokens[1].transpose(0, 1),
