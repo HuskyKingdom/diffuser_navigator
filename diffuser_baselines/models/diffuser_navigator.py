@@ -463,7 +463,6 @@ class DiffusionNavigator(nn.Module):
         his_pad = tokens[4]
         
 
-
         # history features (bs,seq_len,emb)
         history_feature = self.history_self_atten(his_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=his_pad)[-1].transpose(0,1)
@@ -472,6 +471,8 @@ class DiffusionNavigator(nn.Module):
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
+        print(lan_features.shape)
+        
         # observation features (bs,seq_len,emb)
         obs_features = self.observation_crossattd(query=tokens[1].transpose(0, 1),
             value=tokens[2].transpose(0, 1),
@@ -479,7 +480,7 @@ class DiffusionNavigator(nn.Module):
             value_pos=None,
             diff_ts=time_embeddings)[-1].transpose(0,1)
 
-
+    
         # context features 
         observation_mask = torch.zeros((obs_features.shape[0], obs_features.shape[1]), dtype=torch.bool).to(obs_features.device)
         context_features = torch.cat((history_feature,lan_features,obs_features),dim=1)
