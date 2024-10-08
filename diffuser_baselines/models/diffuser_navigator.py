@@ -287,7 +287,7 @@ class DiffusionNavigator(nn.Module):
                 max_seq is automatically determined as the maximum value in lengths.
         """
         # Calculate the maximum sequence length from the input lengths
-        max_seq_length = lengths.max().item()
+        max_seq_length = 500
         
         # Create a range tensor (1D) of shape (max_seq_length)
         range_tensor = torch.arange(max_seq_length).expand(len(lengths), max_seq_length)
@@ -479,7 +479,9 @@ class DiffusionNavigator(nn.Module):
             value_pos=None,
             diff_ts=time_embeddings)[-1].transpose(0,1)
 
-    
+        print(his_pad)
+        print(his_pad.shape)
+        assert 1==2
         # context features 
         observation_mask = torch.zeros((obs_features.shape[0], obs_features.shape[1]), dtype=torch.bool).to(obs_features.device)
         context_features = torch.cat((history_feature,lan_features,obs_features),dim=1)
