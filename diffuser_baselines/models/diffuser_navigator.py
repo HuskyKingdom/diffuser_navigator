@@ -37,8 +37,8 @@ class DiffusionPolicy(Policy):
             return None
         
         # memorize history
-        self.histories.append(rgb_features.squeeze(0)[:, :2048, :, :])
-        self.histories.append(rgb_features.squeeze(0)[:, :2048, :, :])
+        self.histories.append(rgb_features.squeeze(0)[:2048, :, :])
+        self.histories.append(rgb_features.squeeze(0)[:2048, :, :])
 
         print(rgb_features.squeeze(0)[:, :2048, :, :].shape)
         print(torch.stack(self.histories, dim=0).shape)
