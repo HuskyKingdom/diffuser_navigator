@@ -342,7 +342,9 @@ class RelativeCrossAttentionLayer(nn.Module):
             adaln_query = self.adaln(query, diff_ts)
         else:
             adaln_query = query
-
+        
+        print(diff_ts.shape)
+        print(query.shape)
         print(adaln_query.shape)
         assert 1==2
 
