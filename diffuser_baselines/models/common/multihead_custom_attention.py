@@ -187,7 +187,8 @@ def multi_head_attention_forward(query,  # type: Tensor
                                  k_mem=None,
                                  v_mem=None,
                                  gate_attn=None,
-                                 mem_mask=None
+                                 mem_mask=None,
+                                 reversing=False,
                                  ):
     # type: (...) -> Tuple[Tensor, Optional[Tensor]]
     r"""
@@ -397,6 +398,10 @@ def multi_head_attention_forward(query,  # type: Tensor
 
     attn_output_weights = torch.bmm(q, k.transpose(1, 2))
     assert list(attn_output_weights.size()) == [bsz * num_heads, tgt_len, src_len]
+
+    if reversing:
+        print(1)
+        attn_output_weights = -attn_output_weights
 
     if attn_mask is not None:
         attn_mask = attn_mask.unsqueeze(0)
