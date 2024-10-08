@@ -26,14 +26,22 @@ class DiffusionPolicy(Policy):
         super(Policy, self).__init__()
         self.navigator = DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.config = config
+        self.histories = []
 
-    def act(self,batch, all_pose=None, hiddens = None, encode_only=False,print_info=False):
+    def act(self,batch, all_pose=None, encode_only=False,print_info=False):
 
         
         rgb_features,depth_features = self.navigator.encode_visions(batch,self.config) # raw batch
 
         if encode_only:
             return None
+        
+        # histories
+        self.histories.append(rgb_features)
+
+        print(self.histories)
+        assert 1==2
+
 
         # format batch data
         collected_data = {
@@ -44,11 +52,12 @@ class DiffusionPolicy(Policy):
         }
 
 
-        actions, next_hidden = self.navigator(collected_data,run_inference = True,hiddens=hiddens,print_info=print_info)
+        actions = self.navigator(collected_data,run_inference = True,print_info=print_info)
 
-        return actions, next_hidden
+        return actions
         
-    
+    def reset_his(self):
+        self.histories = []
 
     def build_loss(self,observations):
 
@@ -96,11 +105,13 @@ class DiffusionNavigator(nn.Module):
         self.total_correct = 0
 
 
-        # Vision Encoders _____________________
+        
         obs_space = spaces.Dict({
             "rgb": spaces.Box(low=0, high=255, shape=(224, 224, 3), dtype='float32'),
             "depth": spaces.Box(low=0, high=255, shape=(256, 256, 1), dtype='float32')
         })
+
+        # Vision Encoders _____________________
 
         assert config.MODEL.DEPTH_ENCODER.cnn_type in ["VlnResnetDepthEncoder"]
         self.depth_encoder = getattr(
@@ -164,6 +175,7 @@ class DiffusionNavigator(nn.Module):
         # positional embeddings
         self.pe_layer = PositionalEncoding(embedding_dim,0.2)
 
+
         # Attention layers _____________________
         vl_attd_layer = ParallelAttention(
             num_layers=num_layers,
@@ -198,13 +210,14 @@ class DiffusionNavigator(nn.Module):
 
 
 
-        # Diffusion schedulers
+        # Diffusion schedulers _____________________
         self.noise_scheduler = DDPMScheduler(
             num_train_timesteps=diffusion_timesteps,
             beta_schedule="squaredcos_cap_v2",
         )
 
 
+        # Predictors_____________________
         # predictors (history emb + current emb)
         self.noise_predictor = nn.Sequential(
             nn.Linear(embedding_dim, embedding_dim),
@@ -550,7 +563,7 @@ class DiffusionNavigator(nn.Module):
         return actions
 
 
-    def inference_actions(self,observations,mask,hiddens,print_info): # pred_noises (B,N,D)
+    def inference_actions(self,observations,mask,print_info): # pred_noises (B,N,D)
 
         self.noise_scheduler.set_timesteps(self.n_steps)
 
@@ -567,7 +580,7 @@ class DiffusionNavigator(nn.Module):
 
         # tokenlize input
         with torch.no_grad():
-            tokens, next_hiddens = self.tokenlize_input(observations,hiddens,True) # dont pack
+            tokens = self.tokenlize_input(observations,True) # dont pack
 
         for t in timesteps:
             
@@ -594,7 +607,7 @@ class DiffusionNavigator(nn.Module):
         if print_info:
             print(f"final actions {actions} | t {pred_terminations}")
 
-        return actions,next_hiddens
+        return actions
 
 
     def encode_visions(self,batch,config):
@@ -603,3 +616,5 @@ class DiffusionNavigator(nn.Module):
         rgb_embedding = self.rgb_encoder(batch)
 
         return rgb_embedding,depth_embedding
+    
+
