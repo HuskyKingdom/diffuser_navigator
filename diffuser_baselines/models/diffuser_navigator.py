@@ -40,18 +40,14 @@ class DiffusionPolicy(Policy):
         self.histories.append(rgb_features.squeeze(0)[:2048, :, :])
         
 
-        print(rgb_features.squeeze(0)[:2048, :, :].shape)
-        print(torch.stack(self.histories, dim=0).view(len(self.histories), -1).unsqueeze(0).shape)
-        assert 1==2
-
 
         # format batch data
         collected_data = {
         'instruction': batch['instruction'],
         'rgb_features': rgb_features.to(batch['instruction'].device),
         'depth_features': depth_features.to(batch['instruction'].device),
-        'histories': torch.stack(self.histories, dim=0).unsqueeze(0).view(1, -1),     # (bs,max_seq_len,32768)      
-        'his_len': observations['his_len'].to(observations['instruction'].device),
+        'histories': torch.stack(self.histories, dim=0).view(len(self.histories), -1).unsqueeze(0).to(batch['instruction'].device),     # (bs,max_seq_len,32768)      
+        'his_len': torch.tensor([len(self.histories)]).to(batch['instruction'].device),
         'proprioceptions': torch.tensor(all_pose,dtype=torch.float32).to(batch['instruction'].device)
         }
 
@@ -66,6 +62,9 @@ class DiffusionPolicy(Policy):
     def build_loss(self,observations):
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
+
+        print(observations['histories'].shape)
+        assert 1==2
 
 
         # format batch data
