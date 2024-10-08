@@ -467,13 +467,13 @@ class DiffusionNavigator(nn.Module):
         history_feature = self.history_self_atten(his_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=his_pad)[-1].transpose(0,1)
         
-        # languege features (bs,seq_len,emb)
+        # languege features (bs,200,emb)
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
-        print(lan_features.shape)
+        print(obs_features.shape)
         
-        # observation features (bs,seq_len,emb)
+        # observation features (bs,21,emb)
         obs_features = self.observation_crossattd(query=tokens[1].transpose(0, 1),
             value=tokens[2].transpose(0, 1),
             query_pos=None,
