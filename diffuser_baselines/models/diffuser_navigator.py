@@ -40,6 +40,7 @@ class DiffusionPolicy(Policy):
         self.histories.append(rgb_features)
 
         print(self.histories)
+        print(torch.stack(self.histories, dim=0).shape)
         assert 1==2
 
 
