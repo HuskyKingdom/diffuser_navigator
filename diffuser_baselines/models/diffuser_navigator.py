@@ -38,6 +38,7 @@ class DiffusionPolicy(Policy):
         
         # memorize history
         self.histories.append(rgb_features)
+        self.histories.append(rgb_features)
 
         print(rgb_features.shape)
         print(torch.stack(self.histories, dim=0).shape)
