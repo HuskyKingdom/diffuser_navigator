@@ -402,7 +402,6 @@ def multi_head_attention_forward(query,  # type: Tensor
     assert list(attn_output_weights.size()) == [bsz * num_heads, tgt_len, src_len]
 
     if reversing:
-        print(22222)
         attn_output_weights = -attn_output_weights
 
     if attn_mask is not None:
