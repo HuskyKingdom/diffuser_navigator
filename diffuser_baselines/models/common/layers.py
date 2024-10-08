@@ -395,7 +395,7 @@ class FFWRelativeCrossAttentionModule(nn.Module):
         self.ffw_layers = nn.ModuleList()
         for _ in range(num_layers):
             self.attn_layers.append(RelativeCrossAttentionLayer(
-                embedding_dim, num_attn_heads, use_adaln=use_adaln,reversing=False
+                embedding_dim, num_attn_heads, use_adaln=use_adaln,reversing=reversing
             ))
             self.ffw_layers.append(FeedforwardLayer(
                 embedding_dim, embedding_dim, use_adaln=use_adaln

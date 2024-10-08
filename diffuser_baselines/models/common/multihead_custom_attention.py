@@ -401,7 +401,6 @@ def multi_head_attention_forward(query,  # type: Tensor
     attn_output_weights = torch.bmm(q, k.transpose(1, 2))
     assert list(attn_output_weights.size()) == [bsz * num_heads, tgt_len, src_len]
 
-    print(33333)
     if reversing:
         print(22222)
         attn_output_weights = -attn_output_weights
