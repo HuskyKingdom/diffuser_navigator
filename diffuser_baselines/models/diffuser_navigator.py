@@ -36,12 +36,11 @@ class DiffusionPolicy(Policy):
         if encode_only:
             return None
         
-        # histories
-        self.histories.append(rgb_features)
+        # memorize history
         self.histories.append(rgb_features)
 
         print(rgb_features.shape)
-        print(torch.stack(self.histories, dim=0).squeeze(1).shape)
+        print(torch.stack(self.histories, dim=0).shape)
         assert 1==2
 
 
@@ -50,6 +49,8 @@ class DiffusionPolicy(Policy):
         'instruction': batch['instruction'],
         'rgb_features': rgb_features.to(batch['instruction'].device),
         'depth_features': depth_features.to(batch['instruction'].device),
+        'histories': torch.stack(self.histories, dim=0).squeeze(1),     # (bs,max_seq_len,32768)      
+        'his_len': observations['his_len'].to(observations['instruction'].device),
         'proprioceptions': torch.tensor(all_pose,dtype=torch.float32).to(batch['instruction'].device)
         }
 
