@@ -481,8 +481,9 @@ class DiffusionNavigator(nn.Module):
 
 
         # context features 
+        observation_mask = torch.zeros((obs_features.shape[0], obs_features.shape[1]), dtype=torch.bool).to(obs_features.device)
         context_features = torch.cat((history_feature,lan_features,obs_features),dim=1)
-        context_mask = torch.cat((his_pad,pad_mask,torch.zeros((obs_features.shape[0], obs_features.shape[1]), dtype=torch.bool)),dim=1)
+        context_mask = torch.cat((his_pad,pad_mask, observation_mask),dim=1)
 
         context_features = self.context_self_atten(context_features.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=context_mask)[-1].transpose(0,1)
