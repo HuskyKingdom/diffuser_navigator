@@ -38,10 +38,10 @@ class DiffusionPolicy(Policy):
         
         # memorize history
         self.histories.append(rgb_features.squeeze(0)[:2048, :, :])
-        self.histories.append(rgb_features.squeeze(0)[:2048, :, :])
+        
 
         print(rgb_features.squeeze(0)[:2048, :, :].shape)
-        print(torch.stack(self.histories, dim=0).shape)
+        print(torch.stack(self.histories, dim=0).unsqueeze(0).view(1, -1).shape)
         assert 1==2
 
 
@@ -50,7 +50,7 @@ class DiffusionPolicy(Policy):
         'instruction': batch['instruction'],
         'rgb_features': rgb_features.to(batch['instruction'].device),
         'depth_features': depth_features.to(batch['instruction'].device),
-        'histories': torch.stack(self.histories, dim=0).squeeze(1),     # (bs,max_seq_len,32768)      
+        'histories': torch.stack(self.histories, dim=0).unsqueeze(0).view(1, -1),     # (bs,max_seq_len,32768)      
         'his_len': observations['his_len'].to(observations['instruction'].device),
         'proprioceptions': torch.tensor(all_pose,dtype=torch.float32).to(batch['instruction'].device)
         }
