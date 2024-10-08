@@ -498,7 +498,6 @@ class DiffusionNavigator(nn.Module):
         
 
 
-
         # predicting termination
         termination_features = self.termination_self_atten(final_features.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
