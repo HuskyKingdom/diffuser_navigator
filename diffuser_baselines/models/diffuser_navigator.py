@@ -52,8 +52,8 @@ class DiffusionPolicy(Policy):
         'proprioceptions': torch.tensor(all_pose,dtype=torch.float32).to(batch['instruction'].device)
         }
 
-        print(f"his len {collected_data["histories"].shape}")
-        print(f"his len {collected_data["his_len"].shape}")
+        print(f"his len {collected_data['histories'].shape}")
+        print(f"his len {collected_data['his_len'].shape}")
 
         assert 1==2
 
@@ -82,8 +82,8 @@ class DiffusionPolicy(Policy):
         'proprioceptions': observations['proprioceptions'].to(observations['instruction'].device)
         }
 
-        print(f"his len {collected_data["histories"].shape}")
-        print(f"his len {collected_data["his_len"].shape}")
+        print(f"his len {collected_data['histories'].shape}")
+        print(f"his len {collected_data['his_len'].shape}")
 
         assert 1==2
 
