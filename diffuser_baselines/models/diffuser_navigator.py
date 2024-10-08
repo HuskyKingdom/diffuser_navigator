@@ -456,9 +456,6 @@ class DiffusionNavigator(nn.Module):
         his_position = self.pe_layer(tokens[3])
         his_pad = tokens[4]
 
-        print(his_pad.shape)
-        assert 1==2
-
         # history features
         history_feature = self.history_self_atten(his_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=his_pad)[-1].transpose(0,1)
