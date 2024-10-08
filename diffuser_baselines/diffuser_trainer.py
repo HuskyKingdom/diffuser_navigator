@@ -120,6 +120,8 @@ def collate_fn(batch):
         # pose at t
         collected_data['proprioceptions'].append(sample[3][t])
 
+        print(history.shape)
+        assert 1==2
     
     # Pad histories to the same length
     collected_data['histories'] = torch.nn.utils.rnn.pad_sequence(
