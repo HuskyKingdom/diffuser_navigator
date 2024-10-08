@@ -206,10 +206,14 @@ class DiffusionNavigator(nn.Module):
         
         self.history_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
-
-        self.lan_his_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers,reversing=True)
         self.observation_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+
+        self.context_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.contetual_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+
+
+        self.termination_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        self.noise_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
 
 
@@ -460,47 +464,32 @@ class DiffusionNavigator(nn.Module):
         
 
 
-        # history features
+        # history features (bs,seq_len,emb)
         history_feature = self.history_self_atten(his_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=his_pad)[-1].transpose(0,1)
         
-
-        # languege features
+        # languege features (bs,seq_len,emb)
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
-
-        # lan-his cross attend
-        lan_features = self.lan_his_crossattd(query=lan_features.transpose(0, 1),
-            value=history_feature.transpose(0, 1),
-            query_pos=None,
-            value_pos=None,
-            diff_ts=time_embeddings,pad_mask=his_pad)[-1].transpose(0,1)
-
-        # observation features
+        # observation features (bs,seq_len,emb)
         obs_features = self.observation_crossattd(query=tokens[1].transpose(0, 1),
             value=tokens[2].transpose(0, 1),
             query_pos=None,
             value_pos=None,
             diff_ts=time_embeddings)[-1].transpose(0,1)
-        
 
 
         # context features 
-        context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr. (bs,seq,emb)
+        context_features = torch.cat((history_feature,lan_features,obs_features),dim=1)
+        context_mask = torch.cat((his_pad,pad_mask,torch.zeros((obs_features.shape[0], obs_features.shape[1]), dtype=torch.bool)),dim=1)
 
-
-        # # trajectory features
-        traj_features, _ = self.traj_lang_attention[0](
-                seq1=traj_position, seq1_key_padding_mask=None,
-                seq2=lan_features, seq2_key_padding_mask=pad_mask,
-                seq1_pos=None, seq2_pos=None,
-                seq1_sem_pos=None, seq2_sem_pos=None
-        )
-
+        context_features = self.context_self_atten(context_features.transpose(0,1), diff_ts=time_embeddings,
+                query_pos=None, context=None, context_pos=None,pad_mask=context_mask)[-1].transpose(0,1)
+       
 
         # final features
-        final_features = self.contetual_crossattd(query=traj_features.transpose(0, 1),
+        final_features = self.contetual_crossattd(query=traj_position.transpose(0, 1),
             value=context_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,
@@ -508,11 +497,16 @@ class DiffusionNavigator(nn.Module):
         
 
 
+
         # predicting termination
-        termination_prediction = self.termination_predictor(final_features).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
+        termination_features = self.termination_self_atten(final_features.transpose(0,1), diff_ts=time_embeddings,
+                query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
+        termination_prediction = self.termination_predictor(termination_features).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
 
         # predicting noise
-        noise_prediction = self.noise_predictor(final_features) # (bs,seq_len,traj_space)
+        noise_features = self.noise_self_atten(final_features.transpose(0,1), diff_ts=time_embeddings,
+                query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
+        noise_prediction = self.noise_predictor(noise_features) # (bs,seq_len,traj_space)
 
         
         return noise_prediction,termination_prediction
