@@ -240,7 +240,7 @@ def multi_head_attention_forward(query,  # type: Tensor
 
 
     tgt_len, bsz, embed_dim = query.size()
-    
+
     assert embed_dim == embed_dim_to_check
     assert list(query.size()) == [tgt_len, bsz, embed_dim]
     assert key.size() == value.size()
@@ -350,6 +350,9 @@ def multi_head_attention_forward(query,  # type: Tensor
     else:
         assert bias_k is None
         assert bias_v is None
+    
+    print(rotary_pe)
+    assert 1==2
 
     if rotary_pe is not None:  # rotary pe ROPE disentangeld
         qp, kvp = rotary_pe
