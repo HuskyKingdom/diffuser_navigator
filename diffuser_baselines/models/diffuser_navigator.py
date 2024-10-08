@@ -456,7 +456,7 @@ class DiffusionNavigator(nn.Module):
         his_position = self.pe_layer(tokens[3])
         his_pad = tokens[4]
 
-        print(his_position.shape)
+        print(his_pad.shape)
         assert 1==2
 
         # history features
