@@ -54,6 +54,8 @@ class DiffusionPolicy(Policy):
 
         actions = self.navigator(collected_data,run_inference = True,print_info=print_info)
 
+        print(f"his len {len(self.histories)}")
+
         return actions
         
     def reset_his(self):
@@ -62,10 +64,6 @@ class DiffusionPolicy(Policy):
     def build_loss(self,observations):
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
-
-        print(observations['histories'].shape)
-        assert 1==2
-
 
         # format batch data
         collected_data = {

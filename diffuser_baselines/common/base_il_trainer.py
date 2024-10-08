@@ -321,14 +321,13 @@ class BaseVLNCETrainer(BaseILTrainer):
                     with torch.no_grad():
                         out = self.policy.act(batch,all_pose,print_info=True) # print prediction info
                         action_candidates = out.cpu().tolist()
-                # else: # forward ONLY
-                #     with torch.no_grad():
-                #         _, hiddens = self.policy.act(batch,all_pose,hiddens)
+                else: # forward ONLY
+                    with torch.no_grad():
+                        _ = self.policy.act(batch,all_pose)
                 
-                # pop actions & update hidden
+                # pop actions
                 actions = [[env_index.pop(0)] for env_index in action_candidates]
                 actions = torch.tensor(actions).to(self.device)
-                
                 
 
             else:
@@ -391,7 +390,6 @@ class BaseVLNCETrainer(BaseILTrainer):
                     )
                     del stats_episodes[ep_id]["top_down_map_vlnce"]
                     rgb_frames[i] = []
-                    print("fku")
 
                 print(f"infos: {infos[i]}")
 
