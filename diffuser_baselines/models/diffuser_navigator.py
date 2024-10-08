@@ -287,7 +287,7 @@ class DiffusionNavigator(nn.Module):
                 max_seq is automatically determined as the maximum value in lengths.
         """
         # Calculate the maximum sequence length from the input lengths
-        max_seq_length = 500
+        max_seq_length = 300
         
         # Create a range tensor (1D) of shape (max_seq_length)
         range_tensor = torch.arange(max_seq_length).expand(len(lengths), max_seq_length)

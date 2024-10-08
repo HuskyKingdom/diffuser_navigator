@@ -59,7 +59,7 @@ def collate_fn(batch):
 
     def pad_tensors(tensor_list):
         # 找到所有tensor的最大长度
-        max_len = 500
+        max_len = 300
         emb_size = tensor_list[0].size(1)  # 假设所有tensor的embedding维度相同
         
         # 创建一个用于填充的张量，默认填充0
