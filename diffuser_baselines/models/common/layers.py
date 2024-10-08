@@ -290,7 +290,7 @@ class AdaLN(nn.Module):
         scale, shift = self.modulation(t).chunk(2, dim=-1)  # (B, C), (B, C)
         x = x * (1 + scale.unsqueeze(0)) + shift.unsqueeze(0)
 
-        # x = x.squeeze(0)
+        x = x.squeeze(0)
         return x
 
 
