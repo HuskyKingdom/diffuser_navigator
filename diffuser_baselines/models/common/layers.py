@@ -343,7 +343,7 @@ class RelativeCrossAttentionLayer(nn.Module):
         else:
             adaln_query = query
 
-        print(query.shape)
+        print(adaln_query.shape)
         assert 1==2
 
         attn_output, _ = self.multihead_attn(
