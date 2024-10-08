@@ -351,8 +351,6 @@ def multi_head_attention_forward(query,  # type: Tensor
         assert bias_k is None
         assert bias_v is None
     
-    print(rotary_pe)
-    assert 1==2
 
     if rotary_pe is not None:  # rotary pe ROPE disentangeld
         qp, kvp = rotary_pe
