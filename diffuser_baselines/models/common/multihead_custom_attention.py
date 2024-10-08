@@ -36,12 +36,14 @@ class MultiheadCustomAttention(Module):
     """
 
     def __init__(self, embed_dim, num_heads, dropout=0., bias=True, add_bias_kv=False, add_zero_attn=False, kdim=None,
-                 vdim=None, slot_competition=False, return_kv=False, gate_attn=False):
+                 vdim=None, slot_competition=False, return_kv=False, gate_attn=False,reversing=False):
         super().__init__()
         self.embed_dim = embed_dim
         self.kdim = kdim if kdim is not None else embed_dim
         self.vdim = vdim if vdim is not None else embed_dim
         self._qkv_same_embed_dim = self.kdim == embed_dim and self.vdim == embed_dim
+
+        self.reversing = reversing
 
         self.num_heads = num_heads
         self.dropout = dropout
@@ -155,7 +157,7 @@ class MultiheadCustomAttention(Module):
                 attn_mask=attn_mask, slot_competition=self.slot_competition,
                 return_kv=self.return_kv, k_mem=k_mem, v_mem=v_mem,
                 gate_attn=self.gate_attn, mem_mask=mem_mask,
-                rotary_pe=rotary_pe)
+                rotary_pe=rotary_pe,reversing = self.reversing)
 
 
 def multi_head_attention_forward(query,  # type: Tensor
@@ -188,7 +190,7 @@ def multi_head_attention_forward(query,  # type: Tensor
                                  v_mem=None,
                                  gate_attn=None,
                                  mem_mask=None,
-                                 reversing=False,
+                                 reversing=False
                                  ):
     # type: (...) -> Tuple[Tensor, Optional[Tensor]]
     r"""

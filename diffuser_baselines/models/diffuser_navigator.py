@@ -207,7 +207,7 @@ class DiffusionNavigator(nn.Module):
         self.history_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
-        self.lan_his_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        self.lan_his_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers,reversing=True)
         self.observation_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.contetual_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
@@ -462,7 +462,7 @@ class DiffusionNavigator(nn.Module):
 
         # history features
         history_feature = self.history_self_atten(his_position.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None,pad_mask=his_pad,reversing=True)[-1].transpose(0,1)
+                query_pos=None, context=None, context_pos=None,pad_mask=his_pad)[-1].transpose(0,1)
         
 
         # languege features
