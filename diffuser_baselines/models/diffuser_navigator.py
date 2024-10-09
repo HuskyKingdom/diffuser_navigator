@@ -198,6 +198,7 @@ class DiffusionNavigator(nn.Module):
         self.context_cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         # self.self_attention = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.term_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        self.noise_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
         # Diffusion schedulers
         self.noise_scheduler = DDPMScheduler(
@@ -207,17 +208,19 @@ class DiffusionNavigator(nn.Module):
 
 
         # predictors (history emb + current emb)
-        self.term_projctor = nn.Linear(embedding_dim*2, embedding_dim)
-        self.noise_predictor = nn.Sequential(
-            nn.Linear(embedding_dim*2, embedding_dim),
-            nn.ReLU(),
-            nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
-        )
+        self.term_projector = nn.Linear(embedding_dim*2, embedding_dim)
         self.termination_predictor = nn.Sequential(
             nn.Linear(embedding_dim, embedding_dim), # (bs,3,64)
             nn.ReLU(),
             nn.Linear(embedding_dim, 1), # (bs,3,1)
             nn.Sigmoid()
+        )
+
+        self.noise_projector = nn.Linear(embedding_dim*2, embedding_dim)
+        self.noise_predictor = nn.Sequential(
+            nn.Linear(embedding_dim, embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
         )
 
         self.n_steps = diffusion_timesteps
@@ -465,9 +468,10 @@ class DiffusionNavigator(nn.Module):
         fused_feature = torch.cat((features,history_feature),dim=-1) # (bs,seq_len,d*2)
 
         # predicting terminationx
-        termination_feature = self.term_projctor(fused_feature)
+        termination_feature = self.term_projector(fused_feature)
         termination_feature  = self.term_self_atten(termination_feature.transpose(0,1), diff_ts=time_embeddings,
                                                                     query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
+        termination_prediction = self.termination_predictor(termination_feature).view(termination_feature.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
 
                 
         # final_features = self.self_attention(fused_feature.transpose(0,1), diff_ts=time_embeddings,
@@ -476,8 +480,12 @@ class DiffusionNavigator(nn.Module):
         # print(final_features.shape)
         # assert 1==2
 
-        noise_prediction = self.noise_predictor(fused_feature) # (bs,seq_len,traj_space)
-        termination_prediction = self.termination_predictor(termination_feature).view(termination_feature.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
+        
+        
+        noise_feature = self.noise_projector(fused_feature)
+        noise_feature  = self.noise_self_atten(noise_feature.transpose(0,1), diff_ts=time_embeddings,
+                                                                    query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
+        noise_prediction = self.noise_predictor(noise_feature) # (bs,seq_len,traj_space)
 
         return noise_prediction,termination_prediction
 
