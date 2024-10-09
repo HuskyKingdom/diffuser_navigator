@@ -304,6 +304,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         start_time = time.time()
 
         action_candidates = [[]]
+        hiddens = None
 
 
         while envs.num_envs > 0 and len(stats_episodes) < num_eps:
@@ -314,26 +315,28 @@ class BaseVLNCETrainer(BaseILTrainer):
                 pos = envs.call_at(i, "get_state", {"observations": {}})
                 all_pose.append(pos)
             
+            
             current_episodes = envs.current_episodes()
             if config.EVAL.ACTION_POP: # forward every F timesteps
 
                 if len(action_candidates[0]) == 0: # forward & update action candidates
                     with torch.no_grad():
-                        out = self.policy.act(batch,all_pose,print_info=True) # print prediction info
+                        out,hiddens = self.policy.act(batch,all_pose,hiddens,print_info=True) # print prediction info
                         action_candidates = out.cpu().tolist()
-                else: # forward ONLY
-                    with torch.no_grad():
-                        _ = self.policy.act(batch,all_pose)
+                # else: # forward ONLY
+                #     with torch.no_grad():
+                #         _, hiddens = self.policy.act(batch,all_pose,hiddens)
                 
-                # pop actions
+                # pop actions & update hidden
                 actions = [[env_index.pop(0)] for env_index in action_candidates]
                 actions = torch.tensor(actions).to(self.device)
+                
                 
 
             else:
 
                 with torch.no_grad():
-                    out = self.policy.act(batch,all_pose,print_info=True)
+                    out,hiddens = self.policy.act(batch,all_pose,hiddens,print_info=True)
                     # action_candidates = out.cpu().tolist()
                     # actions = torch.tensor(out).to(self.device)
                     actions = out
@@ -364,7 +367,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 stats_episodes[ep_id] = infos[i]
                 observations[i] = envs.reset_at(i)[0]
                 # reset
-                self.policy.reset_his() # modif
+                hiddens = None # modif
                 action_candidates = [[]]
 
                 if config.use_pbar:
@@ -390,6 +393,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                     )
                     del stats_episodes[ep_id]["top_down_map_vlnce"]
                     rgb_frames[i] = []
+                    print("fku")
 
                 print(f"infos: {infos[i]}")
 

@@ -56,22 +56,6 @@ def collate_fn(batch):
     ]
     """
 
-
-    def pad_tensors(tensor_list):
-        # 找到所有tensor的最大长度
-        max_len = 300
-        emb_size = tensor_list[0].size(1)  # 假设所有tensor的embedding维度相同
-        
-        # 创建一个用于填充的张量，默认填充0
-        padded_tensors = torch.zeros(len(tensor_list), max_len, emb_size)
-        
-        # 将原始tensor复制到填充后的张量中
-        for i, tensor in enumerate(tensor_list):
-            length = tensor.size(0)
-            padded_tensors[i, :length, :] = tensor
-        
-        return padded_tensors
-
     F = 2  # 预测的未来动作数量 - 1
 
     collected_data = {
@@ -136,13 +120,13 @@ def collate_fn(batch):
         # pose at t
         collected_data['proprioceptions'].append(sample[3][t])
 
-
     
     # Pad histories to the same length
-    # collected_data['histories'] = torch.nn.utils.rnn.pad_sequence(
-    #     collected_data['histories'], batch_first=True
-    # )
-    collected_data['histories'] = pad_tensors(collected_data['histories'])
+    collected_data['histories'] = torch.nn.utils.rnn.pad_sequence(
+        collected_data['histories'], batch_first=True
+    )
+
+
 
     # stack to batched tensors
     collected_data['proprioceptions'] = np.array(collected_data['proprioceptions'])
@@ -666,7 +650,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         num_epoch_batch += 1
 
                     
-                    if (diffuser_it * self.config.IL.epochs + epoch) % 100 == 0:
+                    if (diffuser_it * self.config.IL.epochs + epoch) % 200 == 0:
                         self.save_checkpoint(
                             f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
                         )

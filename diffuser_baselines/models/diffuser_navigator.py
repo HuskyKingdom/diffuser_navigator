@@ -26,45 +26,34 @@ class DiffusionPolicy(Policy):
         super(Policy, self).__init__()
         self.navigator = DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.config = config
-        self.histories = []
 
-    def act(self,batch, all_pose=None, encode_only=False,print_info=False):
+    def act(self,batch, all_pose=None, hiddens = None, encode_only=False,print_info=False):
 
         
         rgb_features,depth_features = self.navigator.encode_visions(batch,self.config) # raw batch
 
         if encode_only:
             return None
-        
-        # memorize history
-        self.histories.append(rgb_features.squeeze(0)[:2048, :, :])
-        
-        
-
 
         # format batch data
         collected_data = {
         'instruction': batch['instruction'],
         'rgb_features': rgb_features.to(batch['instruction'].device),
         'depth_features': depth_features.to(batch['instruction'].device),
-        'histories': torch.stack(self.histories, dim=0).view(len(self.histories), -1).unsqueeze(0).to(batch['instruction'].device),     # (bs,max_seq_len,32768)      
-        'his_len': torch.tensor([len(self.histories)]).to(batch['instruction'].device),
         'proprioceptions': torch.tensor(all_pose,dtype=torch.float32).to(batch['instruction'].device)
         }
 
 
-        actions = self.navigator(collected_data,run_inference = True,print_info=print_info)
+        actions, next_hidden = self.navigator(collected_data,run_inference = True,hiddens=hiddens,print_info=print_info)
 
-        print(f"his len {len(self.histories)}")
-
-        return actions
+        return actions, next_hidden
         
-    def reset_his(self):
-        self.histories = []
+    
 
     def build_loss(self,observations):
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
+
 
         # format batch data
         collected_data = {
@@ -77,7 +66,6 @@ class DiffusionPolicy(Policy):
         'trajectories': observations['trajectories'].to(observations['instruction'].device),
         'proprioceptions': observations['proprioceptions'].to(observations['instruction'].device)
         }
-
 
         loss = self.navigator(collected_data)
 
@@ -108,13 +96,11 @@ class DiffusionNavigator(nn.Module):
         self.total_correct = 0
 
 
-        
+        # Vision Encoders _____________________
         obs_space = spaces.Dict({
             "rgb": spaces.Box(low=0, high=255, shape=(224, 224, 3), dtype='float32'),
             "depth": spaces.Box(low=0, high=255, shape=(256, 256, 1), dtype='float32')
         })
-
-        # Vision Encoders _____________________
 
         assert config.MODEL.DEPTH_ENCODER.cnn_type in ["VlnResnetDepthEncoder"]
         self.depth_encoder = getattr(
@@ -173,26 +159,30 @@ class DiffusionNavigator(nn.Module):
             nn.Linear(embedding_dim, embedding_dim)
         )
 
-        self.history_projector = nn.Linear(32768, embedding_dim)
+        self.his_encoder = HistoryGRU(32768,512,embedding_dim,2)
+
+        # for param in self.action_encoder.parameters(): # freeze action representations
+        #     param.requires_grad = False
+
+        # prepare action embedding targets for inference
+        # action_targets = torch.arange(self.config.DIFFUSER.action_space).unsqueeze(0)
+        # self.action_em_targets = self.action_encoder(action_targets)
 
         # positional embeddings
         self.pe_layer = PositionalEncoding(embedding_dim,0.2)
 
-
         # Attention layers _____________________
-        vl_attd_layer = ParallelAttention(
+        layer = ParallelAttention(
             num_layers=num_layers,
             d_model=embedding_dim, n_heads=num_attention_heads,
             self_attention1=False, self_attention2=False,
             cross_attention1=True, cross_attention2=False
         )
         self.vl_attention = nn.ModuleList([
-            vl_attd_layer
+            layer
             for _ in range(1)
             for _ in range(1)
         ])
-
-
         self.traj_lang_attention = nn.ModuleList([
             ParallelAttention(
                 num_layers=1,
@@ -202,32 +192,24 @@ class DiffusionNavigator(nn.Module):
                 rotary_pe=False, apply_ffn=False
             )
         ])
-        
-        
-        self.history_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
+
         self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        self.observation_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        self.obs_cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        self.context_cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        # self.self_attention = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        self.term_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
-        self.context_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        self.contetual_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-
-
-        self.termination_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        self.noise_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
-
-
-
-        # Diffusion schedulers _____________________
+        # Diffusion schedulers
         self.noise_scheduler = DDPMScheduler(
             num_train_timesteps=diffusion_timesteps,
             beta_schedule="squaredcos_cap_v2",
         )
 
 
-        # Predictors_____________________
         # predictors (history emb + current emb)
+        self.term_projctor = nn.Linear(embedding_dim*2, embedding_dim)
         self.noise_predictor = nn.Sequential(
-            nn.Linear(embedding_dim, embedding_dim),
+            nn.Linear(embedding_dim*2, embedding_dim),
             nn.ReLU(),
             nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
         )
@@ -280,25 +262,7 @@ class DiffusionNavigator(nn.Module):
         return traj_tokens
 
 
-    def create_padding_mask(self,lengths):
-        """
-        lengths: (bs,) tensor, representing the actual lengths of each sample
-        return: (bs, max_seq) boolean tensor, where positions within the actual length are False, and padding is True.
-                max_seq is automatically determined as the maximum value in lengths.
-        """
-        # Calculate the maximum sequence length from the input lengths
-        max_seq_length = 300
-        
-        # Create a range tensor (1D) of shape (max_seq_length)
-        range_tensor = torch.arange(max_seq_length).expand(len(lengths), max_seq_length)
-        range_tensor = range_tensor.to(lengths.device)
-        
-        # Compare each value in range_tensor with lengths to create the mask
-        mask = range_tensor >= lengths.unsqueeze(1)
-
-        return mask
-
-    def tokenlize_input(self,observations,inference=False):
+    def tokenlize_input(self,observations,hiddens,inference=False):
 
         bs = observations["instruction"].size(0)
         
@@ -317,16 +281,20 @@ class DiffusionNavigator(nn.Module):
         pose_feature = self.pose_encoder(observations["proprioceptions"]) 
 
 
-        history_tokens = self.history_projector(observations["histories"])
-        his_padmask = self.create_padding_mask(observations["his_len"].long())
-    
+        if inference: # dont pack
+            input_x = observations["rgb_features"][:, :2048, :, :].view(observations["rgb_features"].shape[0],-1).unsqueeze(1) # take current as input and reshape to (bs,len,d)
+            history_tokens, next_hiddens = self.his_encoder(input_x,hiddens,inference=True)
+        else:
+            history_tokens, next_hiddens = self.his_encoder(observations["histories"],hiddens,observations["his_len"],inference = False)
+
+
    
-        tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,his_padmask,traj_tokens,pose_feature]
+        tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,traj_tokens,pose_feature]
 
-        return tokens
+        return tokens, next_hiddens
 
 
-    def forward(self, observations, run_inference=False, print_info = False):
+    def forward(self, observations, run_inference=False,hiddens=None, print_info = False):
 
 
         observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions']).squeeze(0) # normalize input alone dimensions
@@ -337,7 +305,7 @@ class DiffusionNavigator(nn.Module):
 
         # inference _____
         if run_inference:
-            return self.inference_actions(observations,pad_mask,print_info)
+            return self.inference_actions(observations,pad_mask,hiddens,print_info)
 
         # train _____
         observations["trajectories"] = self.normalize_dim(observations["trajectories"]) # normalize input alone dimensions
@@ -357,9 +325,9 @@ class DiffusionNavigator(nn.Module):
         )
 
         # tokenlize
-        tokens = self.tokenlize_input(observations)
+        tokens, _ = self.tokenlize_input(observations,hiddens)
         # encode traj
-        tokens[5] = self.encode_trajectories(noised_traj)
+        tokens[4] = self.encode_trajectories(noised_traj)
 
         # predict noise
         pred_noise, pred_termination = self.predict_noise(tokens,noising_timesteps,pad_mask)
@@ -397,7 +365,7 @@ class DiffusionNavigator(nn.Module):
         # intermidiate_noise = noise
 
         # with torch.no_grad():
-        #     tokens, _ = self.tokenlize_input(observations,hiddens)
+        #     tokens, _ = self.tokenlize_input(observations,hiddens) # dont pack
         
         
 
@@ -406,7 +374,7 @@ class DiffusionNavigator(nn.Module):
         #     with torch.no_grad():
 
         #         # encode traj and predict noise
-        #         tokens[5] = self.encode_trajectories(intermidiate_noise) # dont pack
+        #         tokens[4] = self.encode_trajectories(intermidiate_noise) # dont pack
 
         #         tokens = [tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0)]
         #         pad_mask = pad_mask[0].unsqueeze(0)
@@ -449,67 +417,68 @@ class DiffusionNavigator(nn.Module):
         return feats
     
 
-    
-
-    def predict_noise(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens, rgb, depth, history_tokens, his_pad, traj, pose_feature)
+    def predict_noise(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,history_tokens,traj,pose_feature)
 
         time_embeddings = self.time_emb(timesteps.float())
         time_embeddings = time_embeddings + tokens[-1] # fused (48,64)
 
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
-        traj_position = self.pe_layer(tokens[5])
-        his_position = self.pe_layer(tokens[3])
-        his_pad = tokens[4]
-        
+        traj_position = self.pe_layer(tokens[4])
 
-        # history features (bs,seq_len,emb)
-        history_feature = self.history_self_atten(his_position.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None,pad_mask=his_pad)[-1].transpose(0,1)
-        
-        # languege features (bs,200,emb)
+
+        # languege features
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
 
-        # observation features (bs,16,emb)
-        obs_features = self.observation_crossattd(query=tokens[1].transpose(0, 1),
+        # observation features
+        obs_features = self.obs_cross_attention(query=tokens[1].transpose(0, 1),
             value=tokens[2].transpose(0, 1),
             query_pos=None,
             value_pos=None,
-            diff_ts=time_embeddings)[-1].transpose(0,1)
-
-
+            diff_ts=time_embeddings)[-1].transpose(0,1) # takes last layer and return to (B,L,D)
+        
         # context features 
-        observation_mask = torch.zeros((obs_features.shape[0], obs_features.shape[1]), dtype=torch.bool).to(obs_features.device)
-        context_features = torch.cat((history_feature,lan_features,obs_features),dim=1)
-        context_features = self.pe_layer(context_features) # positional encoding
-        context_mask = torch.cat((his_pad,pad_mask, observation_mask),dim=1)
+        context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
 
-        context_features = self.context_self_atten(context_features.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None,pad_mask=context_mask)[-1].transpose(0,1)
-       
+
+        # trajectory features
+        traj_features, _ = self.traj_lang_attention[0](
+                seq1=traj_position, seq1_key_padding_mask=None,
+                seq2=lan_features, seq2_key_padding_mask=pad_mask,
+                seq1_pos=None, seq2_pos=None,
+                seq1_sem_pos=None, seq2_sem_pos=None
+        )
+
 
         # final features
-        final_features = self.contetual_crossattd(query=traj_position.transpose(0, 1),
+        features = self.context_cross_attention(query=traj_features.transpose(0, 1),
             value=context_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,
-            diff_ts=time_embeddings,pad_mask=context_mask)[-1].transpose(0,1) # (bs,3,64)
+            diff_ts=time_embeddings)[-1].transpose(0,1) # (bs,3,64)
         
 
+        # fuse with history
+        history_feature = tokens[-3].unsqueeze(1).expand(-1,features.shape[1],-1)
+        fused_feature = torch.cat((features,history_feature),dim=-1) # (bs,seq_len,d*2)
 
-        # predicting termination
-        termination_features = self.termination_self_atten(final_features.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
-        termination_prediction = self.termination_predictor(termination_features).view(final_features.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
+        # predicting terminationx
+        termination_feature = self.term_projctor(fused_feature)
+        termination_feature  = self.term_self_atten(termination_feature.transpose(0,1), diff_ts=time_embeddings,
+                                                                    query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
 
-        # predicting noise
-        noise_features = self.noise_self_atten(final_features.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
-        noise_prediction = self.noise_predictor(noise_features) # (bs,seq_len,traj_space)
-
+                
+        # final_features = self.self_attention(fused_feature.transpose(0,1), diff_ts=time_embeddings,
+        #         query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
         
+        # print(final_features.shape)
+        # assert 1==2
+
+        noise_prediction = self.noise_predictor(fused_feature) # (bs,seq_len,traj_space)
+        termination_prediction = self.termination_predictor(termination_feature).view(termination_feature.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
+
         return noise_prediction,termination_prediction
 
 
@@ -563,7 +532,7 @@ class DiffusionNavigator(nn.Module):
         return actions
 
 
-    def inference_actions(self,observations,mask,print_info): # pred_noises (B,N,D)
+    def inference_actions(self,observations,mask,hiddens,print_info): # pred_noises (B,N,D)
 
         self.noise_scheduler.set_timesteps(self.n_steps)
 
@@ -580,14 +549,14 @@ class DiffusionNavigator(nn.Module):
 
         # tokenlize input
         with torch.no_grad():
-            tokens = self.tokenlize_input(observations,True) # dont pack
+            tokens, next_hiddens = self.tokenlize_input(observations,hiddens,True) # dont pack
 
         for t in timesteps:
             
             # noise pred.
             with torch.no_grad():
                 # encode traj and predict noise
-                tokens[5] = self.encode_trajectories(intermidiate_noise) # dont pack
+                tokens[4] = self.encode_trajectories(intermidiate_noise) # dont pack
                 pred_noises,pred_terminations = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),mask)
 
             step_out = self.noise_scheduler.step(
@@ -607,7 +576,7 @@ class DiffusionNavigator(nn.Module):
         if print_info:
             print(f"final actions {actions} | t {pred_terminations}")
 
-        return actions
+        return actions,next_hiddens
 
 
     def encode_visions(self,batch,config):
@@ -616,5 +585,3 @@ class DiffusionNavigator(nn.Module):
         rgb_embedding = self.rgb_encoder(batch)
 
         return rgb_embedding,depth_embedding
-    
-
