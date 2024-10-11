@@ -474,7 +474,7 @@ class FFWRelativeSelfCrossAttentionModule(nn.Module):
             ))
 
     def forward(self, query, context, diff_ts=None,
-                query_pos=None, context_pos=None):
+                query_pos=None, context_pos=None, context_mask=None):
         output = []
         for i in range(self.num_layers):
             # Cross attend to the context first
@@ -484,7 +484,7 @@ class FFWRelativeSelfCrossAttentionModule(nn.Module):
                 else:
                     cur_query_pos = query_pos
                 query = self.cross_attn_layers[i](
-                    query, context, diff_ts, cur_query_pos, context_pos
+                    query, context, diff_ts, cur_query_pos, context_pos, context_mask
                 )
             # Self attend next
             query = self.self_attn_layers[i](
@@ -493,3 +493,4 @@ class FFWRelativeSelfCrossAttentionModule(nn.Module):
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
         return output
+
