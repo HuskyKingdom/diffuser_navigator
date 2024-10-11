@@ -207,13 +207,13 @@ class DiffusionNavigator(nn.Module):
         self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.history_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
+        self.lan_his_crossatten = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+
 
         self.semantic_context_cross_atten = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.dynamic_context_cross_atten = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
         self.semdynamic_conditioning = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        self.history_conditioning = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-
         self.term_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         
 
@@ -471,6 +471,13 @@ class DiffusionNavigator(nn.Module):
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
+        # language features fuse with histories
+        lan_features = self.lan_his_crossatten(query=lan_features.transpose(0, 1),
+            value=history_feature.transpose(0, 1),
+            query_pos=None,
+            value_pos=None,
+            diff_ts=time_embeddings,pad_mask=his_pad)[-1].transpose(0,1)
+        
 
         # semantic context
         semantic_context = self.semantic_context_cross_atten(query=tokens[1].transpose(0, 1),
@@ -493,14 +500,6 @@ class DiffusionNavigator(nn.Module):
             query_pos=None,
             value_pos=None,
             diff_ts=time_embeddings,pad_mask=None)[-1].transpose(0,1)
-        
-        # history conditioning
-        conditoned_features = self.history_conditioning(query=conditoned_features.transpose(0, 1),
-            value=history_feature.transpose(0, 1),
-            query_pos=None,
-            value_pos=None,
-            diff_ts=time_embeddings,pad_mask=his_pad)[-1].transpose(0,1)
-
 
 
 
