@@ -39,8 +39,6 @@ class DiffusionPolicy(Policy):
         # memorize history
         self.histories.append(rgb_features.squeeze(0)[:2048, :, :])
         
-        
-
 
         # format batch data
         collected_data = {
