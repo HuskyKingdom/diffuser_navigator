@@ -176,28 +176,28 @@ class DiffusionNavigator(nn.Module):
 
 
         # Attention layers _____________________
-        # vl_attd_layer = ParallelAttention(
-        #     num_layers=num_layers,
-        #     d_model=embedding_dim, n_heads=num_attention_heads,
-        #     self_attention1=False, self_attention2=False,
-        #     cross_attention1=True, cross_attention2=False
-        # )
-        # self.vl_attention = nn.ModuleList([
-        #     vl_attd_layer
-        #     for _ in range(1)
-        #     for _ in range(1)
-        # ])
+        vl_attd_layer = ParallelAttention(
+            num_layers=num_layers,
+            d_model=embedding_dim, n_heads=num_attention_heads,
+            self_attention1=False, self_attention2=False,
+            cross_attention1=True, cross_attention2=False
+        )
+        self.vl_attention = nn.ModuleList([
+            vl_attd_layer
+            for _ in range(1)
+            for _ in range(1)
+        ])
 
 
-        # self.traj_lang_attention = nn.ModuleList([
-        #     ParallelAttention(
-        #         num_layers=1,
-        #         d_model=embedding_dim, n_heads=num_attention_heads,
-        #         self_attention1=False, self_attention2=False,
-        #         cross_attention1=True, cross_attention2=False,
-        #         rotary_pe=False, apply_ffn=False
-        #     )
-        # ])
+        self.traj_lang_attention = nn.ModuleList([
+            ParallelAttention(
+                num_layers=1,
+                d_model=embedding_dim, n_heads=num_attention_heads,
+                self_attention1=False, self_attention2=False,
+                cross_attention1=True, cross_attention2=False,
+                rotary_pe=False, apply_ffn=False
+            )
+        ])
         
         
         self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
@@ -205,9 +205,8 @@ class DiffusionNavigator(nn.Module):
 
         self.lan_his_crossatten = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
-
-        self.semantic_context_cross_atten = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        self.dynamic_context_cross_atten = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+       
+        self.sence_crossattd = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
         self.semdynamic_conditioning = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.term_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
@@ -458,8 +457,7 @@ class DiffusionNavigator(nn.Module):
         traj_position = self.pe_layer(tokens[5])
         his_position = self.pe_layer(tokens[3])
         his_pad = tokens[4]
-        
-
+    
 
         # self attentions
         history_feature = self.history_self_atten(his_position.transpose(0,1), diff_ts=time_embeddings,
@@ -475,28 +473,30 @@ class DiffusionNavigator(nn.Module):
             diff_ts=time_embeddings,pad_mask=his_pad)[-1].transpose(0,1)
         
 
-        # semantic context
-        semantic_context = self.semantic_context_cross_atten(query=tokens[1].transpose(0, 1),
-            value=lan_features.transpose(0, 1),
+        # sence features
+        sence_features = self.sence_crossattd(query=tokens[1].transpose(0, 1),
+            value=tokens[2].transpose(0, 1),
             query_pos=None,
             value_pos=None,
             diff_ts=time_embeddings,pad_mask=pad_mask)[-1].transpose(0,1)
         
-        # sem-dynamic context 
-        sem_dynamic_context = self.dynamic_context_cross_atten(query=tokens[2].transpose(0, 1),
-            value=semantic_context.transpose(0, 1),
-            query_pos=None,
-            value_pos=None,
-            diff_ts=time_embeddings,pad_mask=None)[-1].transpose(0,1)
+        # semantic features
+        semantic_features = self.vision_language_attention(sence_features,lan_features,seq2_pad=pad_mask)
         
 
+        traj_feature, _ = self.traj_lang_attention[0](
+            seq1=traj_position, seq1_key_padding_mask=None,
+            seq2=lan_features, seq2_key_padding_mask=pad_mask,
+            seq1_pos=None, seq2_pos=None,
+            seq1_sem_pos=None, seq2_sem_pos=None
+        )
+
         # sem-dynamic conditioning
-        conditoned_features = self.semdynamic_conditioning(query=traj_position.transpose(0, 1),
-            value=sem_dynamic_context.transpose(0, 1),
+        conditoned_features = self.semdynamic_conditioning(query=traj_feature.transpose(0, 1),
+            value=semantic_features.transpose(0, 1),
             query_pos=None,
             value_pos=None,
             diff_ts=time_embeddings,pad_mask=None)[-1].transpose(0,1)
-
 
 
         # predicting termination
