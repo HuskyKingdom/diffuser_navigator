@@ -486,7 +486,7 @@ class DiffusionNavigator(nn.Module):
 
         traj_feature, _ = self.traj_lang_attention[0](
             seq1=traj_position, seq1_key_padding_mask=None,
-            seq2=lan_features, seq2_key_padding_mask=pad_mask,
+            seq2=lan_features, sseq2_key_padding_mask=pad_mask,
             seq1_pos=None, seq2_pos=None,
             seq1_sem_pos=None, seq2_sem_pos=None
         )
@@ -500,7 +500,7 @@ class DiffusionNavigator(nn.Module):
 
 
         # predicting termination
-        termination_feature = self.term_self_atten(conditoned_features.transpose(0,1), diff_ts=time_embeddings,
+        termination_feature = self.term_self_atten(traj_feature.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
         termination_prediction = self.termination_predictor(termination_feature).view(termination_feature.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
 
