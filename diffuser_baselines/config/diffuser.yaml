@@ -11,7 +11,7 @@ VIDEO_OPTION: ["disk"]
 
 EVAL:
   USE_CKPT_CONFIG: False
-  SPLIT: train # for testing overfitting only
+  SPLIT: val_seen # for testing overfitting only
   EPISODE_COUNT: -1
   ACTION_POP: True
 
