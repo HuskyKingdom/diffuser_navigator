@@ -486,7 +486,7 @@ class DiffusionNavigator(nn.Module):
 
         traj_feature, _ = self.traj_lang_attention[0](
             seq1=traj_position, seq1_key_padding_mask=None,
-            seq2=lan_features, sseq2_key_padding_mask=pad_mask,
+            seq2=lan_features, seq2_key_padding_mask=pad_mask,
             seq1_pos=None, seq2_pos=None,
             seq1_sem_pos=None, seq2_sem_pos=None
         )
