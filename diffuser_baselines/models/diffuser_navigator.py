@@ -478,7 +478,7 @@ class DiffusionNavigator(nn.Module):
             value=tokens[2].transpose(0, 1),
             query_pos=None,
             value_pos=None,
-            diff_ts=time_embeddings,pad_mask=pad_mask)[-1].transpose(0,1)
+            diff_ts=time_embeddings,pad_mask=None)[-1].transpose(0,1)
         
         # semantic features
         semantic_features = self.vision_language_attention(sence_features,lan_features,seq2_pad=pad_mask)
