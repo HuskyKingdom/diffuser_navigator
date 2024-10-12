@@ -53,8 +53,6 @@ class DiffusionPolicy(Policy):
 
         actions = self.navigator(collected_data,run_inference = True,print_info=print_info)
 
-        print(f"his len {len(self.histories)}")
-
         return actions
         
     def reset_his(self):
