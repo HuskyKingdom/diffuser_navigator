@@ -405,7 +405,7 @@ class DiffusionNavigator(nn.Module):
                 # encode traj and predict noise
                 tokens[5] = self.encode_trajectories(intermidiate_noise) # dont pack
 
-                tokens = [tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0)]
+                tokens = [tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0),tokens[6][0].unsqueeze(0)]
                 pad_mask = pad_mask[0].unsqueeze(0)
 
                 pred_noises,pred_termination = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
