@@ -54,8 +54,6 @@ class InstructionEncoder(nn.Module):
 
         input = observations.long()
 
-        
-
 
         out = self.map_layer(self.embedding_layer(input))
         

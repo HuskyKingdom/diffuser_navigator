@@ -282,8 +282,8 @@ class BaseVLNCETrainer(BaseILTrainer):
             observations, self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID
         )
 
-        print(observations[0]["instruction"])
-        assert 1==2
+  
+        
         
 
         batch = batch_obs(observations, self.device)

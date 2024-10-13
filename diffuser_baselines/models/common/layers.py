@@ -344,13 +344,16 @@ class RelativeCrossAttentionLayer(nn.Module):
             adaln_query = query
 
 
-        attn_output, _ = self.multihead_attn(
+        attn_output, attn_weights = self.multihead_attn(
             query=adaln_query,
             key=value,
             value=value,
             rotary_pe=None if query_pos is None else (query_pos, value_pos),
             key_padding_mask=pad_mask
         )
+
+        print(attn_weights.shape)
+        assert 1==2
         output = query + self.dropout(attn_output)
         output = self.norm(output)
         return output
