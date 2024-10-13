@@ -424,7 +424,7 @@ def vis_attention(weights):
     sns.heatmap(weights, cmap='viridis')
     plt.xlabel('键的位置 (Key Positions)')
     plt.ylabel('查询的位置 (Query Positions)')
-    plt.title(f'注意力权重可视化 - 批次 {batch_idx}, 头 {head_idx}')
+    plt.title(f'注意力权重可视化 - 批次 {0}')
     plt.show()
     assert 1==2
 
