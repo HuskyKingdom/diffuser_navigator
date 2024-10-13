@@ -414,13 +414,18 @@ class FFWRelativeCrossAttentionModule(nn.Module):
             output.append(query)
         return output
 
-def vis_attention(weights, k=28):
+def vis_attention(weights, pad_mask, k=None):
     import matplotlib.pyplot as plt
     import seaborn as sns
     import numpy as np
+    import torch
 
-    tokens = ['Walk', 'down', 'the', 'stairs,', 'turn', 'right,', 'and', 'walk', 'towards',  'place', 'with', 'a', 'rug', '.', 'Wait', 'near', 'the', 'bench', 'and',  'piano', 'along', 'the', 'right', 'side', 'of', 'the', 'wall', '.']
-    
+    k = torch.sum(~pad_mask)
+    k.item()
+
+    text = "Walk down the stairs, turn right, and walk towards place with a rug. Wait near the bench and piano along the right side of the wall."
+    tokens = text.replace(".", " .").split()
+
     # 获取平均注意力权重，形状为 [seq_len, seq_len]
     avg_weights = weights.mean(dim=1)[0]
     
@@ -485,7 +490,7 @@ class FFWRelativeSelfAttentionModule(nn.Module):
             )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
-            vis_attention(attn_output_weights)
+            vis_attention(attn_output_weights,pad_mask)
         return output
 
 
