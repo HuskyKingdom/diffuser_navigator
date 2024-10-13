@@ -420,9 +420,17 @@ def vis_attention(weights, k=28):
     import numpy as np
 
     tokens = ['Walk', 'down', 'the', 'stairs,', 'turn', 'right,', 'and', 'walk', 'towards',  'place', 'with', 'a', 'rug', '.', 'Wait', 'near', 'the', 'bench', 'and',  'piano', 'along', 'the', 'right', 'side', 'of', 'the', 'wall', '.']
-    avg_weights = weights.mean(dim=1)[0]  # [seq_len, seq_len]
+    
+    # 获取平均注意力权重，形状为 [seq_len, seq_len]
+    avg_weights = weights.mean(dim=1)[0]
+    
+    # 切片操作，保留前k个 key 和 query
     sliced_weights = avg_weights[:k, :k]
-    sum_weights = sliced_weights.sum(dim=1)
+    
+    # 对 key positions（列方向）进行求和
+    sum_weights = sliced_weights.sum(dim=0)
+    
+    # 将注意力权重转换为numpy数组
     weights_np = sum_weights.detach().cpu().numpy()
 
     # 确保tokens长度和权重矩阵匹配
@@ -436,12 +444,16 @@ def vis_attention(weights, k=28):
     
     # 绘图
     plt.figure(figsize=(10, 6))
+    
+    # 在key positions上绘制权重和
     sns.barplot(x=np.arange(len(tokens)), y=weights_np[:k], palette='Blues')
+    
+    # 设置标签为tokens
     plt.xticks(np.arange(len(tokens)), tokens, rotation=45, ha='right')
     
-    plt.xlabel('Query Tokens')
+    plt.xlabel('Key Tokens')
     plt.ylabel('Attention Sum')
-    plt.title(f'Attention Distribution for Each Query Token')
+    plt.title(f'Attention Distribution for Each Key Position')
     plt.tight_layout()
     plt.show()
 
