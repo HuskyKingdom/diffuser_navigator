@@ -276,14 +276,13 @@ class BaseVLNCETrainer(BaseILTrainer):
         self.policy.eval()
 
         observations = envs.reset()
-        print(observations["instruction"])
-        assert 1==2
+        print(observations[0]["instruction"])
         
         observations = extract_instruction_tokens(
             observations, self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID
         )
 
-        print(observations["instruction"])
+        print(observations[0]["instruction"])
         assert 1==2
         
 
