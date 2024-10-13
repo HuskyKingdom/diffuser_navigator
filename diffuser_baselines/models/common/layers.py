@@ -414,6 +414,21 @@ class FFWRelativeCrossAttentionModule(nn.Module):
             output.append(query)
         return output
 
+def vis_attention(weights):
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    avg_weights = weights.mean(dim=1)[0]
+    weights = avg_weights.detach().cpu().numpy()
+    # 使用Seaborn绘制热力图
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(weights, cmap='viridis')
+    plt.xlabel('键的位置 (Key Positions)')
+    plt.ylabel('查询的位置 (Query Positions)')
+    plt.title(f'注意力权重可视化 - 批次 {batch_idx}, 头 {head_idx}')
+    plt.show()
+    assert 1==2
+
+
 
 class FFWRelativeSelfAttentionModule(nn.Module):
 
@@ -441,9 +456,7 @@ class FFWRelativeSelfAttentionModule(nn.Module):
             )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
-            avg_weights = attn_output_weights.mean(dim=1)[0]
-            print(avg_weights.shape)
-            assert 1==2
+            vis_attention(attn_output_weights)
         return output
 
 
