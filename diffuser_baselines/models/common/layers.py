@@ -352,11 +352,10 @@ class RelativeCrossAttentionLayer(nn.Module):
             key_padding_mask=pad_mask
         )
 
-        print(attn_weights.shape)
-        assert 1==2
+ 
         output = query + self.dropout(attn_output)
         output = self.norm(output)
-        return output
+        return output, attn_weights
 
 
 class SelfAttentionLayer(nn.Module):
@@ -408,7 +407,7 @@ class FFWRelativeCrossAttentionModule(nn.Module):
                 query_pos=None, value_pos=None,pad_mask=None):
         output = []
         for i in range(self.num_layers):
-            query = self.attn_layers[i](
+            query , _ = self.attn_layers[i](
                 query, value, diff_ts, query_pos, value_pos,pad_mask
             )
             query = self.ffw_layers[i](query, diff_ts)
@@ -437,11 +436,14 @@ class FFWRelativeSelfAttentionModule(nn.Module):
                 query_pos=None, context=None, context_pos=None,pad_mask=None):
         output = []
         for i in range(self.num_layers):
-            query = self.attn_layers[i](
+            query, attn_output_weights = self.attn_layers[i](
                 query, query, diff_ts, query_pos, query_pos,pad_mask
             )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
+            avg_weights = attn_output_weights.mean(dim=1)[0]
+            print(avg_weights.shape)
+            assert 1==2
         return output
 
 
