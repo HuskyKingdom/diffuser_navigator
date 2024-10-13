@@ -433,7 +433,7 @@ class DiffusionNavigator(nn.Module):
 
         # languege features
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None,pad_mask=pad_mask,text=True)[-1].transpose(0,1)
+                query_pos=None, context=None, context_pos=None,pad_mask=pad_mask,vis=True)[-1].transpose(0,1)
         
 
         # observation features

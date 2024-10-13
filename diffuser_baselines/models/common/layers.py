@@ -483,7 +483,7 @@ class FFWRelativeSelfAttentionModule(nn.Module):
             ))
 
     def forward(self, query, diff_ts=None,
-                query_pos=None, context=None, context_pos=None,pad_mask=None,text=False):
+                query_pos=None, context=None, context_pos=None,pad_mask=None,vis=False):
         output = []
         for i in range(self.num_layers):
             query, attn_output_weights = self.attn_layers[i](
@@ -491,8 +491,13 @@ class FFWRelativeSelfAttentionModule(nn.Module):
             )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
-            if text:
+            time = 0
+            if vis and time==0:
                 vis_attention(attn_output_weights,pad_mask)
+            elif time < 200:
+                time += 1
+            else:
+                time = 0
         return output
 
 
