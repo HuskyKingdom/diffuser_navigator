@@ -417,19 +417,39 @@ class FFWRelativeCrossAttentionModule(nn.Module):
 def vis_attention(weights, k=28):
     import matplotlib.pyplot as plt
     import seaborn as sns
+    import numpy as np
+
+    tokens = ['Walk', 'down', 'the', 'stairs,', 'turn', 'right,', 'and', 'walk', 'towards',  'place', 'with', 'a', 'rug', '.', 'Wait', 'near', 'the', 'bench', 'and',  'piano', 'along', 'the', 'right', 'side', 'of', 'the', 'wall', '.']
     # 计算平均注意力权重并选择第一个批次
     avg_weights = weights.mean(dim=1)[0]  # 形状为 [seq_len, seq_len]
     # 对查询和键的位置进行切片，保留前k个
     sliced_weights = avg_weights[:k, :k]
-    weights_np = sliced_weights.detach().cpu().numpy()
-    # 使用Seaborn绘制热力图
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(weights_np, cmap='viridis')
-    plt.xlabel('Key Positions')
-    plt.ylabel('Query Positions')
-    plt.title(f'Instruction Attentions')
+    
+    # 对每个查询位置的注意力进行求和
+    sum_weights = sliced_weights.sum(dim=1)
+    
+    # 将注意力权重转换为numpy数组
+    weights_np = sum_weights.detach().cpu().numpy()
+
+    # 确保tokens长度和权重矩阵匹配
+    if len(tokens) > k:
+        tokens = tokens[:k]
+
+    # 创建一个绘图
+    plt.figure(figsize=(10, 6))
+    
+    # 使用Seaborn绘制柱状图
+    sns.barplot(x=np.arange(len(tokens)), y=weights_np, palette='viridis')
+
+    # 设置标签为tokens
+    plt.xticks(np.arange(len(tokens)), tokens, rotation=45, ha='right')
+    
+    plt.xlabel('Query Tokens')
+    plt.ylabel('Attention Sum')
+    plt.title(f'Attention Distribution for Each Query Token')
+    plt.tight_layout()
     plt.show()
-    assert 1==2
+    assert 1 == 2
 
 
 class FFWRelativeSelfAttentionModule(nn.Module):
