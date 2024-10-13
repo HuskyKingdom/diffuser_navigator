@@ -417,29 +417,19 @@ class FFWRelativeCrossAttentionModule(nn.Module):
 def vis_attention(weights, k=28):
     import matplotlib.pyplot as plt
     import seaborn as sns
-    import numpy as np
-    
     # 计算平均注意力权重并选择第一个批次
     avg_weights = weights.mean(dim=1)[0]  # 形状为 [seq_len, seq_len]
     # 对查询和键的位置进行切片，保留前k个
     sliced_weights = avg_weights[:k, :k]
-    
-    # 沿着第二个维度求和，形状变为 (dim1,)
-    summed_weights = sliced_weights.sum(dim=1).detach().cpu().numpy()
-    
-    # 将其reshape为 (dim1, 1) 的矩阵
-    summed_weights_reshaped = np.reshape(summed_weights, (k, 1))
-    
-    # 可视化 reshaped 的权重矩阵
+    weights_np = sliced_weights.detach().cpu().numpy()
+    # 使用Seaborn绘制热力图
     plt.figure(figsize=(8, 6))
-    sns.heatmap(summed_weights_reshaped, cmap='viridis', annot=True, cbar=True)
-    plt.xlabel('Summed Attention Weights')
+    sns.heatmap(weights_np, cmap='viridis')
+    plt.xlabel('Key Positions')
     plt.ylabel('Query Positions')
-    plt.title('Summed Attention Weights Heatmap')
+    plt.title(f'Instruction Attentions')
     plt.show()
-
-    assert 1 == 2
-
+    assert 1==2
 
 
 class FFWRelativeSelfAttentionModule(nn.Module):
