@@ -492,8 +492,9 @@ class FFWRelativeSelfAttentionModule(nn.Module):
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
             time = 0
-            if vis and time==0:
+            if vis and time < 2:
                 vis_attention(attn_output_weights,pad_mask)
+                time += 1
             elif time < 200:
                 time += 1
             else:
