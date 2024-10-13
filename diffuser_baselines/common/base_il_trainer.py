@@ -323,11 +323,14 @@ class BaseVLNCETrainer(BaseILTrainer):
                     with torch.no_grad():
                         out,hiddens = self.policy.act(batch,all_pose,hiddens)
                         action_candidates = out.cpu().tolist()
+                else:
+                    with torch.no_grad():
+                        _ ,hiddens = self.policy.act(batch,all_pose,hiddens)
+
                 
                 # pop actions & update hidden
                 actions = [[env_index.pop(0)] for env_index in action_candidates]
                 actions = torch.tensor(actions).to(self.device)
-                _, hiddens = self.policy.act(batch,all_pose,hiddens)
                 
 
             else:
