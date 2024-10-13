@@ -431,6 +431,7 @@ def vis_attention(weights, k=28):
     elif len(tokens) < k:
         k = len(tokens)  # 限制k为tokens的长度
 
+    print(sliced_weights)
     print(sum_weights)
     
     # 绘图
