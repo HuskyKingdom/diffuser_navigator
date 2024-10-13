@@ -421,15 +421,20 @@ def vis_attention(weights, k=28):
     avg_weights = weights.mean(dim=1)[0]  # 形状为 [seq_len, seq_len]
     # 对查询和键的位置进行切片，保留前k个
     sliced_weights = avg_weights[:k, :k]
-    weights_np = sliced_weights.detach().cpu().numpy()
-    # 使用Seaborn绘制热力图
+    
+    # 沿着第二个维度求和，形状变为 (dim1, 1)
+    summed_weights = sliced_weights.sum(dim=1).detach().cpu().numpy()
+    
+    # 可视化这个一维向量
     plt.figure(figsize=(8, 6))
-    sns.heatmap(weights_np, cmap='viridis')
-    plt.xlabel('Key Positions')
-    plt.ylabel('Query Positions')
-    plt.title(f'Instruction Attentions')
+    plt.plot(summed_weights, marker='o')
+    plt.xlabel('Query Positions')
+    plt.ylabel('Summed Attention Weights')
+    plt.title('Summed Attention Weights for Top K Query Positions')
     plt.show()
-    assert 1==2
+
+    assert 1 == 2
+
 
 
 class FFWRelativeSelfAttentionModule(nn.Module):
