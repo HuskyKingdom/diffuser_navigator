@@ -136,7 +136,7 @@ class ParallelAttentionLayer(nn.Module):
         if self.cross_attention1:
             if self.rotary_pe:
                 rot_args['rotary_pe'] = (seq1_pos, seq2_pos)
-            seq1b, atten_weights = self.cross_12(
+            seq1b = self.cross_12(
                 query=self._adaln(q1, self.adaln_12, ada_sgnl).transpose(0, 1),
                 key=k2.transpose(0, 1),
                 value=v2.transpose(0, 1),
@@ -144,7 +144,6 @@ class ParallelAttentionLayer(nn.Module):
                 key_padding_mask=seq2_key_padding_mask,  # (B, S2)
                 **rot_args
             )[0].transpose(0, 1)
-            vis_attention(atten_weights,seq2_key_padding_mask)
             seq1 = seq1 + self.dropout_12(seq1b)
             seq1 = self._norm(seq1, self.norm_12, not self.pre_norm)
 
