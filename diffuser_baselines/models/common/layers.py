@@ -136,7 +136,7 @@ class ParallelAttentionLayer(nn.Module):
         if self.cross_attention1:
             if self.rotary_pe:
                 rot_args['rotary_pe'] = (seq1_pos, seq2_pos)
-            seq1b = self.cross_12(
+            seq1b, atten_weights = self.cross_12(
                 query=self._adaln(q1, self.adaln_12, ada_sgnl).transpose(0, 1),
                 key=k2.transpose(0, 1),
                 value=v2.transpose(0, 1),
@@ -144,6 +144,7 @@ class ParallelAttentionLayer(nn.Module):
                 key_padding_mask=seq2_key_padding_mask,  # (B, S2)
                 **rot_args
             )[0].transpose(0, 1)
+            vis_attention(atten_weights,seq2_key_padding_mask)
             seq1 = seq1 + self.dropout_12(seq1b)
             seq1 = self._norm(seq1, self.norm_12, not self.pre_norm)
 
@@ -491,14 +492,10 @@ class FFWRelativeSelfAttentionModule(nn.Module):
             )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
-            time = 0
-            if vis and time < 2:
+
+            if vis:
                 vis_attention(attn_output_weights,pad_mask)
-                time += 1
-            elif time < 200:
-                time += 1
-            else:
-                time = 0
+
         return output
 
 
