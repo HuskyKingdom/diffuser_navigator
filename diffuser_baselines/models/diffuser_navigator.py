@@ -27,7 +27,7 @@ class DiffusionPolicy(Policy):
         self.navigator = DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.config = config
 
-    def act(self,batch, all_pose=None, hiddens = None, encode_only=False):
+    def act(self,batch, all_pose=None, hiddens = None, encode_only=False,print_info = False):
 
         
         rgb_features,depth_features = self.navigator.encode_visions(batch,self.config) # raw batch
@@ -45,6 +45,9 @@ class DiffusionPolicy(Policy):
 
 
         actions, next_hidden = self.navigator(collected_data,run_inference = True,hiddens=hiddens)
+
+        if print_info:
+            print(f"final actions {actions}")
 
         return actions, next_hidden
         
@@ -265,6 +268,9 @@ class DiffusionNavigator(nn.Module):
     def tokenlize_input(self,observations,hiddens,inference=False):
 
         bs = observations["instruction"].size(0)
+
+        print(observations["instruction"])
+        assert 1==2
         
         # tokenlize
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
@@ -529,7 +535,6 @@ class DiffusionNavigator(nn.Module):
         
         actions[sampled_mask == 0] = 0 
 
-        print(f"final actions {actions} | t {terminations}")
         return actions
 
 
