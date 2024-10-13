@@ -420,28 +420,20 @@ def vis_attention(weights, k=28):
     import numpy as np
 
     tokens = ['Walk', 'down', 'the', 'stairs,', 'turn', 'right,', 'and', 'walk', 'towards',  'place', 'with', 'a', 'rug', '.', 'Wait', 'near', 'the', 'bench', 'and',  'piano', 'along', 'the', 'right', 'side', 'of', 'the', 'wall', '.']
-    # 计算平均注意力权重并选择第一个批次
-    avg_weights = weights.mean(dim=1)[0]  # 形状为 [seq_len, seq_len]
-    # 对查询和键的位置进行切片，保留前k个
+    avg_weights = weights.mean(dim=1)[0]  # [seq_len, seq_len]
     sliced_weights = avg_weights[:k, :k]
-    
-    # 对每个查询位置的注意力进行求和
     sum_weights = sliced_weights.sum(dim=1)
-    
-    # 将注意力权重转换为numpy数组
     weights_np = sum_weights.detach().cpu().numpy()
 
     # 确保tokens长度和权重矩阵匹配
     if len(tokens) > k:
         tokens = tokens[:k]
-
-    # 创建一个绘图
-    plt.figure(figsize=(10, 6))
+    elif len(tokens) < k:
+        k = len(tokens)  # 限制k为tokens的长度
     
-    # 使用Seaborn绘制柱状图
-    sns.barplot(x=np.arange(len(tokens)), y=weights_np, palette='viridis')
-
-    # 设置标签为tokens
+    # 绘图
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x=np.arange(len(tokens)), y=weights_np[:k], palette='Blues')
     plt.xticks(np.arange(len(tokens)), tokens, rotation=45, ha='right')
     
     plt.xlabel('Query Tokens')
@@ -449,7 +441,7 @@ def vis_attention(weights, k=28):
     plt.title(f'Attention Distribution for Each Query Token')
     plt.tight_layout()
     plt.show()
-    assert 1 == 2
+
 
 
 class FFWRelativeSelfAttentionModule(nn.Module):
