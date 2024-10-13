@@ -269,9 +269,7 @@ class DiffusionNavigator(nn.Module):
 
         bs = observations["instruction"].size(0)
 
-        print(observations["instruction"])
-        assert 1==2
-        
+
         # tokenlize
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
 
