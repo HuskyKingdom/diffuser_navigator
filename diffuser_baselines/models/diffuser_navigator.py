@@ -300,9 +300,8 @@ class DiffusionNavigator(nn.Module):
         first_trajectory = traj[:, 0, :].unsqueeze(1).expand(-1, 3, -1)
         delta_trajectories = traj[:, 1:, :] - first_trajectory
 
-        print(traj)
-        print(delta_trajectories)
-        assert 1==2
+        print(traj,delta_trajectories,"---------------------")
+        
     
         return delta_trajectories
         
