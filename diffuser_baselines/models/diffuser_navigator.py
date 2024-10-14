@@ -295,6 +295,12 @@ class DiffusionNavigator(nn.Module):
 
         return tokens, next_hiddens
 
+    def get_delta(self,traj):
+
+        # compute action deltas
+        print(traj.shape)
+        assert 1==2
+
 
     def forward(self, observations, run_inference=False,hiddens=None):
 
@@ -312,7 +318,9 @@ class DiffusionNavigator(nn.Module):
         # train _____
         # observations["trajectories"] = self.normalize_dim(observations["trajectories"]) # normalize input alone dimensions
 
-        print(observations["trajectories"])
+        print(observations['proprioceptions'].shape)
+        full_traj = torch.cat((observations['proprioceptions'],observations["trajectories"]),1)
+        self.get_delta()
         # buiding noise
         noise = torch.randn(observations["trajectories"].shape, device=observations["trajectories"].device)
 
