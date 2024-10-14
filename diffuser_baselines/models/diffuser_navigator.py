@@ -309,7 +309,7 @@ class DiffusionNavigator(nn.Module):
 
 
         traj_tokens = None # will be encoded later
-        pose_feature = self.pose_encoder(observations["proprioceptions"][:,:-1]) 
+        pose_feature = self.pose_encoder(observations["proprioceptions"][:,-1:]) 
 
 
         if inference: # dont pack
