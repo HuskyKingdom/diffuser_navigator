@@ -149,7 +149,7 @@ class DiffusionNavigator(nn.Module):
         )
 
         self.pose_encoder = nn.Sequential(
-            nn.Linear(self.config.DIFFUSER.traj_space, embedding_dim),
+            nn.Linear(1, embedding_dim),
             nn.ReLU(),
             nn.Linear(embedding_dim, embedding_dim)
         )
@@ -288,6 +288,14 @@ class DiffusionNavigator(nn.Module):
 
         return tensor * (max_val - min_val) + min_val
 
+    def normalize_head(tensor):
+        # Normalize tensor to [0, 1]
+        min_val, max_val = -3.15, 3.15
+        norm_tensor = (tensor - min_val) / (max_val - min_val)
+        
+        # Scale to [-1, 1]
+        norm_tensor = norm_tensor * 2 - 1
+        return norm_tensor
 
     def encode_trajectories(self,traj):
         traj_tokens = self.traj_encoder(traj)
@@ -309,7 +317,9 @@ class DiffusionNavigator(nn.Module):
 
 
         traj_tokens = None # will be encoded later
-        pose_feature = self.pose_encoder(observations["proprioceptions"][:,-1:]) 
+        normed_head_pose = self.normalize_head(observations["proprioceptions"][:,-1:])
+        print(normed_head_pose.shape)
+        pose_feature = self.pose_encoder(normed_head_pose) 
 
 
         if inference: # dont pack
