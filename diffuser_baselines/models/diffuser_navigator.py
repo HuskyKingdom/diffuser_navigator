@@ -319,7 +319,7 @@ class DiffusionNavigator(nn.Module):
         # observations["trajectories"] = self.normalize_dim(observations["trajectories"]) # normalize input alone dimensions
 
         full_traj = torch.cat((observations['proprioceptions'].unsqueeze(1),observations["trajectories"]),1)
-        self.get_delta()
+        self.get_delta(full_traj)
         # buiding noise
         noise = torch.randn(observations["trajectories"].shape, device=observations["trajectories"].device)
 
