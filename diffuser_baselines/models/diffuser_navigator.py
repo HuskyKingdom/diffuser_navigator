@@ -200,7 +200,7 @@ class DiffusionNavigator(nn.Module):
         self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.cross_attention_sec = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.self_attention = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        self.term_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        
 
         # Diffusion schedulers
         self.noise_scheduler = DDPMScheduler(
@@ -210,17 +210,11 @@ class DiffusionNavigator(nn.Module):
 
 
         # predictors (history emb + current emb)
-        self.term_projctor = nn.Linear(embedding_dim*2, embedding_dim)
+        self.noise_projector = nn.Linear(embedding_dim*2, embedding_dim)
         self.noise_predictor = nn.Sequential(
-            nn.Linear(embedding_dim*2, embedding_dim),
+            nn.Linear(embedding_dim, embedding_dim),
             nn.ReLU(),
             nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
-        )
-        self.termination_predictor = nn.Sequential(
-            nn.Linear(embedding_dim, embedding_dim), # (bs,3,64)
-            nn.ReLU(),
-            nn.Linear(embedding_dim, 1), # (bs,3,1)
-            nn.Sigmoid()
         )
 
         self.n_steps = diffusion_timesteps
@@ -337,8 +331,6 @@ class DiffusionNavigator(nn.Module):
         first_trajectory = traj[:, 0, :].unsqueeze(1).expand(-1, 3, -1)
         delta_trajectories = traj[:, 1:, :] - first_trajectory
         delta_trajectories = self.delta_norm(delta_trajectories)
-
-        print(traj,delta_trajectories,"---------------------")
         
     
         return delta_trajectories
@@ -360,10 +352,11 @@ class DiffusionNavigator(nn.Module):
         # train _____
         # observations["trajectories"] = self.normalize_dim(observations["trajectories"]) # normalize input alone dimensions
 
-        full_traj = torch.cat((observations['proprioceptions'].unsqueeze(1),observations["trajectories"]),1)
-        self.get_delta(full_traj)
+        full_traj = torch.cat((observations['proprioceptions'].unsqueeze(1),observations["trajectories"]),1)   
+        delta_traj = self.get_delta(full_traj)
+
         # buiding noise
-        noise = torch.randn(observations["trajectories"].shape, device=observations["trajectories"].device)
+        noise = torch.randn(delta_traj.shape, delta_traj.device)
 
         noising_timesteps = torch.randint(
             0,
@@ -371,30 +364,27 @@ class DiffusionNavigator(nn.Module):
             (len(noise),), device=noise.device
         ).long()
 
-        noised_traj = self.noise_scheduler.add_noise(
-            observations["trajectories"], noise,
+        noised_delta = self.noise_scheduler.add_noise(
+            delta_traj, noise,
             noising_timesteps
         )
 
         # tokenlize
         tokens, _ = self.tokenlize_input(observations,hiddens)
         # encode traj
-        tokens[4] = self.encode_trajectories(noised_traj)
+        tokens[4] = self.encode_trajectories(noised_delta)
 
         # predict noise
-        pred_noise, pred_termination = self.predict_noise(tokens,noising_timesteps,pad_mask)
+        pred_noise = self.predict_noise(tokens,noising_timesteps,pad_mask)
 
 
         
-        target_terminations = torch.where(observations["gt_actions"] == 0, torch.tensor(1, device=observations["gt_actions"].device), torch.tensor(0, device=observations["gt_actions"].device)).float()
-        
+        # target_terminations = torch.where(observations["gt_actions"] == 0, torch.tensor(1, device=observations["gt_actions"].device), torch.tensor(0, device=observations["gt_actions"].device)).float()
+        # bin_crossentro_loss = F.binary_cross_entropy(pred_termination, target_terminations)
+
         # compute loss
         mse_loss = F.mse_loss(pred_noise, noise)
-        bin_crossentro_loss = F.binary_cross_entropy(pred_termination, target_terminations)
-
-        # loss = mse_loss + self.config.DIFFUSER.beta * kl_loss
-        loss = mse_loss + bin_crossentro_loss
-
+        loss = mse_loss
 
         # # # evaluations ____
 
@@ -472,7 +462,7 @@ class DiffusionNavigator(nn.Module):
     def predict_noise(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,history_tokens,traj,pose_feature)
 
         time_embeddings = self.time_emb(timesteps.float())
-        time_embeddings = time_embeddings + tokens[-1] # fused (48,64)
+        time_embeddings = time_embeddings # fused (48,64)
 
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
@@ -516,23 +506,16 @@ class DiffusionNavigator(nn.Module):
         history_feature = tokens[-3].unsqueeze(1).expand(-1,features.shape[1],-1)
         fused_feature = torch.cat((features,history_feature),dim=-1) # (bs,seq_len,d*2)
 
-        # predicting terminationx
-        termination_feature = self.term_projctor(fused_feature)
-        termination_feature  = self.term_self_atten(termination_feature.transpose(0,1), diff_ts=time_embeddings,
-                                                                    query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
-
-                
-        # final_features = self.self_attention(fused_feature.transpose(0,1), diff_ts=time_embeddings,
-        #         query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
         
-        # print(final_features.shape)
-        # assert 1==2
+        projected_feature = self.noise_projector(fused_feature)
+        final_features = self.self_attention(projected_feature.transpose(0,1), diff_ts=time_embeddings,
+                query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
 
-        noise_prediction = self.noise_predictor(fused_feature) # (bs,seq_len,traj_space)
 
-        termination_prediction = self.termination_predictor(termination_feature).view(termination_feature.shape[0],-1) # (bs,seq_len,1) -> (bs,seq_len)
+        noise_prediction = self.noise_predictor(final_features) # (bs,seq_len,traj_space)
+        
 
-        return noise_prediction,termination_prediction
+        return noise_prediction
 
 
     def calculate_actions(self, tensor, head_threshold):
