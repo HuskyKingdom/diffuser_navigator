@@ -288,7 +288,7 @@ class DiffusionNavigator(nn.Module):
 
         return tensor * (max_val - min_val) + min_val
 
-    def normalize_head(tensor):
+    def normalize_head(self,tensor):
         # Normalize tensor to [0, 1]
         min_val, max_val = -3.15, 3.15
         norm_tensor = (tensor - min_val) / (max_val - min_val)
