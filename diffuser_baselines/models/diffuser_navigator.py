@@ -297,10 +297,15 @@ class DiffusionNavigator(nn.Module):
 
     def get_delta(self,traj):
 
-        # compute action deltas
-        print(traj.shape)
-        assert 1==2
+        first_trajectory = traj[:, 0, :].unsqueeze(1).expand(-1, 3, -1)
+        delta_trajectories = traj[:, 1:, :] - first_trajectory
 
+        print(traj)
+        print(delta_trajectories)
+        assert 1==2
+    
+        return delta_trajectories
+        
 
     def forward(self, observations, run_inference=False,hiddens=None):
 
