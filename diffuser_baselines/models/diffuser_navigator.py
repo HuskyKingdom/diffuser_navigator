@@ -261,8 +261,6 @@ class DiffusionNavigator(nn.Module):
 
 
     def encode_trajectories(self,traj):
-        print(traj)
-        
         traj_tokens = self.traj_encoder(traj)
         return traj_tokens
 
@@ -314,6 +312,7 @@ class DiffusionNavigator(nn.Module):
         # train _____
         # observations["trajectories"] = self.normalize_dim(observations["trajectories"]) # normalize input alone dimensions
 
+        print(observations["trajectories"])
         # buiding noise
         noise = torch.randn(observations["trajectories"].shape, device=observations["trajectories"].device)
 
