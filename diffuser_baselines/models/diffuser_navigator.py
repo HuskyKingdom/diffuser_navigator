@@ -356,7 +356,7 @@ class DiffusionNavigator(nn.Module):
         delta_traj = self.get_delta(full_traj)
 
         # buiding noise
-        noise = torch.randn(delta_traj.shape, delta_traj.device)
+        noise = torch.randn(delta_traj.shape, device=delta_traj.device)
 
         noising_timesteps = torch.randint(
             0,
