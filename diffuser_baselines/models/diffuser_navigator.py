@@ -245,7 +245,42 @@ class DiffusionNavigator(nn.Module):
         
         return norm_tensor
 
+    def delta_norm (self, tensor, min_val=None, max_val=None, feature_range=(-1, 1)):
+    
+        # this function and denorm function would automatically extend the input tensor to shape [bs,len,4]
 
+        if min_val is None:
+            min_val = torch.tensor([[[-0.75, -0.75, -0.75, -0.79]]], dtype=torch.float32,device = tensor.device)
+        if max_val is None:
+            max_val = torch.tensor([[[0.75, 0.75, 0.75, 0.79]]], dtype=torch.float32,device = tensor.device) 
+        
+        # norm to [0, 1]
+        norm_tensor = (tensor - min_val) / (max_val - min_val + 1e-8)
+        
+        # map to feature range
+        scale = feature_range[1] - feature_range[0]
+        norm_tensor = norm_tensor * scale + feature_range[0]
+        
+        return norm_tensor
+
+    def delta_denorm (self, tensor, min_val=None, max_val=None, feature_range=(-1, 1)):
+    
+        # this function and denorm function would automatically extend the input tensor to shape [bs,len,4]
+
+        if min_val is None:
+            min_val = torch.tensor([[[-0.75, -0.75, -0.75, -0.79]]], dtype=torch.float32,device = tensor.device)
+        if max_val is None:
+            max_val = torch.tensor([[[0.75, 0.75, 0.75, 0.79]]], dtype=torch.float32,device = tensor.device) 
+        
+        # norm to [0, 1]
+        norm_tensor = (tensor - min_val) / (max_val - min_val + 1e-8)
+        
+        # map to feature range
+        scale = feature_range[1] - feature_range[0]
+        norm_tensor = norm_tensor * scale + feature_range[0]
+        
+        return norm_tensor
+    
     def denormalize_dim(self, tensor, min_val=None, max_val=None, feature_range=(-1, 1)):
 
         if min_val is None:
@@ -296,9 +331,12 @@ class DiffusionNavigator(nn.Module):
         return tokens, next_hiddens
 
     def get_delta(self,traj):
+        
+        # compute raw trajectory delta and normlize them
 
         first_trajectory = traj[:, 0, :].unsqueeze(1).expand(-1, 3, -1)
         delta_trajectories = traj[:, 1:, :] - first_trajectory
+        delta_trajectories = self.delta_norm(delta_trajectories)
 
         print(traj,delta_trajectories,"---------------------")
         
