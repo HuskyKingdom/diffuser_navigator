@@ -261,6 +261,8 @@ class DiffusionNavigator(nn.Module):
 
 
     def encode_trajectories(self,traj):
+        print(traj)
+        assert 1==2
         traj_tokens = self.traj_encoder(traj)
         return traj_tokens
 
@@ -275,8 +277,6 @@ class DiffusionNavigator(nn.Module):
 
         rgb_features =  observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1).permute(0,2,1)
         depth_features =  observations["depth_features"].view(bs,observations["depth_features"].size(1),-1).permute(0,2,1)
-
-
         rgb_tokens = self.rgb_linear(rgb_features)  # (bs, 16, 2112) -> (bs, 16, em)
         depth_tokens = self.depth_linear(depth_features) # (bs, 16, 192) -> (bs, 16, em)
 
