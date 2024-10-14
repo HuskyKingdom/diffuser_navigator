@@ -309,7 +309,7 @@ class DiffusionNavigator(nn.Module):
 
 
         traj_tokens = None # will be encoded later
-        pose_feature = self.pose_encoder(observations["proprioceptions"]) 
+        pose_feature = self.pose_encoder(observations["proprioceptions"][:,:-1]) 
 
 
         if inference: # dont pack
@@ -326,7 +326,7 @@ class DiffusionNavigator(nn.Module):
 
     def get_delta(self,traj):
         
-        # compute raw trajectory delta and normlize them
+        # compute raw trajectory delta and normalize them
 
         first_trajectory = traj[:, 0, :].unsqueeze(1).expand(-1, 3, -1)
         delta_trajectories = traj[:, 1:, :] - first_trajectory
@@ -352,6 +352,7 @@ class DiffusionNavigator(nn.Module):
         # train _____
         # observations["trajectories"] = self.normalize_dim(observations["trajectories"]) # normalize input alone dimensions
 
+        # compute action delta and normalize
         full_traj = torch.cat((observations['proprioceptions'].unsqueeze(1),observations["trajectories"]),1)   
         delta_traj = self.get_delta(full_traj)
 
@@ -377,7 +378,6 @@ class DiffusionNavigator(nn.Module):
         # predict noise
         pred_noise = self.predict_noise(tokens,noising_timesteps,pad_mask)
 
-
         
         # target_terminations = torch.where(observations["gt_actions"] == 0, torch.tensor(1, device=observations["gt_actions"].device), torch.tensor(0, device=observations["gt_actions"].device)).float()
         # bin_crossentro_loss = F.binary_cross_entropy(pred_termination, target_terminations)
@@ -389,27 +389,24 @@ class DiffusionNavigator(nn.Module):
         # # # evaluations ____
 
         # loss = loss - loss # ignore update 
-        # noise = torch.randn(observations["trajectories"][0].unsqueeze(0).shape, device=observations["trajectories"].device)
+        # noise = torch.randn(delta_traj[0].unsqueeze(0).shape, device=delta_traj.device)
 
         # noising_timesteps = torch.randint(
         #     99,
         #     100, # self.noise_scheduler.config.num_train_timesteps
         #     (1,), device=noise.device
         # ).long()
-
-        # noised_traj = self.noise_scheduler.add_noise(
-        #     observations["trajectories"][0].unsqueeze(0), noise,
+        
+        # noised_delta = self.noise_scheduler.add_noise(
+        #     delta_traj[0].unsqueeze(0).shape, noise,
         #     noising_timesteps
         # )
-        
 
         # denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
-        # intermidiate_noise = noise
+        # intermidiate_noise = noised_delta
 
         # with torch.no_grad():
         #     tokens, _ = self.tokenlize_input(observations,hiddens) # dont pack
-        
-        
 
         # for t in denoise_steps:
         #     # noise pred.
@@ -421,7 +418,7 @@ class DiffusionNavigator(nn.Module):
         #         tokens = [tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0)]
         #         pad_mask = pad_mask[0].unsqueeze(0)
 
-        #         pred_noises,pred_termination = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
+        #         pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
         #     step_out = self.noise_scheduler.step(
         #         pred_noises, t, intermidiate_noise
@@ -430,11 +427,14 @@ class DiffusionNavigator(nn.Module):
 
         #     intermidiate_noise = step_out["prev_sample"]
 
-        # denormed_groundtruth = self.denormalize_dim(observations['trajectories'][0])
-        # denormed_pred = self.denormalize_dim(intermidiate_noise)
+        # denoised = intermidiate_noise
 
-        # print(f"GroundTruth Trajectory {denormed_groundtruth} | Predicted Actions {denormed_pred}")
-        # print(f"ground truth actions {target_terminations[0]} | predicted terminations {pred_termination}")
+        # gt_delta_denormed = self.delta_denorm(delta_traj[0].unsqueeze(0))
+        # pred_delta_denormed = self.delta_denorm(denoised)
+        # pred_actions = self.delta_to_action(pred_delta_denormed)
+
+        # print(f"GroundTruth Delta {gt_delta_denormed} | Predicted Delta {pred_delta_denormed}")
+        # print(f"ground truth actions {observations['gt_actions'][0]} | predicted actions {pred_actions}")
 
 
         # # analyzing
@@ -565,6 +565,14 @@ class DiffusionNavigator(nn.Module):
         actions[sampled_mask == 0] = 0 
 
         return actions
+    
+    def delta_to_action(self,delta):
+
+        print(delta)
+        assert 1==2
+
+        return actions
+
 
 
     def inference_actions(self,observations,mask,hiddens): # pred_noises (B,N,D)
@@ -572,7 +580,7 @@ class DiffusionNavigator(nn.Module):
         self.noise_scheduler.set_timesteps(self.n_steps)
 
         pure_noise = torch.randn(
-            size=(len(observations['proprioceptions']),self.config.DIFFUSER.traj_length,self.config.DIFFUSER.traj_space), # (bs, L, 4)
+            size=(len(observations['proprioceptions'].unsqueeze(1)),self.config.DIFFUSER.traj_length,self.config.DIFFUSER.traj_space), # (bs, L, 4)
             dtype=observations['proprioceptions'].dtype,
             device=observations['proprioceptions'].device
         )
@@ -592,7 +600,7 @@ class DiffusionNavigator(nn.Module):
             with torch.no_grad():
                 # encode traj and predict noise
                 tokens[4] = self.encode_trajectories(intermidiate_noise) # dont pack
-                pred_noises,pred_terminations = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),mask)
+                pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),mask)
 
             step_out = self.noise_scheduler.step(
                 pred_noises, t, intermidiate_noise
@@ -604,9 +612,9 @@ class DiffusionNavigator(nn.Module):
         denoised = intermidiate_noise
 
         # return action index
-        denomed_pose = self.denormalize_dim(observations['proprioceptions'])
-        denormed_denoised = self.denormalize_dim(denoised)
-        actions = self.traj_to_action(denomed_pose, denormed_denoised,pred_terminations)
+
+        denomed_delta = self.delta_denorm(denoised)
+        actions = self.delta_to_action(denomed_delta)
 
 
         return actions,next_hiddens
