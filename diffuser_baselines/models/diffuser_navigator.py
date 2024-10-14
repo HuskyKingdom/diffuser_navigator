@@ -471,7 +471,7 @@ class DiffusionNavigator(nn.Module):
     def predict_noise(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,history_tokens,traj,pose_feature)
 
         time_embeddings = self.time_emb(timesteps.float())
-        time_embeddings = time_embeddings = tokens[-1] # fused (48,64)
+        time_embeddings = time_embeddings + tokens[-1] # fused (48,64)
 
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
