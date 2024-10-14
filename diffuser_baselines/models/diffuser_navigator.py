@@ -262,7 +262,7 @@ class DiffusionNavigator(nn.Module):
 
     def encode_trajectories(self,traj):
         print(traj)
-        assert 1==2
+        
         traj_tokens = self.traj_encoder(traj)
         return traj_tokens
 
