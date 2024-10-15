@@ -339,7 +339,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             else:
 
                 with torch.no_grad():
-                    out,hiddens = self.policy.act(batch,all_pose,hiddens)
+                    out,hiddens = self.policy.act(batch,all_pose,hiddens,print_info=True)
                     # action_candidates = out.cpu().tolist()
                     # actions = torch.tensor(out).to(self.device)
                     actions = out
