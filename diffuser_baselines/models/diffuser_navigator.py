@@ -395,62 +395,62 @@ class DiffusionNavigator(nn.Module):
         mse_loss = F.mse_loss(pred_noise, noise)
         loss = mse_loss
 
-        # # # evaluations ____
+        # # evaluations ____
 
-        # loss = loss - loss # ignore update 
-        # noise = torch.randn(delta_traj[0].unsqueeze(0).shape, device=delta_traj.device)
+        loss = loss - loss # ignore update 
+        noise = torch.randn(delta_traj[0].unsqueeze(0).shape, device=delta_traj.device)
 
-        # noising_timesteps = torch.randint(
-        #     99,
-        #     100, # self.noise_scheduler.config.num_train_timesteps
-        #     (1,), device=noise.device
-        # ).long()
+        noising_timesteps = torch.randint(
+            99,
+            100, # self.noise_scheduler.config.num_train_timesteps
+            (1,), device=noise.device
+        ).long()
         
-        # noised_delta = self.noise_scheduler.add_noise(
-        #     delta_traj[0].unsqueeze(0).shape, noise,
-        #     noising_timesteps
-        # )
+        noised_delta = self.noise_scheduler.add_noise(
+            delta_traj[0].unsqueeze(0).shape, noise,
+            noising_timesteps
+        )
 
-        # denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
-        # intermidiate_noise = noised_delta
+        denoise_steps = list(range(noising_timesteps[0].item(), -1, -1))
+        intermidiate_noise = noised_delta
 
-        # with torch.no_grad():
-        #     tokens, _ = self.tokenlize_input(observations,hiddens) # dont pack
+        with torch.no_grad():
+            tokens, _ = self.tokenlize_input(observations,hiddens) # dont pack
 
-        # for t in denoise_steps:
-        #     # noise pred.
-        #     with torch.no_grad():
+        for t in denoise_steps:
+            # noise pred.
+            with torch.no_grad():
 
-        #         # encode traj and predict noise
-        #         tokens[4] = self.encode_trajectories(intermidiate_noise) # dont pack
+                # encode traj and predict noise
+                tokens[4] = self.encode_trajectories(intermidiate_noise) # dont pack
 
-        #         tokens = [tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0)]
-        #         pad_mask = pad_mask[0].unsqueeze(0)
+                tokens = [tokens[0][0].unsqueeze(0),tokens[1][0].unsqueeze(0),tokens[2][0].unsqueeze(0),tokens[3][0].unsqueeze(0),tokens[4][0].unsqueeze(0),tokens[5][0].unsqueeze(0)]
+                pad_mask = pad_mask[0].unsqueeze(0)
 
-        #         pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
+                pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),pad_mask)
 
-        #     step_out = self.noise_scheduler.step(
-        #         pred_noises, t, intermidiate_noise
-        #     )
-
-
-        #     intermidiate_noise = step_out["prev_sample"]
-
-        # denoised = intermidiate_noise
-
-        # gt_delta_denormed = self.delta_denorm(delta_traj[0].unsqueeze(0))
-        # pred_delta_denormed = self.delta_denorm(denoised)
-        # pred_actions = self.delta_to_action(pred_delta_denormed)
-
-        # print(f"GroundTruth Delta {gt_delta_denormed} | Predicted Delta {pred_delta_denormed}")
-        # print(f"ground truth actions {observations['gt_actions'][0]} | predicted actions {pred_actions}")
+            step_out = self.noise_scheduler.step(
+                pred_noises, t, intermidiate_noise
+            )
 
 
-        # # analyzing
-        # if self.total_evaled < 200:
-        #     self.total_evaled += 3
-        # else:
-        #     assert 1==2
+            intermidiate_noise = step_out["prev_sample"]
+
+        denoised = intermidiate_noise
+
+        gt_delta_denormed = self.delta_denorm(delta_traj[0].unsqueeze(0))
+        pred_delta_denormed = self.delta_denorm(denoised)
+        pred_actions = self.delta_to_action(pred_delta_denormed)
+
+        print(f"GroundTruth Delta {gt_delta_denormed} | Predicted Delta {pred_delta_denormed}")
+        print(f"ground truth actions {observations['gt_actions'][0]} | predicted actions {pred_actions}")
+
+
+        # analyzing
+        if self.total_evaled < 200:
+            self.total_evaled += 3
+        else:
+            assert 1==2
 
 
 
