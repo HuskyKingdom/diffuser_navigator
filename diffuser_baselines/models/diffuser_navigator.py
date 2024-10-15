@@ -592,7 +592,7 @@ class DiffusionNavigator(nn.Module):
                 x, y, z, heading = delta
                 
                 print(abs(heading - previse_heading))
-                if abs(heading - previse_heading)  < heading_threshold: # turn
+                if abs(heading - previse_heading) > heading_threshold: # turn
                     if heading > 0:
                         actions[b, t] = 2
                     else:
