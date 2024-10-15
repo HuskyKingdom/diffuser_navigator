@@ -600,10 +600,10 @@ class DiffusionNavigator(nn.Module):
                         actions[b, t] = 2
                     else:
                         actions[b, t] = 3
-                elif abs(heading - previse_heading) < forward_threshold:
-                    actions[b, t] = 0  # 前进 (forward)
+                elif abs(heading - previse_heading) > forward_threshold:
+                    actions[b, t] = 1  # 前进 (forward)
                 else:
-                    actions[b, t] = 1  # 停止 (stop)
+                    actions[b, t] = 0  # 停止 (stop)
 
                 previse_heading = heading
 
