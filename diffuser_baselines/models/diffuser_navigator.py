@@ -437,9 +437,11 @@ class DiffusionNavigator(nn.Module):
 
         gt_delta_denormed = self.delta_denorm(delta_traj[0].unsqueeze(0))
         pred_delta_denormed = self.delta_denorm(denoised)
-        pred_actions = self.delta_to_action(pred_delta_denormed)
 
         print(f"GroundTruth Delta {gt_delta_denormed} | Predicted Delta {pred_delta_denormed}")
+        pred_actions = self.delta_to_action(pred_delta_denormed)
+
+        
         print(f"ground truth actions {observations['gt_actions'][0]} | predicted actions {pred_actions}")
 
 
