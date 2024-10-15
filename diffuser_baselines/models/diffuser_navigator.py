@@ -618,7 +618,7 @@ class DiffusionNavigator(nn.Module):
         self.noise_scheduler.set_timesteps(self.n_steps)
 
         pure_noise = torch.randn(
-            size=(len(observations['proprioceptions'].unsqueeze(1)),self.config.DIFFUSER.traj_length,self.config.DIFFUSER.traj_space), # (bs, L, 4)
+            size=(len(observations['proprioceptions']),self.config.DIFFUSER.traj_length,self.config.DIFFUSER.traj_space), # (bs, L, 4)
             dtype=observations['proprioceptions'].dtype,
             device=observations['proprioceptions'].device
         )
