@@ -586,14 +586,13 @@ class DiffusionNavigator(nn.Module):
         forward_threshold = 0.05  # 用于判断xyz是否有显著变化
         
         for b in range(bs):
+            previse_heading = 0
             for t in range(3):  # 遍历每个时间步
                 delta = deltas[b, t]  # 当前时间步的增量 (x, y, z, heading)
                 x, y, z, heading = delta
                 
-                current_head_tgt = heading_change_tgt * (t+1)
-                
-                print(abs(abs(heading) - current_head_tgt))
-                if abs(heading) - current_head_tgt < heading_threshold: # turn
+                print(abs(heading - previse_heading))
+                if abs(heading - previse_heading)  < heading_threshold: # turn
                     if heading > 0:
                         actions[b, t] = 2
                     else:
@@ -602,6 +601,8 @@ class DiffusionNavigator(nn.Module):
                     actions[b, t] = 1  # 前进 (forward)
                 else:
                     actions[b, t] = 0  # 停止 (stop)
+
+                previse_heading = heading
 
 
         return actions
