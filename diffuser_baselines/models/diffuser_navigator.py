@@ -581,17 +581,20 @@ class DiffusionNavigator(nn.Module):
         # 定义 heading 的变化量近似判断
         heading_change_left = 0.2618
         heading_change_right = -0.2618
-        forward_threshold = 1e-3  # 用于判断xyz是否有显著变化
+        heading_threshold = 0.10
+        forward_threshold = 5e-2  # 用于判断xyz是否有显著变化
         
         for b in range(bs):
             for t in range(3):  # 遍历每个时间步
                 delta = deltas[b, t]  # 当前时间步的增量 (x, y, z, heading)
                 x, y, z, heading = delta
-
-                # 判断动作
-                if abs(heading - heading_change_left) < 1e-3:
+                
+                current_head_left = heading_change_left * t
+                current_head_right = heading_change_right * t
+                
+                if abs(heading - current_head_left) < heading_threshold:
                     actions[b, t] = 2  # 左转 (left)
-                elif abs(heading - heading_change_right) < 1e-3:
+                elif abs(heading - current_head_right) < heading_threshold:
                     actions[b, t] = 3  # 右转 (right)
                 elif abs(x) > forward_threshold or abs(z) > forward_threshold:
                     actions[b, t] = 1  # 前进 (forward)
