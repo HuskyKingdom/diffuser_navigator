@@ -407,7 +407,7 @@ class DiffusionNavigator(nn.Module):
         ).long()
         
         noised_delta = self.noise_scheduler.add_noise(
-            delta_traj[0].unsqueeze(0).shape, noise,
+            delta_traj[0].unsqueeze(0), noise,
             noising_timesteps
         )
 
