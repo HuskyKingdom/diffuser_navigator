@@ -437,11 +437,9 @@ class DiffusionNavigator(nn.Module):
 
         gt_delta_denormed = self.delta_denorm(delta_traj[0].unsqueeze(0))
         pred_delta_denormed = self.delta_denorm(denoised)
-
-        print(f"GroundTruth traj {full_traj[0]}")
-        print(f"GroundTruth Delta {gt_delta_denormed} | Predicted Delta {pred_delta_denormed}")
         pred_actions = self.delta_to_action(pred_delta_denormed)
-        
+
+        print(f"GroundTruth Delta {gt_delta_denormed} | Predicted Delta {pred_delta_denormed}")
         print(f"ground truth actions {observations['gt_actions'][0]} | predicted actions {pred_actions}")
 
 
@@ -574,9 +572,38 @@ class DiffusionNavigator(nn.Module):
 
         return actions
     
+
+    def compute_actions_from_deltas(self,deltas):
+
+        bs = deltas.shape[0]
+        actions = torch.zeros((bs, 3), dtype=torch.int)  # 初始化 actions shape 为 (bs, 3)
+
+        # 定义 heading 的变化量近似判断
+        heading_change_left = 0.2618
+        heading_change_right = -0.2618
+        forward_threshold = 1e-3  # 用于判断xyz是否有显著变化
+        
+        for b in range(bs):
+            for t in range(3):  # 遍历每个时间步
+                delta = deltas[b, t]  # 当前时间步的增量 (x, y, z, heading)
+                x, y, z, heading = delta
+
+                # 判断动作
+                if abs(heading - heading_change_left) < 1e-3:
+                    actions[b, t] = 2  # 左转 (left)
+                elif abs(heading - heading_change_right) < 1e-3:
+                    actions[b, t] = 3  # 右转 (right)
+                elif abs(x) > forward_threshold or abs(z) > forward_threshold:
+                    actions[b, t] = 1  # 前进 (forward)
+                else:
+                    actions[b, t] = 0  # 停止 (stop)
+        return actions
+
+
+
     def delta_to_action(self,delta):
 
-        print(delta)
+        print(self.compute_actions_from_deltas(delta))
         assert 1==2
 
         return actions
