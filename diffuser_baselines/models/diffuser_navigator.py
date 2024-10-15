@@ -585,7 +585,7 @@ class DiffusionNavigator(nn.Module):
         # 定义 heading 的变化量近似判断
         heading_change_tgt = 0.2618
         heading_threshold = 0.20
-        forward_threshold = 0.001 # 用于判断xyz是否有显著变化
+        forward_threshold = 0.20 # 用于判断xyz是否有显著变化
         
         for b in range(bs):
             previse_heading = 0
@@ -602,10 +602,10 @@ class DiffusionNavigator(nn.Module):
                         actions[b, t] = 2
                     else:
                         actions[b, t] = 3
-                elif abs(heading - previse_heading) > forward_threshold:
-                    actions[b, t] = 1  # 前进 (forward)
+                elif pose_diff < forward_threshold:
+                    actions[b, t] = 0  
                 else:
-                    actions[b, t] = 0  # 停止 (stop)
+                    actions[b, t] = 1 
 
                 previse_heading = heading
                 p_x, p_y, p_z, p_h = x, y, z, heading
