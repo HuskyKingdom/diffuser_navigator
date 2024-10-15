@@ -581,27 +581,28 @@ class DiffusionNavigator(nn.Module):
         actions = torch.zeros((bs, 3), dtype=torch.int)  # 初始化 actions shape 为 (bs, 3)
 
         # 定义 heading 的变化量近似判断
-        heading_change_left = 0.2618
-        heading_change_right = -0.2618
+        heading_change_tgt = 0.2618
         heading_threshold = 0.10
-        forward_threshold = 5e-2  # 用于判断xyz是否有显著变化
+        forward_threshold = 0.05  # 用于判断xyz是否有显著变化
         
         for b in range(bs):
             for t in range(3):  # 遍历每个时间步
                 delta = deltas[b, t]  # 当前时间步的增量 (x, y, z, heading)
                 x, y, z, heading = delta
                 
-                current_head_left = heading_change_left * t
-                current_head_right = heading_change_right * t
+                current_head_tgt = heading_change_tgt * t
                 
-                if abs(heading - current_head_left) < heading_threshold:
-                    actions[b, t] = 2  # 左转 (left)
-                elif abs(heading - current_head_right) < heading_threshold:
-                    actions[b, t] = 3  # 右转 (right)
+                if abs(heading) - current_head_tgt < heading_threshold: # turn
+                    if heading > 0:
+                        actions[b, t] = 2
+                    else:
+                        actions[b, t] = 3
                 elif abs(x) > forward_threshold or abs(z) > forward_threshold:
                     actions[b, t] = 1  # 前进 (forward)
                 else:
                     actions[b, t] = 0  # 停止 (stop)
+
+
         return actions
 
 
