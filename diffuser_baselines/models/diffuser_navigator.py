@@ -589,11 +589,13 @@ class DiffusionNavigator(nn.Module):
         
         for b in range(bs):
             previse_heading = 0
+            previse_all = 0
             for t in range(3):  # 遍历每个时间步
                 delta = deltas[b, t]  # 当前时间步的增量 (x, y, z, heading)
                 x, y, z, heading = delta
                 
-                print(abs(x) + abs(y) + abs(z))
+                all = abs(x) + abs(y) + abs(z) + abs(heading)
+                print(abs(all - previse_all))
                 if abs(heading - previse_heading) > heading_threshold: # turn
                     if heading > 0:
                         actions[b, t] = 2
@@ -605,6 +607,7 @@ class DiffusionNavigator(nn.Module):
                     actions[b, t] = 0  # 停止 (stop)
 
                 previse_heading = heading
+                previse_all = all
 
 
         return actions
