@@ -575,7 +575,9 @@ class DiffusionNavigator(nn.Module):
         return actions
     
 
-    def compute_actions_from_deltas(self,deltas):
+
+
+    def delta_to_action(self,deltas):
 
         bs = deltas.shape[0]
         actions = torch.zeros((bs, 3), dtype=torch.int)  # 初始化 actions shape 为 (bs, 3)
@@ -606,17 +608,6 @@ class DiffusionNavigator(nn.Module):
 
 
         return actions
-
-
-
-    def delta_to_action(self,delta):
-
-        print(self.compute_actions_from_deltas(delta))
-        assert 1==2
-
-        return actions
-
-
 
     def inference_actions(self,observations,mask,hiddens): # pred_noises (B,N,D)
 
