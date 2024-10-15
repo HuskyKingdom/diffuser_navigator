@@ -593,7 +593,7 @@ class DiffusionNavigator(nn.Module):
                 delta = deltas[b, t]  # 当前时间步的增量 (x, y, z, heading)
                 x, y, z, heading = delta
                 
-                print(abs(heading - previse_heading))
+                print(abs(x) + abs(y) + abs(z))
                 if abs(heading - previse_heading) > heading_threshold: # turn
                     if heading > 0:
                         actions[b, t] = 2
