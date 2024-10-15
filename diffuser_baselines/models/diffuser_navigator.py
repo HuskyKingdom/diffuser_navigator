@@ -586,7 +586,7 @@ class DiffusionNavigator(nn.Module):
         forward_threshold = 0.05  # 用于判断xyz是否有显著变化
         
         for b in range(bs):
-            for t in range(3):  # 遍历每个时间步
+            for t in range(1,4):  # 遍历每个时间步
                 delta = deltas[b, t]  # 当前时间步的增量 (x, y, z, heading)
                 x, y, z, heading = delta
                 
