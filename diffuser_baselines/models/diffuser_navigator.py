@@ -591,7 +591,7 @@ class DiffusionNavigator(nn.Module):
                 x, y, z, heading = delta
                 
                 current_head_tgt = heading_change_tgt * t
-                
+                print(abs(heading) - current_head_tgt)
                 if abs(heading) - current_head_tgt < heading_threshold: # turn
                     if heading > 0:
                         actions[b, t] = 2
