@@ -318,7 +318,6 @@ class BaseVLNCETrainer(BaseILTrainer):
             for i in range(envs.num_envs):
                 pos = envs.call_at(i, "get_state", {"observations": {}})
                 all_pose.append(pos)
-                print(pos)
             
             current_episodes = envs.current_episodes()
             if config.EVAL.ACTION_POP: # forward every F timesteps
