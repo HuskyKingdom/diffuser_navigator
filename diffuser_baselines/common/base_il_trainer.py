@@ -122,6 +122,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         """
         checkpoint = {
             "state_dict": self.policy.state_dict(),
+            "optim_state": self.optimizer.state_dict(),
             "config": self.config,
         }
         torch.save(
