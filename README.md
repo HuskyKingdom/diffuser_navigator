@@ -27,10 +27,18 @@ Experimental Repo of Diffuser Navigator.
 
 ## Training
 
-Experimental:
+Single GPU:
 
 ```
 python run.py \
   --exp-config diffuser_baselines/config/diffuser.yaml \
+  --run-type train
+```
+
+DDP Training:
+
+```
+CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=2 run.py \
+  --exp-config diffuser_baselines/config/ddp_diffuser.yaml \
   --run-type train
 ```
