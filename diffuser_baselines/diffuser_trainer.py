@@ -26,9 +26,6 @@ from vlnce_baselines.common.utils import extract_instruction_tokens
 
 import torch.nn.functional as Fuc
 
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    import tensorflow as tf  # noqa: F401
 
 
 class ObservationsDict(dict):
