@@ -686,14 +686,15 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         )
 
                         epoch_loss += loss
-            
+
+                    if self.world_rank == 0: #ddp
                         writer.add_scalar(
                             f"train_loss_iter_{diffuser_it}", loss, step_id
                         )
                         step_id += 1  # noqa: SIM113
                         num_epoch_batch += 1
 
-                    if self.world_rank == 0:
+                    if self.world_rank == 0: #ddp
                         if (diffuser_it * self.config.IL.epochs + epoch) % 200 == 0:
                             self.save_checkpoint(
                                 f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
@@ -706,7 +707,10 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         num_epoch_batch = 0
                         logger.info(f"epoch loss: {loss} | Batches processed: {step_id}. | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
 
-                dist.barrier()
+                dist.barrier() #ddp
+        
+        dist.destroy_process_group() #ddp
+
 
 
 
