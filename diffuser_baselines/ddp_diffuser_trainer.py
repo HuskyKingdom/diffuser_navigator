@@ -41,6 +41,32 @@ from torch.utils.data import DataLoader, DistributedSampler
 
 import torch.nn.functional as Fuc
 
+# ddpm pgb management
+
+from contextlib import contextmanager
+
+@contextmanager
+def maybe_tqdm(total=None, desc=None, leave=True, dynamic_ncols=True):
+    if dist.get_rank() == 0:
+        yield tqdm.tqdm(total=total, desc=desc, leave=leave, dynamic_ncols=dynamic_ncols)
+    else:
+        # 提供一个简单的占位符
+        yield contextlib.nullcontext()
+
+@contextmanager
+def maybe_trange(*args, **kwargs):
+    if dist.get_rank() == 0:
+        yield tqdm.trange(*args, **kwargs)
+    else:
+        yield range(*args)
+
+@contextmanager
+def maybe_tqdm_iterable(iterable, *args, **kwargs):
+    if dist.get_rank() == 0:
+        yield tqdm.tqdm(iterable, *args, **kwargs)
+    else:
+        yield iterable
+
 
 
 class ObservationsDict(dict):
@@ -662,53 +688,55 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
                 epoch_loss = 0
                 num_epoch_batch = 0
-                for epoch in tqdm.trange(
-                    self.config.IL.epochs, dynamic_ncols=True
-                ):
-                    for batch in tqdm.tqdm(
-                        diter,
-                        total=diffusion_dataset.length // diffusion_dataset.batch_size,
-                        leave=False,
-                        dynamic_ncols=True,
-                    ):
-             
 
-                        batch = {
-                            k: v.to(
-                                device=self.device,
-                                dtype=torch.float32,
-                                non_blocking=True,
-                            )
-                            for k, v in batch.items()
-                        }
+                with maybe_trange(self.config.IL.epochs, desc="Epochs", dynamic_ncols=True) as epoch_range:
+                    for epoch in epoch_range:
+                        with maybe_tqdm_iterable(
+                            diter,
+                            total=diffusion_dataset.length // diffusion_dataset.batch_size,
+                            leave=False,
+                            dynamic_ncols=True,
+                            desc="Batches"
+                        ) as batch_iter:
+                            
+                            for batch in batch_iter:
+                            
+                                batch = {
+                                    k: v.to(
+                                        device=self.device,
+                                        dtype=torch.float32,
+                                        non_blocking=True,
+                                    )
+                                    for k, v in batch.items()
+                                }
 
-                        loss = self._update_agent(
-                            batch
-                        )
+                                loss = self._update_agent(
+                                    batch
+                                )
 
-                        epoch_loss += loss
+                                epoch_loss += loss
 
-                        if self.world_rank == 0: #ddp
-                            writer.add_scalar(
-                                f"train_loss_iter_{diffuser_it}", loss, step_id
-                            )
-                        step_id += 1  # noqa: SIM113
-                        num_epoch_batch += 1
+                                if self.world_rank == 0: #ddp
+                                    writer.add_scalar(
+                                        f"train_loss_iter_{diffuser_it}", loss, step_id
+                                    )
+                                step_id += 1  # noqa: SIM113
+                                num_epoch_batch += 1
 
-                    if self.world_rank == 0: #ddp
-                        if (diffuser_it * self.config.IL.epochs + epoch) % 200 == 0:
-                            self.save_checkpoint(
-                                f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
-                            )
-                        else:
-                            print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
+                            if self.world_rank == 0: #ddp
+                                if (diffuser_it * self.config.IL.epochs + epoch) % 200 == 0:
+                                    self.save_checkpoint(
+                                        f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
+                                    )
+                                else:
+                                    print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
 
-                        epoch_loss /= num_epoch_batch
-                        epoch_loss = 0
-                        num_epoch_batch = 0
-                        logger.info(f"epoch loss: {loss} | Batches processed: {step_id}. | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
+                                epoch_loss /= num_epoch_batch
+                                epoch_loss = 0
+                                num_epoch_batch = 0
+                                logger.info(f"epoch loss: {loss} | Batches processed: {step_id}. | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
 
-                dist.barrier() #ddp
+                        dist.barrier() #ddp
         
         dist.destroy_process_group() #ddp
 
