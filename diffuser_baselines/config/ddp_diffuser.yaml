@@ -8,6 +8,7 @@ CHECKPOINT_FOLDER: data/checkpoints/diffuser
 EVAL_CKPT_PATH_DIR: data/checkpoints/diffuser/ckpt.600.pth
 RESULTS_DIR: data/checkpoints/diffuser/evals
 VIDEO_OPTION: []
+JobName: ddp
 
 EVAL:
   USE_CKPT_CONFIG: False
