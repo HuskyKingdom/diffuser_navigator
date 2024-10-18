@@ -734,7 +734,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                                 epoch_loss /= num_epoch_batch
                                 epoch_loss = 0
                                 num_epoch_batch = 0
-                                logger.info(f"epoch loss: {loss} | Batches processed: {step_id}. | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
+                                logger.info(f"epoch loss: {loss}  | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
 
                         dist.barrier() #ddp
         
