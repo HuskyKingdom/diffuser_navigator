@@ -688,10 +688,10 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
                         epoch_loss += loss
 
-                    if self.world_rank == 0: #ddp
-                        writer.add_scalar(
-                            f"train_loss_iter_{diffuser_it}", loss, step_id
-                        )
+                        if self.world_rank == 0: #ddp
+                            writer.add_scalar(
+                                f"train_loss_iter_{diffuser_it}", loss, step_id
+                            )
                         step_id += 1  # noqa: SIM113
                         num_epoch_batch += 1
 
@@ -715,7 +715,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
 
 
-    def _update_agent( #ddp
+    def _update_agent( # ddp
         self,
         observations,
         step_grad: bool = True,
