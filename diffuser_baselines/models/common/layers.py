@@ -4,6 +4,7 @@ from torch.nn import functional as F
 
 from .multihead_custom_attention import MultiheadCustomAttention
 
+import torch
 
 class ParallelAttentionLayer(nn.Module):
     """Self-/Cross-attention between two sequences."""
@@ -271,12 +272,19 @@ class ParallelAttention(nn.Module):
         return seq1, seq2
 
 
+class SiLU(nn.Module):
+
+    @staticmethod
+    def forward(x):
+        return x * torch.sigmoid(x)
+
+
 class AdaLN(nn.Module):
 
     def __init__(self, embedding_dim):
         super().__init__()
         self.modulation = nn.Sequential(
-             nn.SiLU(), nn.Linear(embedding_dim, 2 * embedding_dim, bias=True)
+            SiLU(), nn.Linear(embedding_dim, 2 * embedding_dim, bias=True)
         )
         nn.init.constant_(self.modulation[-1].weight, 0)
         nn.init.constant_(self.modulation[-1].bias, 0)
