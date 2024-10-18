@@ -40,6 +40,13 @@ def main():
         help="Modify config options from command line",
     )
 
+    parser.add_argument(
+        "--local_rank",
+        type=int,
+        default=0,
+        help="Local rank for distributed training. Automatically passed by torch.distributed.launch."
+    )
+
     args = parser.parse_args()
     run_exp(**vars(args))
 
