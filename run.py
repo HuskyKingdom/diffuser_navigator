@@ -51,7 +51,7 @@ def main():
     run_exp(**vars(args))
 
 
-def run_exp(exp_config: str, run_type: str, opts=None) -> None:
+def run_exp(exp_config: str, run_type: str, opts=None, local_rank=None) -> None:
     """Runs experiment given mode and config
 
     Args:
