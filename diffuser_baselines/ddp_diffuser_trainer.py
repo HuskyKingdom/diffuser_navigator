@@ -775,6 +775,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
         if step_grad:
             self.optimizer.step()
             self.optimizer.zero_grad()
+            if self.config.lr_Schedule:
+                self.scheduler.step()
         
         return loss.item()
 
@@ -802,6 +804,11 @@ class DiffuserTrainer(BaseVLNCETrainer):
             self.policy.parameters(), lr=self.config.IL.lr
         )
 
+
+        if self.config.lr_Schedule:
+            steps_per_epoch = 42 // self.world_size
+            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.IL.lr, pct_start=0.35, 
+                                                steps_per_epoch=steps_per_epoch, epochs=2000)
 
         if load_from_ckpt:
             ckpt_path = config.IL.ckpt_to_load
