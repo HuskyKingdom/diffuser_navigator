@@ -718,7 +718,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
                                 if self.world_rank == 0: #ddp
                                     writer.add_scalar(
-                                        f"train_loss_iter_{diffuser_it}_{self.args.JobName}", loss, step_id
+                                        f"train_loss_iter_{diffuser_it}_{self.config.JobName}", loss, step_id
                                     )
                                 step_id += 1  # noqa: SIM113
                                 num_epoch_batch += 1
