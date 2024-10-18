@@ -41,7 +41,7 @@ def main():
     )
 
     parser.add_argument(
-        "--local_rank",
+        "local_rank",
         type=int,
         default=0,
         help="Local rank for distributed training. Automatically passed by torch.distributed.launch."
