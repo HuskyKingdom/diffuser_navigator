@@ -18,7 +18,7 @@ from habitat_baselines.common.obs_transformers import (
 )
 from habitat_baselines.common.tensorboard_utils import TensorboardWriter
 from habitat_baselines.utils.common import batch_obs
-
+import contextlib
 from vlnce_baselines.common.aux_losses import AuxLosses
 from diffuser_baselines.common.base_il_trainer import BaseVLNCETrainer
 from vlnce_baselines.common.env_utils import construct_envs
@@ -621,11 +621,12 @@ class DiffuserTrainer(BaseVLNCETrainer):
         )
 
 
-        with TensorboardWriter(
+        with (TensorboardWriter(
             self.config.TENSORBOARD_DIR,
             flush_secs=self.flush_secs,
             purge_step=0,
-        ) as writer:
+        ) if self.world_rank == 0
+            else contextlib.suppress() ) as writer:
             for diffuser_it in range(self.config.IL.DAGGER.iterations):
 
                 # get dataset ---
@@ -724,6 +725,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         
         # Reduce loss across all processes
         loss_tensor = torch.tensor(loss, device=self.device)
+        print(self.device)
         dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
         loss = loss_tensor.item() / self.world_size
         
