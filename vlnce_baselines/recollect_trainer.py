@@ -20,10 +20,6 @@ from vlnce_baselines.common.recollection_dataset import (
 )
 from vlnce_baselines.dagger_trainer import collate_fn
 
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    import tensorflow as tf  # noqa: F401
-
 
 @baseline_registry.register_trainer(name="recollect_trainer")
 class RecollectTrainer(BaseVLNCETrainer):
