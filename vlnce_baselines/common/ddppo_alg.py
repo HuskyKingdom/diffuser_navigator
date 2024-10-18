@@ -2,7 +2,7 @@ from typing import Tuple
 
 import torch
 from habitat_baselines.rl.ddppo.algo.ddppo import DDPPO
-from torch.functional import Tensor
+from torch import Tensor
 from torch.nn.functional import l1_loss
 
 
