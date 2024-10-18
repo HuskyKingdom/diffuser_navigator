@@ -572,7 +572,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         """Main method for training DAgger."""
         if self.config.IL.DAGGER.preload_lmdb_features:
             try:
-                lmdb.open(self.lmdb_features_dir, readonly=True)
+                lmdb.open(self.lmdb_features_dir, readonly=True, lock=False) # ddp
             except lmdb.Error as err:
                 logger.error(
                     "Cannot open database for teacher forcing preload."
@@ -581,7 +581,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         else:
             with lmdb.open(
                 self.lmdb_features_dir,
-                map_size=int(self.config.IL.DAGGER.lmdb_map_size),
+                map_size=int(self.config.IL.DAGGER.lmdb_map_size), lock=False # ddp
             ) as lmdb_env, lmdb_env.begin(write=True) as txn:
                 txn.drop(lmdb_env.open_db())
 
