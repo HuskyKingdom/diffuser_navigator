@@ -752,7 +752,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         loss = self.policy.module.build_loss(observations)  # Access the underlying module
         
         # Reduce loss across all processes
-        loss_tensor = torch.tensor(loss, device=self.device)
+        loss_tensor = loss.clone()
         dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
         loss_tensor = loss_tensor / self.world_size
         
