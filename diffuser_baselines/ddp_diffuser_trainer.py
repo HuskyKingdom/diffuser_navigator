@@ -749,25 +749,12 @@ class DiffuserTrainer(BaseVLNCETrainer):
         step_grad: bool = True,
         loss_accumulation_scalar: int = 1,
     ):
-        # loss = self.policy.module.build_loss(observations)  # Access the underlying module
+        loss = self.policy.module.build_loss(observations)  # Access the underlying module
         
-        # # Reduce loss across all processes
-        # loss_tensor = torch.tensor(loss, device=self.device)
-        # dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
-        # loss = loss_tensor / self.world_size
-        
-        # loss = loss / loss_accumulation_scalar
-        # loss.backward()
-        
-        # if step_grad:
-        #     self.optimizer.step()
-        #     self.optimizer.zero_grad()
-        
-        # return loss
-    
-        loss = self.policy.module.build_loss(observations)  # 保持为张量
-        dist.all_reduce(loss, op=dist.ReduceOp.SUM)
-        loss = loss / self.world_size
+        # Reduce loss across all processes
+        loss_tensor = torch.tensor(loss, device=self.device)
+        dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
+        loss_tensor = loss_tensor / self.world_size
         
         loss = loss / loss_accumulation_scalar
         loss.backward()
@@ -775,10 +762,23 @@ class DiffuserTrainer(BaseVLNCETrainer):
         if step_grad:
             self.optimizer.step()
             self.optimizer.zero_grad()
-            if self.config.lr_Schedule:
-                self.scheduler.step()
         
-        return loss.item()
+        return loss_tensor.item()
+    
+        # loss = self.policy.module.build_loss(observations)  # 保持为张量
+        # dist.all_reduce(loss, op=dist.ReduceOp.SUM)
+        # loss = loss / self.world_size
+        
+        # loss = loss / loss_accumulation_scalar
+        # loss.backward()
+        
+        # if step_grad:
+        #     self.optimizer.step()
+        #     self.optimizer.zero_grad()
+        #     if self.config.lr_Schedule:
+        #         self.scheduler.step()
+        
+        # return loss.item()
 
 
 
