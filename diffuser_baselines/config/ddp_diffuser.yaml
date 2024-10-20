@@ -44,7 +44,7 @@ DIFFUSER:
   num_layers: 2
   diffusion_timesteps: 100
   logging_file: data/loggings/train.log
-  LR: 1.0e-5
+  LR: 2.0e-5
   traj_length: 3
   beta: 0.1
   action_space: 4
