@@ -762,6 +762,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
         if step_grad:
             self.optimizer.step()
             self.optimizer.zero_grad()
+            if self.config.lr_Schedule:
+                self.scheduler.step()
         
         return loss_tensor.item()
     
