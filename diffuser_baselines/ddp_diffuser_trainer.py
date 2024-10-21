@@ -751,10 +751,10 @@ class DiffuserTrainer(BaseVLNCETrainer):
     ):
         loss = self.policy.module.build_loss(observations)  # Access the underlying module
         
-        # Reduce loss across all processes
-        loss_tensor = loss.clone()
-        dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
-        loss_tensor = loss_tensor / self.world_size
+        with torch.no_grad():
+            loss_tensor = loss.clone()
+            dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
+            loss_tensor = loss_tensor / self.world_size
         
         loss = loss / loss_accumulation_scalar
         loss.backward()
@@ -767,20 +767,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
         
         return loss_tensor.item()
     
-        # loss = self.policy.module.build_loss(observations)  # 保持为张量
-        # dist.all_reduce(loss, op=dist.ReduceOp.SUM)
-        # loss = loss / self.world_size
-        
-        # loss = loss / loss_accumulation_scalar
-        # loss.backward()
-        
-        # if step_grad:
-        #     self.optimizer.step()
-        #     self.optimizer.zero_grad()
-        #     if self.config.lr_Schedule:
-        #         self.scheduler.step()
-        
-        # return loss.item()
 
 
 
