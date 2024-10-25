@@ -804,7 +804,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
             
             # load policy from ddp
             state_dict = ckpt_dict['state_dict']
-                new_state_dict = {}
+            new_state_dict = {}
             for k, v in state_dict.items():
                 new_key = k.replace('module.', '')
                 new_state_dict[new_key] = v
