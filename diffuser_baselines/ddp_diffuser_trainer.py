@@ -777,6 +777,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
         num_actions: int,
     ) -> None:
         
+        train = not load_from_ckpt
+        
         policy = baseline_registry.get_policy(self.config.MODEL.policy_name)
         self.policy = policy(
             config,
@@ -793,7 +795,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         )
 
 
-        if self.config.lr_Schedule and not load_from_ckpt:
+        if self.config.lr_Schedule and train:
             steps_per_epoch = 42 // self.world_size
             self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.IL.lr, pct_start=0.35, 
                                                 steps_per_epoch=steps_per_epoch, epochs=2000)
@@ -809,9 +811,10 @@ class DiffuserTrainer(BaseVLNCETrainer):
                 new_key = k.replace('module.', '')
                 new_state_dict[new_key] = v
             ckpt_dict['state_dict'] = new_state_dict
+
             self.policy.load_state_dict(ckpt_dict["state_dict"])
-            
             self.optimizer.load_state_dict(ckpt_dict["optim_state"])
+
             if config.IL.is_requeue:
                 self.optimizer.load_state_dict(ckpt_dict["optim_state"])
                 self.start_epoch = ckpt_dict["epoch"] + 1
@@ -819,8 +822,9 @@ class DiffuserTrainer(BaseVLNCETrainer):
             logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
 
         # ddp
-        self.policy = DDP(self.policy, device_ids=[self.local_rank], output_device=self.local_rank)
-
+        if train:
+            self.policy = DDP(self.policy, device_ids=[self.local_rank], output_device=self.local_rank)
+        
         params = sum(param.numel() for param in self.policy.parameters())
         params_t = sum(
             p.numel() for p in self.policy.parameters() if p.requires_grad
