@@ -5,7 +5,7 @@ TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 1
 TENSORBOARD_DIR: data/tensorboard_dirs/ddpLRSchedule_diffuser
 CHECKPOINT_FOLDER: data/checkpoints/ddpLRSchedule_diffuser
-EVAL_CKPT_PATH_DIR: data/checkpoints/ddpLRSchedule_diffuser/ckpt.2000.pth
+EVAL_CKPT_PATH_DIR: data/checkpoints/ddpLRSchedule_diffuser/ckpt.1800.pth
 RESULTS_DIR: data/checkpoints/ddpLRSchedule_diffuser/evals
 VIDEO_OPTION: []
 JobName: ddpLRSchedule
@@ -18,7 +18,7 @@ EVAL:
   ACTION_POP: False
 
 IL:
-  ckpt_to_load: data/checkpoints/diffuser/ckpt.2000.pth
+  ckpt_to_load: data/checkpoints/diffuser/ckpt.1800.pth
   load_from_ckpt: True # for testing overfitting only 
   epochs: 2000
   batch_size: 256
