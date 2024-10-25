@@ -801,7 +801,16 @@ class DiffuserTrainer(BaseVLNCETrainer):
         if load_from_ckpt:
             ckpt_path = config.IL.ckpt_to_load
             ckpt_dict = self.load_checkpoint(ckpt_path, map_location="cpu")
+            
+            # load policy from ddp
+            state_dict = ckpt_dict['state_dict']
+                new_state_dict = {}
+            for k, v in state_dict.items():
+                new_key = k.replace('module.', '')
+                new_state_dict[new_key] = v
+            ckpt_dict['state_dict'] = new_state_dict
             self.policy.load_state_dict(ckpt_dict["state_dict"])
+            
             self.optimizer.load_state_dict(ckpt_dict["optim_state"])
             if config.IL.is_requeue:
                 self.optimizer.load_state_dict(ckpt_dict["optim_state"])
