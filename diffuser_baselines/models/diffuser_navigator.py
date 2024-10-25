@@ -639,6 +639,7 @@ class DiffusionNavigator(nn.Module):
                 tokens[4] = self.encode_trajectories(intermidiate_noise) # dont pack
                 pred_noises = self.predict_noise(tokens,t * torch.ones(len(tokens[0])).to(tokens[0].device).long(),mask)
 
+            print(pred_noises.shape)
             step_out = self.noise_scheduler.step(
                 pred_noises, t, intermidiate_noise
             )
