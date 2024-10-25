@@ -793,7 +793,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         )
 
 
-        if self.config.lr_Schedule:
+        if self.config.lr_Schedule and not load_from_ckpt:
             steps_per_epoch = 42 // self.world_size
             self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.IL.lr, pct_start=0.35, 
                                                 steps_per_epoch=steps_per_epoch, epochs=2000)
