@@ -18,7 +18,7 @@ EVAL:
   ACTION_POP: False
 
 IL:
-  ckpt_to_load: data/checkpoints/diffuser/ckpt.1800.pth
+  ckpt_to_load: data/checkpoints/ddpLRSchedule_diffuser/ckpt.1800.pth
   load_from_ckpt: True # for testing overfitting only 
   epochs: 2000
   batch_size: 256
