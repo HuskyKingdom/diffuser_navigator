@@ -5,7 +5,7 @@ TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 1
 TENSORBOARD_DIR: data/tensorboard_dirs/ddpLemb_diffuser
 CHECKPOINT_FOLDER: data/checkpoints/ddpLemb_diffuser
-EVAL_CKPT_PATH_DIR: data/checkpoints/ddpLemb_diffuser/ckpt.600.pth
+EVAL_CKPT_PATH_DIR: data/checkpoints/ddpLemb_diffuser/ckpt.1000.pth
 RESULTS_DIR: data/checkpoints/ddpLemb_diffuser/evals
 VIDEO_OPTION: []
 JobName: ddp_Lemb
@@ -18,8 +18,8 @@ EVAL:
   ACTION_POP: False
 
 IL:
-  ckpt_to_load: data/checkpoints/diffuser/ckpt.600.pth
-  load_from_ckpt: False # for testing overfitting only 
+  ckpt_to_load: data/checkpoints/ddpLemb_diffuser/ckpt.1000.pth
+  load_from_ckpt: True # for testing overfitting only 
   epochs: 2000
   batch_size: 256
   is_requeue: False # continuo training
