@@ -7,7 +7,7 @@ TENSORBOARD_DIR: data/tensorboard_dirs/ddpLRSchedule_diffuser
 CHECKPOINT_FOLDER: data/checkpoints/ddpLRSchedule_diffuser
 EVAL_CKPT_PATH_DIR: data/checkpoints/ddpLRSchedule_diffuser/ckpt.1800.pth
 RESULTS_DIR: data/checkpoints/ddpLRSchedule_diffuser/evals
-VIDEO_OPTION: []
+VIDEO_OPTION: ["disk"]
 JobName: ddpLRSchedule
 lr_Schedule: True
 
