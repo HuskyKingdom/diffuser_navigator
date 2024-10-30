@@ -279,7 +279,6 @@ class D3DiffusionNavigator(nn.Module):
 
 
         # train _____
-        x = (2 * x.float() / self.num_actions) - 1.0
         t = t.float() / self.n_steps
 
         
