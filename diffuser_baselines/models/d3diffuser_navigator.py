@@ -225,9 +225,8 @@ class D3DiffusionNavigator(nn.Module):
         self.action_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,2,1)
         self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        self.cross_attention_sec = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        self.self_attention = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        
+        self.context_cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+
         # predictors (history emb + current emb)
         self.his_projector = nn.Sequential(
             nn.Linear(embedding_dim, embedding_dim),
@@ -345,9 +344,18 @@ class D3DiffusionNavigator(nn.Module):
         context_features = torch.cat((history_feature, context_features),dim=1)
 
 
-        print(action_features.shape)
-        print(context_features.shape)
-        print(history_feature.shape)
+
+        # prediction head
+
+        final_feature = self.context_cross_attention(query=action_features.transpose(0, 1),
+            value=context_features.transpose(0, 1),
+            query_pos=None,
+            value_pos=None,
+            diff_ts=time_embeddings)[-1].transpose(0,1) 
+
+        logits_pred = self.sample_predictor(final_feature)
+
+        print(logits_pred.shape)
 
         assert 1==2
 
