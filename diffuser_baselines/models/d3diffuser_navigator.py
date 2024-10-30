@@ -265,8 +265,12 @@ class D3DiffusionNavigator(nn.Module):
             history_tokens, next_hiddens = self.his_encoder(observations["histories"],hiddens,observations["his_len"],inference = False)
 
 
+        
    
         tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask]
+
+        print(tokens[0])
+        assert 1==2
 
         return tokens, next_hiddens
 
@@ -282,8 +286,7 @@ class D3DiffusionNavigator(nn.Module):
         # tokenlize
         tokens = cond
 
-        print(tokens[0])
-        assert 1==2
+        
         # predict noise
         pred_logits = self.predict_logits(tokens,t)
 
