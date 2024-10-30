@@ -314,6 +314,8 @@ class D3DiffusionNavigator(nn.Module):
 
         rgb_features =  observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1).permute(0,2,1)
         depth_features =  observations["depth_features"].view(bs,observations["depth_features"].size(1),-1).permute(0,2,1)
+
+        print(rgb_features.shape)
         rgb_tokens = self.rgb_linear(rgb_features)  # (bs, 16, 2112) -> (bs, 16, em)
         depth_tokens = self.depth_linear(depth_features) # (bs, 16, 192) -> (bs, 16, em)
 
