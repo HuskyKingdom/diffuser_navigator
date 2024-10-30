@@ -266,11 +266,14 @@ class D3DiffusionNavigator(nn.Module):
 
         
 
-    def forward(self, x_t, t, cond, run_inference=False):
+    def forward(self, x, t, cond, run_inference=False):
 
 
         # train _____
-
+        x = (2 * x.float() / self.N) - 1.0
+        
+        print(x)
+        assert 1==2
         # tokenlize
         tokens = cond
 
@@ -634,9 +637,7 @@ class D3PM(nn.Module):
         x_t = self.q_sample(
             x, t, torch.rand((*x.shape, self.num_classses), device=x.device)
         )
-        print(x[:10])
-        print(x_t[:10])
-        assert 1==2
+
         # x_t is same shape as x
         assert x_t.shape == x.shape, print(
             f"x_t.shape: {x_t.shape}, x.shape: {x.shape}"
