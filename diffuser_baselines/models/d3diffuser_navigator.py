@@ -250,7 +250,7 @@ class D3DiffusionNavigator(nn.Module):
         # tokenlize
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
 
-        print(observations['instruction'])
+        print(instr_tokens)
         assert 1==2
 
         rgb_features =  observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1).permute(0,2,1)
