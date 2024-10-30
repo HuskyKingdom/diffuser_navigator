@@ -24,9 +24,10 @@ class D3DiffusionPolicy(Policy):
     ) -> None:
         
         super(Policy, self).__init__()
+        self.config = config
         self.navigator = D3DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.d3pm = D3PM(self.navigator,self.config.DIFFUSER.diffusion_timesteps,self.config.DIFFUSER.action_space)
-        self.config = config
+        
 
     def act(self,batch, all_pose=None, hiddens = None, encode_only=False,print_info = False):
 
