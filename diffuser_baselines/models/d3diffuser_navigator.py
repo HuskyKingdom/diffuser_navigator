@@ -73,7 +73,7 @@ class D3DiffusionPolicy(Policy):
         }
 
         
-        cond = self.navigator.get_cond(collected_data)
+        cond, _ = self.navigator.get_cond(collected_data)
         x_0 = collected_data['gt_actions'].to(torch.int64)
 
        
@@ -269,8 +269,6 @@ class D3DiffusionNavigator(nn.Module):
    
         tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask]
 
-        print(tokens[0])
-        assert 1==2
 
         return tokens, next_hiddens
 
