@@ -280,16 +280,10 @@ class D3DiffusionNavigator(nn.Module):
         # train _____
         x = (2 * x.float() / self.num_actions) - 1.0
         t = t.float() / self.n_steps
-        
-        print(x.shape)
-
-        assert 1==2
-        # tokenlize
-        tokens = cond
 
         
         # predict noise
-        pred_logits = self.predict_logits(tokens,t)
+        pred_logits = self.predict_logits(x,cond,t)
 
         return pred_logits
 
@@ -305,7 +299,7 @@ class D3DiffusionNavigator(nn.Module):
         return feats
     
 
-    def predict_logits(self, tokens, timesteps): # tokens in form [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask]
+    def predict_logits(self, x, tokens, timesteps): # tokens in form [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask]
 
         time_embeddings = self.time_emb(timesteps.float())
         pad_mask = tokens[-1]
@@ -330,7 +324,7 @@ class D3DiffusionNavigator(nn.Module):
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
 
 
-    
+        print(x.shape)
         print(context_features.shape)
 
         assert 1==2
