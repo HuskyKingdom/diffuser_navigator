@@ -250,8 +250,6 @@ class D3DiffusionNavigator(nn.Module):
         # tokenlize
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
 
-        print(instr_tokens)
-        assert 1==2
 
         rgb_features =  observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1).permute(0,2,1)
         depth_features =  observations["depth_features"].view(bs,observations["depth_features"].size(1),-1).permute(0,2,1)
@@ -284,6 +282,8 @@ class D3DiffusionNavigator(nn.Module):
         # tokenlize
         tokens = cond
 
+        print(tokens[0])
+        assert 1==2
         # predict noise
         pred_logits = self.predict_logits(tokens,t)
 
