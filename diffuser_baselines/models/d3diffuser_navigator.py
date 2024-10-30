@@ -160,7 +160,7 @@ class D3DiffusionNavigator(nn.Module):
         self.rgb_linear = nn.Linear(2112,embedding_dim)
         self.depth_linear = nn.Linear(192,embedding_dim)
 
-        # self.action_encoder = nn.Embedding(num_actions, embedding_dim)
+        self.action_encoder = nn.Embedding(num_actions, embedding_dim)
         self.traj_encoder = nn.Sequential(
             nn.Linear(self.config.DIFFUSER.traj_space, embedding_dim),
             nn.ReLU(),
@@ -222,6 +222,7 @@ class D3DiffusionNavigator(nn.Module):
             )
         ])
 
+        self.action_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,2,1)
         self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.cross_attention_sec = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
@@ -304,9 +305,18 @@ class D3DiffusionNavigator(nn.Module):
         time_embeddings = self.time_emb(timesteps.float())
         pad_mask = tokens[-1]
 
+        # encode actions
+        action_emb = self.action_encoder(x)
 
+        
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
+        action_position = self.pe_layer(action_emb)
+
+        # action features
+        action_features = self.action_self_atten(action_position.transpose(0,1), diff_ts=time_embeddings,
+                query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
+
 
         # languege features
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
@@ -324,7 +334,7 @@ class D3DiffusionNavigator(nn.Module):
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
 
 
-        print(x.shape)
+        print(action_features.shape)
         print(context_features.shape)
 
         assert 1==2
