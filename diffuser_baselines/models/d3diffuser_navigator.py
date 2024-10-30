@@ -305,11 +305,10 @@ class D3DiffusionNavigator(nn.Module):
     def predict_logits(self, tokens, timesteps): # tokens in form [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask]
 
         time_embeddings = self.time_emb(timesteps.float())
-        time_embeddings = time_embeddings 
         pad_mask = tokens[-1]
 
+        print(timesteps.shape)
         print(time_embeddings.shape)
-        print(pad_mask.shape)
         assert 1==2
 
         # positional embedding
