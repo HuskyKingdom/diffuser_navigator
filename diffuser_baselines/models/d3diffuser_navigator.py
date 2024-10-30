@@ -75,6 +75,9 @@ class D3DiffusionPolicy(Policy):
         
         cond = self.navigator.get_cond(collected_data)
         x_0 = collected_data['gt_actions'].to(torch.int64)
+
+        print(cond[0])
+        assert 1==2
         loss, info = self.d3pm(x_0, cond)
         
 
@@ -301,7 +304,6 @@ class D3DiffusionNavigator(nn.Module):
         pad_mask = tokens[-1]
 
         # positional embedding
-        print(tokens[0])
         instruction_position = self.pe_layer(tokens[0])
 
         # languege features
