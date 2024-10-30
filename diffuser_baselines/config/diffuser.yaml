@@ -14,7 +14,7 @@ EVAL:
   USE_CKPT_CONFIG: False
   SPLIT: train # for testing overfitting only
   EPISODE_COUNT: -1
-  ACTION_POP: False
+  ACTION_POP: True
 
 IL:
   ckpt_to_load: data/checkpoints/diffuser/ckpt.1200.pth
