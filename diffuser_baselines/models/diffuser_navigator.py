@@ -70,6 +70,8 @@ class DiffusionPolicy(Policy):
         'proprioceptions': observations['proprioceptions'].to(observations['instruction'].device)
         }
 
+        print(observations['instruction'])
+        assert 1==2
         loss = self.navigator(collected_data)
 
         return loss

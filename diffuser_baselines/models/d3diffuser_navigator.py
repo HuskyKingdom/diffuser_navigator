@@ -76,8 +76,7 @@ class D3DiffusionPolicy(Policy):
         cond = self.navigator.get_cond(collected_data)
         x_0 = collected_data['gt_actions'].to(torch.int64)
 
-        print(observations['instruction'])
-        assert 1==2
+       
         loss, info = self.d3pm(x_0, cond)
         
 
@@ -242,6 +241,9 @@ class D3DiffusionNavigator(nn.Module):
 
 
     def get_cond(self,observations,hiddens=None,inference=False):
+
+        print(observations['instruction'])
+        assert 1==2
 
         bs = observations["instruction"].size(0)
         pad_mask = (observations['instruction'] == 0)
