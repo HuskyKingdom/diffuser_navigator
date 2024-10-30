@@ -25,7 +25,7 @@ class D3DiffusionPolicy(Policy):
         
         super(Policy, self).__init__()
         self.navigator = D3DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
-        self.d3pm = D3PM(self.navigator,100,4)
+        self.d3pm = D3PM(self.navigator,self.config.DIFFUSER.diffusion_timesteps,self.config.DIFFUSER.action_space)
         self.config = config
 
     def act(self,batch, all_pose=None, hiddens = None, encode_only=False,print_info = False):
@@ -91,7 +91,7 @@ class D3DiffusionPolicy(Policy):
         """
          (bs, seq_len) -> (bs, seq_len, num_cls) one-hot encoding
         """
-        num_cls = 4 
+        num_cls = self.config.DIFFUSER.action_space
         bs, seq_len = inputs.shape
         one_hot = torch.zeros(bs, seq_len, num_cls, device=inputs.device)  # 创建全零张量
         one_hot.scatter_(2, inputs.unsqueeze(-1), 1)  # 在最后一维进行 one-hot 编码
@@ -271,9 +271,8 @@ class D3DiffusionNavigator(nn.Module):
 
         # train _____
         x = (2 * x.float() / self.num_actions) - 1.0
+        t = t.float().reshape(-1, 1) / self.n_steps
         
-        print(x)
-        assert 1==2
         # tokenlize
         tokens = cond
 
@@ -294,15 +293,14 @@ class D3DiffusionNavigator(nn.Module):
         return feats
     
 
-    def predict_logits(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,history_tokens,traj,pose_feature)
+    def predict_logits(self, tokens, timesteps): # tokens in form [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask]
 
         time_embeddings = self.time_emb(timesteps.float())
-        time_embeddings = time_embeddings + tokens[-1] # fused (48,64)
+        time_embeddings = time_embeddings 
+        pad_mask = tokens[-1]
 
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
-        traj_position = self.pe_layer(tokens[4])
-
 
         # languege features
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
@@ -320,23 +318,12 @@ class D3DiffusionNavigator(nn.Module):
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
 
 
-        # trajectory features
-        traj_features, _ = self.traj_lang_attention[0](
-                seq1=traj_position, seq1_key_padding_mask=None,
-                seq2=lan_features, seq2_key_padding_mask=pad_mask,
-                seq1_pos=None, seq2_pos=None,
-                seq1_sem_pos=None, seq2_sem_pos=None
-        )
+    
+        print(context_features.shape)
 
+        assert 1==2
 
-        # final features
-        features = self.cross_attention_sec(query=traj_features.transpose(0, 1),
-            value=context_features.transpose(0, 1),
-            query_pos=None,
-            value_pos=None,
-            diff_ts=time_embeddings)[-1].transpose(0,1) # (bs,3,64)
-        
-
+  
         # fuse with history
         history_feature = tokens[-3].unsqueeze(1).expand(-1,features.shape[1],-1)
         fused_feature = torch.cat((features,history_feature),dim=-1) # (bs,seq_len,d*2)
