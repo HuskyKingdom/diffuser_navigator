@@ -148,18 +148,18 @@ class DiffusionNavigator(nn.Module):
             nn.Linear(embedding_dim, embedding_dim)
         )
 
-        self.pose_encoder = nn.Sequential(
-            SinusoidalPosEmb(embedding_dim),
-            nn.Linear(embedding_dim, embedding_dim),
-            nn.ReLU(),
-            nn.Linear(embedding_dim, embedding_dim)
-        )
-
         # self.pose_encoder = nn.Sequential(
-        #     nn.Linear(1, embedding_dim),
+        #     SinusoidalPosEmb(embedding_dim),
+        #     nn.Linear(embedding_dim, embedding_dim),
         #     nn.ReLU(),
         #     nn.Linear(embedding_dim, embedding_dim)
         # )
+
+        self.pose_encoder = nn.Sequential(
+            nn.Linear(1, embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, embedding_dim)
+        )
 
 
         self.time_emb = nn.Sequential(
