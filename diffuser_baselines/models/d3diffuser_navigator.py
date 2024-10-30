@@ -153,32 +153,12 @@ class D3DiffusionNavigator(nn.Module):
         self.depth_encoder.to(next(self.parameters()).device).train()
         self.rgb_encoder.to(next(self.parameters()).device).train()
 
-
-
         # Other Encoders
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
         self.rgb_linear = nn.Linear(2112,embedding_dim)
         self.depth_linear = nn.Linear(192,embedding_dim)
 
         self.action_encoder = nn.Embedding(num_actions, embedding_dim)
-        self.traj_encoder = nn.Sequential(
-            nn.Linear(self.config.DIFFUSER.traj_space, embedding_dim),
-            nn.ReLU(),
-            nn.Linear(embedding_dim, embedding_dim)
-        )
-
-        # self.pose_encoder = nn.Sequential(
-        #     SinusoidalPosEmb(embedding_dim),
-        #     nn.Linear(embedding_dim, embedding_dim),
-        #     nn.ReLU(),
-        #     nn.Linear(embedding_dim, embedding_dim)
-        # )
-
-        self.pose_encoder = nn.Sequential(
-            nn.Linear(1, embedding_dim),
-            nn.ReLU(),
-            nn.Linear(embedding_dim, embedding_dim)
-        )
 
 
         self.time_emb = nn.Sequential(
@@ -234,7 +214,6 @@ class D3DiffusionNavigator(nn.Module):
             nn.Linear(embedding_dim, embedding_dim)
         )
 
-        self.sample_projector = nn.Linear(embedding_dim*2, embedding_dim)
         self.sample_predictor = nn.Sequential(
             nn.Linear(embedding_dim, embedding_dim),
             nn.ReLU(),
@@ -355,25 +334,7 @@ class D3DiffusionNavigator(nn.Module):
 
         logits_pred = self.sample_predictor(final_feature)
 
-        print(logits_pred.shape)
-
-        assert 1==2
-
-  
-        # fuse with history
-        
-        fused_feature = torch.cat((features,history_feature),dim=-1) # (bs,seq_len,d*2)
-
-        
-        projected_feature = self.noise_projector(fused_feature)
-        final_features = self.self_attention(projected_feature.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None)[-1].transpose(0,1)
-
-
-        noise_prediction = self.noise_predictor(final_features) # (bs,seq_len,traj_space)
-        
-
-        return noise_prediction
+        return logits_pred
 
 
     def calculate_actions(self, tensor, head_threshold):
