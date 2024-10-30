@@ -73,9 +73,10 @@ class D3DiffusionPolicy(Policy):
 
         
         cond = self.navigator.get_cond(collected_data)
+        x_0 = self.to_onehot(collected_data['gt_actions'])
 
-        print(cond)
-        print(collected_data['gt_actions'].shape)
+        print(x_0)
+        print(x_0.shape)
         assert 1==2
         loss, info = self.d3pm(x, cond)
 
@@ -88,6 +89,16 @@ class D3DiffusionPolicy(Policy):
         return cls(
             config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
         )
+    
+    def to_onehot(self,inputs):
+        """
+         (bs, seq_len) -> (bs, seq_len, num_cls) one-hot encoding
+        """
+        num_cls = 4 
+        bs, seq_len = inputs.shape
+        one_hot = torch.zeros(bs, seq_len, num_cls, device=inputs.device)  # 创建全零张量
+        one_hot.scatter_(2, inputs.unsqueeze(-1), 1)  # 在最后一维进行 one-hot 编码
+        return one_hot
 
 
 
