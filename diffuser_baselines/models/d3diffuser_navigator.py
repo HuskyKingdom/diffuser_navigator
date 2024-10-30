@@ -71,8 +71,8 @@ class D3DiffusionPolicy(Policy):
         'proprioceptions': observations['proprioceptions'].to(observations['instruction'].device)
         }
 
-        print(rgb_features.shape)
-        cond = self.navigator.get_cond(observations)
+        
+        cond = self.navigator.get_cond(collected_data)
 
         print(cond)
         print(collected_data['gt_actions'].shape)

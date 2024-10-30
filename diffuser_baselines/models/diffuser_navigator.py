@@ -70,7 +70,6 @@ class DiffusionPolicy(Policy):
         'proprioceptions': observations['proprioceptions'].to(observations['instruction'].device)
         }
 
-        print(rgb_features.shape)
         loss = self.navigator(collected_data)
 
         return loss
