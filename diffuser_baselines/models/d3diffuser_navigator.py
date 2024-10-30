@@ -73,8 +73,7 @@ class D3DiffusionPolicy(Policy):
 
         
         cond = self.navigator.get_cond(collected_data)
-        print(collected_data['gt_actions'].dtype)
-        x_0 = self.to_onehot(collected_data['gt_actions'])
+        x_0 = self.to_onehot(collected_data['gt_actions'].to(torch.int64))
 
         print(x_0)
         print(x_0.shape)
