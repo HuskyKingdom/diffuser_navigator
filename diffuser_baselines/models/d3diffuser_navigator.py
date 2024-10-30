@@ -73,6 +73,7 @@ class D3DiffusionPolicy(Policy):
 
         
         cond = self.navigator.get_cond(collected_data)
+        print(collected_data['gt_actions'].dtype)
         x_0 = self.to_onehot(collected_data['gt_actions'])
 
         print(x_0)
