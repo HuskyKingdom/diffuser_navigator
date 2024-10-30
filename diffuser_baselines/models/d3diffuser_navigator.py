@@ -94,8 +94,8 @@ class D3DiffusionPolicy(Policy):
         """
         num_cls = self.config.DIFFUSER.action_space
         bs, seq_len = inputs.shape
-        one_hot = torch.zeros(bs, seq_len, num_cls, device=inputs.device)  # 创建全零张量
-        one_hot.scatter_(2, inputs.unsqueeze(-1), 1)  # 在最后一维进行 one-hot 编码
+        one_hot = torch.zeros(bs, seq_len, num_cls, device=inputs.device)  
+        one_hot.scatter_(2, inputs.unsqueeze(-1), 1) 
         return one_hot
 
 
@@ -301,6 +301,7 @@ class D3DiffusionNavigator(nn.Module):
         pad_mask = tokens[-1]
 
         # positional embedding
+        print(tokens[0])
         instruction_position = self.pe_layer(tokens[0])
 
         # languege features
