@@ -342,7 +342,7 @@ class D3DiffusionNavigator(nn.Module):
         history_feature = tokens[-2].unsqueeze(1).expand(-1,1,-1)
         history_feature = self.his_projector(history_feature)
 
-        context_features = torch.cat((history_feature, context_features),dim=-1)
+        context_features = torch.cat((history_feature, context_features),dim=1)
 
 
         print(action_features.shape)
