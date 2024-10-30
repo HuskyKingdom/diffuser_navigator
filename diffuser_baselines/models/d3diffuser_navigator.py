@@ -634,7 +634,8 @@ class D3PM(nn.Module):
         x_t = self.q_sample(
             x, t, torch.rand((*x.shape, self.num_classses), device=x.device)
         )
-        print(x_t)
+        print(x[:10])
+        print(x_t[:10])
         assert 1==2
         # x_t is same shape as x
         assert x_t.shape == x.shape, print(
