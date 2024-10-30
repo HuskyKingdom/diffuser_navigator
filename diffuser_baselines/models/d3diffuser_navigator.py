@@ -308,6 +308,10 @@ class D3DiffusionNavigator(nn.Module):
         time_embeddings = time_embeddings 
         pad_mask = tokens[-1]
 
+        print(time_embeddings.shape)
+        print(pad_mask.shape)
+        assert 1==2
+
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
 
