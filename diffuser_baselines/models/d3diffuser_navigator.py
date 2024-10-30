@@ -73,12 +73,9 @@ class D3DiffusionPolicy(Policy):
 
         
         cond = self.navigator.get_cond(collected_data)
-        x_0 = self.to_onehot(collected_data['gt_actions'].to(torch.int64))
-
-        print(x_0)
-        print(x_0.shape)
-        assert 1==2
-        loss, info = self.d3pm(x, cond)
+        x_0 = collected_data['gt_actions'].to(torch.int64)
+        loss, info = self.d3pm(x_0, cond)
+        
 
         return loss
     
@@ -239,87 +236,11 @@ class D3DiffusionNavigator(nn.Module):
     
 
 
-    def normalize_dim(self, tensor, min_val=None, max_val=None, feature_range=(-1, 1)):
-    
-        # this function and denorm function would automatically extend the input tensor to shape [bs,len,4]
 
-        if min_val is None:
-            min_val = torch.tensor([[[-32.31, -5.96, -74.19, -3.15]]], dtype=torch.float32,device = tensor.device)
-        if max_val is None:
-            max_val = torch.tensor([[[70.04, 7.46, 46.58, 3.15]]], dtype=torch.float32,device = tensor.device) 
-        
-        # norm to [0, 1]
-        norm_tensor = (tensor - min_val) / (max_val - min_val + 1e-8)
-        
-        # map to feature range
-        scale = feature_range[1] - feature_range[0]
-        norm_tensor = norm_tensor * scale + feature_range[0]
-        
-        return norm_tensor
-
-    def delta_norm (self, tensor, min_val=None, max_val=None, feature_range=(-1, 1)):
-    
-        # this function and denorm function would automatically extend the input tensor to shape [bs,len,4]
-
-        if min_val is None:
-            min_val = torch.tensor([[[-0.75, -0.75, -0.75, -0.79]]], dtype=torch.float32,device = tensor.device)
-        if max_val is None:
-            max_val = torch.tensor([[[0.75, 0.75, 0.75, 0.79]]], dtype=torch.float32,device = tensor.device) 
-        
-        # norm to [0, 1]
-        norm_tensor = (tensor - min_val) / (max_val - min_val + 1e-8)
-        
-        # map to feature range
-        scale = feature_range[1] - feature_range[0]
-        norm_tensor = norm_tensor * scale + feature_range[0]
-        
-        return norm_tensor
-
-    def delta_denorm (self, tensor, min_val=None, max_val=None, feature_range=(-1, 1)):
-    
-        # this function and denorm function would automatically extend the input tensor to shape [bs,len,4]
-
-        if min_val is None:
-            min_val = torch.tensor([[[-0.75, -0.75, -0.75, -0.79]]], dtype=torch.float32,device = tensor.device)
-        if max_val is None:
-            max_val = torch.tensor([[[0.75, 0.75, 0.75, 0.79]]], dtype=torch.float32,device = tensor.device) 
-        
-        # map to feature range
-        scale = feature_range[1] - feature_range[0]
-        tensor = (tensor - feature_range[0]) / scale
-
-        return tensor * (max_val - min_val) + min_val
-    
-    def denormalize_dim(self, tensor, min_val=None, max_val=None, feature_range=(-1, 1)):
-
-        if min_val is None:
-            min_val = torch.tensor([[[-32.31, -5.96, -74.19, -3.15]]], dtype=torch.float32,device = tensor.device)
-        if max_val is None:
-            max_val = torch.tensor([[[70.04, 7.46, 46.58, 3.15]]], dtype=torch.float32,device = tensor.device) 
-
-
-        scale = feature_range[1] - feature_range[0]
-        tensor = (tensor - feature_range[0]) / scale
-
-        return tensor * (max_val - min_val) + min_val
-
-    def normalize_head(self,tensor):
-        # Normalize tensor to [0, 1]
-        min_val, max_val = -3.15, 3.15
-        norm_tensor = (tensor - min_val) / (max_val - min_val)
-        
-        # Scale to [-1, 1]
-        norm_tensor = norm_tensor * 2 - 1
-        return norm_tensor
-
-    def encode_trajectories(self,traj):
-        traj_tokens = self.traj_encoder(traj)
-        return traj_tokens
-    
     def get_cond(self,observations,hiddens=None,inference=False):
 
         bs = observations["instruction"].size(0)
-
+        pad_mask = (observations['instruction'] == 0)
 
         # tokenlize
         instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
@@ -339,45 +260,24 @@ class D3DiffusionNavigator(nn.Module):
 
 
    
-        tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens]
+        tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask]
 
         return tokens, next_hiddens
 
         
 
-    def forward(self, observations, run_inference=False,hiddens=None):
+    def forward(self, x_t, t, cond, run_inference=False):
 
-
-        # observations['proprioceptions'] = self.normalize_dim(observations['proprioceptions']).squeeze(0) # normalize input alone dimensions
-
-
-        # language padding mask
-        pad_mask = (observations['instruction'] == 0)
-
-        # inference _____
-        if run_inference:
-            return self.inference_actions(observations,pad_mask,hiddens)
 
         # train _____
 
         # tokenlize
-        tokens, _ = self.tokenlize_input(observations,hiddens)
-        # encode traj
-        tokens[4] = self.encode_trajectories(noised_delta)
+        tokens = cond
+
         # predict noise
-        pred_noise = self.predict_noise(tokens,noising_timesteps,pad_mask)
+        pred_logits = self.predict_logits(tokens,t)
 
-        
-        # target_terminations = torch.where(observations["gt_actions"] == 0, torch.tensor(1, device=observations["gt_actions"].device), torch.tensor(0, device=observations["gt_actions"].device)).float()
-        # bin_crossentro_loss = F.binary_cross_entropy(pred_termination, target_terminations)
-
-        # compute loss
-        mse_loss = F.mse_loss(pred_noise, noise)
-        loss = mse_loss
-
-
-
-        return loss
+        return pred_logits
 
 
 
@@ -391,7 +291,7 @@ class D3DiffusionNavigator(nn.Module):
         return feats
     
 
-    def predict_noise(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,history_tokens,traj,pose_feature)
+    def predict_logits(self, tokens, timesteps,pad_mask): # tokens in form (instr_tokens,rgb,depth,history_tokens,traj,pose_feature)
 
         time_embeddings = self.time_emb(timesteps.float())
         time_embeddings = time_embeddings + tokens[-1] # fused (48,64)
@@ -734,6 +634,8 @@ class D3PM(nn.Module):
         x_t = self.q_sample(
             x, t, torch.rand((*x.shape, self.num_classses), device=x.device)
         )
+        print(x_t)
+        assert 1==2
         # x_t is same shape as x
         assert x_t.shape == x.shape, print(
             f"x_t.shape: {x_t.shape}, x.shape: {x.shape}"
