@@ -332,15 +332,19 @@ class D3DiffusionNavigator(nn.Module):
         # context features 
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
 
+        # integrate history
+        history_feature = tokens[-2].unsqueeze(1).expand(-1,1,-1)
+
 
         print(action_features.shape)
         print(context_features.shape)
+        print(history_feature.shape)
 
         assert 1==2
 
   
         # fuse with history
-        history_feature = tokens[-3].unsqueeze(1).expand(-1,features.shape[1],-1)
+        
         fused_feature = torch.cat((features,history_feature),dim=-1) # (bs,seq_len,d*2)
 
         
