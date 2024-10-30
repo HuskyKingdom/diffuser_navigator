@@ -229,6 +229,12 @@ class D3DiffusionNavigator(nn.Module):
         self.self_attention = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         
         # predictors (history emb + current emb)
+        self.his_projector = nn.Sequential(
+            nn.Linear(embedding_dim, embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, embedding_dim)
+        )
+
         self.sample_projector = nn.Linear(embedding_dim*2, embedding_dim)
         self.sample_predictor = nn.Sequential(
             nn.Linear(embedding_dim, embedding_dim),
@@ -334,6 +340,9 @@ class D3DiffusionNavigator(nn.Module):
 
         # integrate history
         history_feature = tokens[-2].unsqueeze(1).expand(-1,1,-1)
+        history_feature = self.his_projector(history_feature)
+
+        context_features = torch.cat((history_feature, context_features),dim=-1)
 
 
         print(action_features.shape)
