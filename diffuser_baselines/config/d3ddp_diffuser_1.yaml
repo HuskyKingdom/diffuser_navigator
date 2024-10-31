@@ -8,7 +8,8 @@ CHECKPOINT_FOLDER: data/checkpoints/d3ddpdiffuser_1
 EVAL_CKPT_PATH_DIR: data/checkpoints/d3ddpdiffuser_1/ckpt.1200.pth
 RESULTS_DIR: data/checkpoints/d3ddpdiffuser_1/evals
 VIDEO_OPTION: []
-
+JobName: d3ddpdiffuser_1
+lr_Schedule: True
 
 EVAL:
   USE_CKPT_CONFIG: False
@@ -20,7 +21,7 @@ IL:
   ckpt_to_load: data/checkpoints/d3ddpdiffuser_1/ckpt.1200.pth
   load_from_ckpt: False # for testing overfitting only 
   epochs: 2000
-  batch_size: 128
+  batch_size: 256
   is_requeue: False # continuo training
   
 
