@@ -334,7 +334,7 @@ class D3DiffusionNavigator(nn.Module):
 
         logits_pred = self.sample_predictor(final_feature)
 
-        return logits_pred
+        return logits_pred 
 
 
     def encode_visions(self,batch,config):
