@@ -307,8 +307,8 @@ class D3DiffusionNavigator(nn.Module):
         history_feature = self.history_self_atten(history_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
         
-        print(history_position.shape)
-        print(tokens[5].shape)
+        print(pad_mask)
+        print(tokens[5])
         assert 1==2
 
         # action features
