@@ -23,7 +23,7 @@ class HistoryGRU(nn.Module):
             
             print(output.shape)
             print(lengths.shape)
-            print(output[1,2])
+            print(output[1,1])
 
             assert 1==2
 
