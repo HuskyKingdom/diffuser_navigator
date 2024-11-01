@@ -153,6 +153,7 @@ class Seq2SeqNet(Net):
 
         print(observations["rgb_features"].shape)
         print(rgb_embedding.shape)
+        print(prev_actions.shape)
         assert 1==2
 
         x = torch.cat(
