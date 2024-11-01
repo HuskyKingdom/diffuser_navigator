@@ -54,8 +54,8 @@ def collate_fn(batch):
 
     transposed = list(zip(*batch))
 
-    print(transposed[1])
-    print(transposed[2])
+    print(transposed[1][0])
+    print(transposed[2][0])
     assert 1==2
 
     observations_batch = list(transposed[0])
@@ -541,7 +541,7 @@ class DaggerTrainer(BaseVLNCETrainer):
                     collate_fn=collate_fn,
                     pin_memory=False,
                     drop_last=True,  # drop last batch if smaller
-                    num_workers=3,
+                    num_workers=1,
                 )
 
                 AuxLosses.activate()
