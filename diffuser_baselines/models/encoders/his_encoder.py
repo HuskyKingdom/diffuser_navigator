@@ -19,7 +19,8 @@ class HistoryGRU(nn.Module):
             packed_output, hiddens = self.gru(packed_input,hiddens)
             # hiddens: (num_layers, batch_size, hidden_size)
             output, _ = pad_packed_sequence(packed_output, batch_first=True)
-            print(output.shape)
+            print(output[0,1])
+            print(output[0,2])
 
             assert 1==2
         else:
