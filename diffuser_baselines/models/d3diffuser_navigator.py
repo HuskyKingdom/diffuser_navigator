@@ -208,15 +208,12 @@ class D3DiffusionNavigator(nn.Module):
         self.history_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,2,1)
         self.action_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,2,1)
         self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
+
+        self.language_his_cross_atten = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.context_cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
-        # predictors (history emb + current emb)
-        self.his_projector = nn.Sequential(
-            nn.Linear(embedding_dim, embedding_dim),
-            nn.ReLU(),
-            nn.Linear(embedding_dim, embedding_dim)
-        )
+        # predictors
 
         self.sample_predictor = nn.Sequential(
             nn.Linear(embedding_dim, embedding_dim),
@@ -308,29 +305,32 @@ class D3DiffusionNavigator(nn.Module):
 
   
         
-        # positional embedding
+        # positional embedding __________________
         instruction_position = self.pe_layer(tokens[0])
         action_position = self.pe_layer(action_emb)
         history_position = self.pe_layer(tokens[3])
 
-
+        # self attentions __________________
         # encode history
         history_feature = self.history_self_atten(history_position.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
+                query_pos=None, context=None, context_pos=None,pad_mask=his_pad_mask)[-1].transpose(0,1)
         
-        print(his_pad_mask)
-        print(his_pad_mask.shape)
-        assert 1==2
 
         # action features
         action_features = self.action_self_atten(action_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
 
-
         # languege features
         lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
+
+        # cross attentions __________________
+        lan_features = self.language_his_cross_atten(query=lan_features.transpose(0, 1),
+            value=history_feature.transpose(0, 1),
+            query_pos=None,
+            value_pos=None,
+            diff_ts=time_embeddings,pad_mask=his_pad_mask)[-1].transpose(0,1) # takes last layer and return to (B,L,D)
 
         # observation features
         obs_features = self.cross_attention(query=tokens[1].transpose(0, 1),
@@ -342,16 +342,8 @@ class D3DiffusionNavigator(nn.Module):
         # context features 
         context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
 
-        # integrate history
-        history_feature = tokens[-2].unsqueeze(1).expand(-1,1,-1)
-        history_feature = self.his_projector(history_feature)
-
-        context_features = torch.cat((history_feature, context_features),dim=1)
-
-
 
         # prediction head
-
         final_feature = self.context_cross_attention(query=action_features.transpose(0, 1),
             value=context_features.transpose(0, 1),
             query_pos=None,
