@@ -26,7 +26,7 @@ class HistoryGRU(nn.Module):
             print(torch.allclose(x[0,1], x[13,1], atol=1e-8))
             print(torch.allclose(output[0,1], output[13,1], atol=1e-8))
 
-            assert 1==2
+
         else:
             _, hiddens = self.gru(x,hiddens)
 
