@@ -289,6 +289,7 @@ class D3DiffusionNavigator(nn.Module):
     
     def create_boolean_mask(self,mask):
        
+        mask = mask.to(torch.int32)
         max_len = mask.max().item()
         expanded_mask = torch.arange(max_len).expand(len(mask), max_len)
         boolean_mask = expanded_mask < mask.unsqueeze(1)
