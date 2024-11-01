@@ -514,7 +514,7 @@ class DaggerTrainer(BaseVLNCETrainer):
                         dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
                     )
                     print(f"dataset collected.")
-                    assert 1==2
+    
 
 
                 if torch.cuda.is_available():
@@ -557,6 +557,9 @@ class DaggerTrainer(BaseVLNCETrainer):
                             weights_batch,
                         ) = batch
 
+                        print(not_done_masks)
+                        assert 1==2
+                        
                         observations_batch = {
                             k: v.to(
                                 device=self.device,
