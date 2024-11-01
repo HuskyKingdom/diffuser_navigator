@@ -20,9 +20,10 @@ class HistoryGRU(nn.Module):
             # hiddens: (num_layers, batch_size, hidden_size)
             output, _ = pad_packed_sequence(packed_output, batch_first=True)
 
-            print(x.shape)
+            
             print(output[0,1])
             print(output[13,1])
+            print(torch.allclose(x[0,1], x[13,1], atol=1e-8))
             print(torch.allclose(output[0,1], output[13,1], atol=1e-8))
 
             assert 1==2
