@@ -95,18 +95,19 @@ def collate_fn(batch):
         )
 
     prev_actions_batch = torch.stack(prev_actions_batch, dim=1)
-    print("before stack",corrected_actions_batch[0].shape)
     corrected_actions_batch = torch.stack(corrected_actions_batch, dim=1)
     weights_batch = torch.stack(weights_batch, dim=1)
 
-    print("oracle",corrected_actions_batch.shape)
-    assert 1==2
+    
 
     not_done_masks = torch.ones_like(
         corrected_actions_batch, dtype=torch.uint8
     )
     not_done_masks[0] = 0
 
+    print("notdone",not_done_masks.shape)
+    print("notdone data",not_done_masks)
+    assert 1==2
 
     observations_batch = ObservationsDict(observations_batch)
 
