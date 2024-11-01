@@ -163,6 +163,10 @@ class Seq2SeqNet(Net):
 
         x, rnn_states_out = self.state_encoder(x, rnn_states, masks)
 
+        print(x.shape)
+        assert 1==2
+
+
         if self.model_config.PROGRESS_MONITOR.use and AuxLosses.is_active():
             progress_hat = torch.tanh(self.progress_monitor(x))
             progress_loss = F.mse_loss(
