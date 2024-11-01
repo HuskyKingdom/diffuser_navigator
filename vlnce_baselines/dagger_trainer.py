@@ -557,9 +557,9 @@ class DaggerTrainer(BaseVLNCETrainer):
                             weights_batch,
                         ) = batch
 
-                        print(not_done_masks)
+                        print(not_done_masks.shape)
                         assert 1==2
-                        
+
                         observations_batch = {
                             k: v.to(
                                 device=self.device,
