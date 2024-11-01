@@ -105,9 +105,6 @@ def collate_fn(batch):
     )
     not_done_masks[0] = 0
 
-    print("notdone",not_done_masks.shape)
-    print("notdone data",not_done_masks)
-    assert 1==2
 
     observations_batch = ObservationsDict(observations_batch)
 
