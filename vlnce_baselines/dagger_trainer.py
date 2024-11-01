@@ -100,7 +100,7 @@ def collate_fn(batch):
     )
     not_done_masks[0] = 0
 
-    
+    print(corrected_actions_batch.shape)
     assert 1==2
 
     observations_batch = ObservationsDict(observations_batch)
