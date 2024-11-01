@@ -163,6 +163,7 @@ class Seq2SeqNet(Net):
 
         x, rnn_states_out = self.state_encoder(x, rnn_states, masks)
 
+        print(x.shape)
         print(rnn_states.shape)
         assert 1==2
 
