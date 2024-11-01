@@ -287,7 +287,7 @@ class D3DiffusionNavigator(nn.Module):
         return feats
     
     
-    def create_boolean_mask(mask):
+    def create_boolean_mask(self,mask):
        
         max_len = mask.max().item()
         expanded_mask = torch.arange(max_len).expand(len(mask), max_len)
