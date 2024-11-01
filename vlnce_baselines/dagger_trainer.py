@@ -54,6 +54,10 @@ def collate_fn(batch):
 
     transposed = list(zip(*batch))
 
+    print(transposed[1].shape)
+    print(transposed[2].shape)
+    assert 1==2
+
     observations_batch = list(transposed[0])
     prev_actions_batch = list(transposed[1])
     corrected_actions_batch = list(transposed[2])
@@ -100,8 +104,6 @@ def collate_fn(batch):
     )
     not_done_masks[0] = 0
 
-    print(prev_actions_batch.shape)
-    assert 1==2
 
     observations_batch = ObservationsDict(observations_batch)
 
