@@ -18,6 +18,10 @@ class HistoryGRU(nn.Module):
             packed_input = pack_padded_sequence(x, lengths.cpu(), batch_first=True, enforce_sorted=False)
             _, hiddens = self.gru(packed_input,hiddens)
             # hiddens: (num_layers, batch_size, hidden_size)
+            output, _ = pad_packed_sequence(packed_output, batch_first=True)
+            print(output)
+
+            assert 1==2
         else:
             _, hiddens = self.gru(x,hiddens)
 
