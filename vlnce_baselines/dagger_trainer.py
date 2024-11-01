@@ -52,7 +52,7 @@ def collate_fn(batch):
         )
         return torch.cat([t, pad], dim=0)
 
-    transposed = list(zip(*batch)) 
+    transposed = list(zip(*batch))
 
     observations_batch = list(transposed[0])
     prev_actions_batch = list(transposed[1])
