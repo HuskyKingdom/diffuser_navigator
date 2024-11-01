@@ -161,9 +161,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             logits.permute(0, 2, 1), corrected_actions, reduction="none"
         )
 
-        print("logits",logits.permute(0, 2, 1).shape)
-        print("true",corrected_actions.shape)
-        assert 1==2
+        
         action_loss = ((weights * action_loss).sum(0) / weights.sum(0)).mean()
 
         aux_mask = (weights > 0).view(-1)
