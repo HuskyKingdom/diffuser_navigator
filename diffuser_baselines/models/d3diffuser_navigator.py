@@ -50,9 +50,7 @@ class D3DiffusionPolicy(Policy):
 
         actions = self.d3pm.sample(init_noise,cond)
 
-        print(actions)
-        assert 1==2
-
+       
         if print_info:
             print(f"final actions {actions}")
 
