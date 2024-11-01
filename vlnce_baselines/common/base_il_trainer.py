@@ -155,8 +155,6 @@ class BaseVLNCETrainer(BaseILTrainer):
         logits = distribution.logits
         logits = logits.view(T, N, -1)
         
-        print(logits.shape)
-        assert 1==2
 
 
         action_loss = F.cross_entropy(
