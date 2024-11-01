@@ -55,7 +55,7 @@ def collate_fn(batch):
     transposed = list(zip(*batch))
 
     print(transposed[1])
-    print(transposed[2].shape)
+    print(transposed[2])
     assert 1==2
 
     observations_batch = list(transposed[0])
