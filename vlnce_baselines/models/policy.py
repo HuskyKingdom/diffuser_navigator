@@ -56,7 +56,4 @@ class ILPolicy(Policy, metaclass=abc.ABCMeta):
             observations, rnn_states, prev_actions, masks
         )
 
-        print("ditribution",features.shape)
-        assert 1==2
-
         return self.action_distribution(features)

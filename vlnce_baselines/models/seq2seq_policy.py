@@ -144,6 +144,8 @@ class Seq2SeqNet(Net):
         depth_embedding = self.depth_encoder(observations)
         rgb_embedding = self.rgb_encoder(observations)
 
+        print(instruction_embedding.shape)
+        assert 1==2
         if self.model_config.ablate_instruction:
             instruction_embedding = instruction_embedding * 0
         if self.model_config.ablate_depth:
