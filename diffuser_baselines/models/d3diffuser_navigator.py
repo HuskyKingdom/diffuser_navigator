@@ -205,6 +205,7 @@ class D3DiffusionNavigator(nn.Module):
             )
         ])
 
+        self.history_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,2,1)
         self.action_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,2,1)
         self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
@@ -255,7 +256,7 @@ class D3DiffusionNavigator(nn.Module):
 
         
    
-        tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask]
+        tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask,observations["his_len"]]
 
 
         return tokens, next_hiddens
@@ -294,12 +295,21 @@ class D3DiffusionNavigator(nn.Module):
         # encode actions
         action_emb = self.action_encoder(x)
 
-        print(tokens[-2].shape)
-        assert 1==2
+  
         
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
         action_position = self.pe_layer(action_emb)
+        history_position = self.pe_layer(tokens[3])
+
+
+        # encode history
+        history_feature = self.history_self_atten(history_position.transpose(0,1), diff_ts=time_embeddings,
+                query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
+        
+        print(instruction_position.shape)
+        print(pad_mask.shape)
+        assert 1==2
 
         # action features
         action_features = self.action_self_atten(action_position.transpose(0,1), diff_ts=time_embeddings,
