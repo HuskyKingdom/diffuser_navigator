@@ -294,6 +294,8 @@ class D3DiffusionNavigator(nn.Module):
         # encode actions
         action_emb = self.action_encoder(x)
 
+        print(tokens[-2].shape)
+        assert 1==2
         
         # positional embedding
         instruction_position = self.pe_layer(tokens[0])
