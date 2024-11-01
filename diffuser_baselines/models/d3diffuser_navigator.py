@@ -45,8 +45,13 @@ class D3DiffusionPolicy(Policy):
         'proprioceptions': torch.tensor(all_pose,dtype=torch.float32).to(batch['instruction'].device)
         }
     
+        cond, next_hidden = self.navigator.get_cond(collected_data)
+        init_noise = torch.randint(0, self.config.DIFFUSER.action_space, (1, self.config.DIFFUSER.traj_length)).cuda()
 
-        actions, next_hidden = self.navigator(collected_data,run_inference = True,hiddens=hiddens)
+        actions = self.d3pm.sample(init_noise,cond)
+
+        print(actions)
+        assert 1==2
 
         if print_info:
             print(f"final actions {actions}")
