@@ -287,10 +287,10 @@ class D3DiffusionNavigator(nn.Module):
         return feats
     
 
-    def predict_logits(self, x, tokens, timesteps): # tokens in form [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask]
+    def predict_logits(self, x, tokens, timesteps): # tokens in form [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask, his_len]
 
         time_embeddings = self.time_emb(timesteps.float())
-        pad_mask = tokens[-1]
+        pad_mask = tokens[4]
 
         # encode actions
         action_emb = self.action_encoder(x)
@@ -307,8 +307,8 @@ class D3DiffusionNavigator(nn.Module):
         history_feature = self.history_self_atten(history_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
         
-        print(instruction_position.shape)
-        print(pad_mask.shape)
+        print(history_position.shape)
+        print(tokens[5].shape)
         assert 1==2
 
         # action features
