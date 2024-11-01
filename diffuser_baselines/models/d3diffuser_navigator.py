@@ -286,11 +286,21 @@ class D3DiffusionNavigator(nn.Module):
         )
         return feats
     
+    
+    def create_boolean_mask(mask):
+       
+        max_len = mask.max().item()
+        expanded_mask = torch.arange(max_len).expand(len(mask), max_len)
+        boolean_mask = expanded_mask < mask.unsqueeze(1)
+
+        return ~boolean_mask 
+
 
     def predict_logits(self, x, tokens, timesteps): # tokens in form [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask, his_len]
 
         time_embeddings = self.time_emb(timesteps.float())
         pad_mask = tokens[4]
+        his_pad_mask = self.create_boolean_mask(tokens[5])
 
         # encode actions
         action_emb = self.action_encoder(x)
@@ -307,8 +317,8 @@ class D3DiffusionNavigator(nn.Module):
         history_feature = self.history_self_atten(history_position.transpose(0,1), diff_ts=time_embeddings,
                 query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
         
-        print(history_position.shape)
-        print(tokens[5])
+        print(his_pad_mask)
+        print(his_pad_mask.shape)
         assert 1==2
 
         # action features
