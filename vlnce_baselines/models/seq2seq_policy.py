@@ -151,10 +151,7 @@ class Seq2SeqNet(Net):
         if self.model_config.ablate_rgb:
             rgb_embedding = rgb_embedding * 0
 
-        print(observations["rgb_features"].shape)
-        print(rgb_embedding.shape)
-        print(prev_actions.shape)
-        assert 1==2
+
 
         x = torch.cat(
             [instruction_embedding, depth_embedding, rgb_embedding], dim=1
