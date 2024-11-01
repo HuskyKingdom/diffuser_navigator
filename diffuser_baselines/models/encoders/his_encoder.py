@@ -21,7 +21,7 @@ class HistoryGRU(nn.Module):
             output, _ = pad_packed_sequence(packed_output, batch_first=True)
             print(output[0,1])
             print(output[1,1])
-            print(are_equal = torch.equal(output[0,1], output[1,1]))
+            print(torch.equal(output[0,1], output[1,1]))
 
             assert 1==2
         else:
