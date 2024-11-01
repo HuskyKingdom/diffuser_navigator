@@ -95,6 +95,7 @@ def collate_fn(batch):
         )
 
     prev_actions_batch = torch.stack(prev_actions_batch, dim=1)
+    print("before stack",corrected_actions_batch[0].shape)
     corrected_actions_batch = torch.stack(corrected_actions_batch, dim=1)
     weights_batch = torch.stack(weights_batch, dim=1)
 
