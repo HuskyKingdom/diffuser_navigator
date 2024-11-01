@@ -291,7 +291,7 @@ class D3DiffusionNavigator(nn.Module):
        
         mask = mask.to(torch.int32)
         max_len = mask.max().item()
-        expanded_mask = torch.arange(max_len).expand(len(mask), max_len)
+        expanded_mask = torch.arange(max_len).expand(len(mask), max_len).to(mask.device)
         boolean_mask = expanded_mask < mask.unsqueeze(1)
 
         return ~boolean_mask 
