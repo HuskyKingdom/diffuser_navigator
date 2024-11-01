@@ -154,6 +154,9 @@ class BaseVLNCETrainer(BaseILTrainer):
 
         logits = distribution.logits
         logits = logits.view(T, N, -1)
+        
+        print(logits.shape)
+
 
         action_loss = F.cross_entropy(
             logits.permute(0, 2, 1), corrected_actions, reduction="none"
