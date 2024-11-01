@@ -14,7 +14,7 @@ EVAL:
   USE_CKPT_CONFIG: False
   SPLIT: val_seen # for testing overfitting only
   EPISODE_COUNT: -1
-  ACTION_POP: True
+  ACTION_POP: False
 
 IL:
   ckpt_to_load: data/checkpoints/d3diffuser/ckpt.800.pth
