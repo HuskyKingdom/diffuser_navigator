@@ -109,6 +109,9 @@ class D3DiffusionPolicy(Policy):
         one_hot = torch.zeros(bs, seq_len, num_cls, device=inputs.device)  
         one_hot.scatter_(2, inputs.unsqueeze(-1), 1) 
         return one_hot
+    
+    def clear_his(self):
+        self.histories = []
 
 
 

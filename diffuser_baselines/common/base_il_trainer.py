@@ -369,6 +369,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 # reset
                 hiddens = None # modif
                 action_candidates = [[]]
+                self.policy.clear_his()
 
                 if config.use_pbar:
                     pbar.update()
