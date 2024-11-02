@@ -81,6 +81,7 @@ def collate_fn(batch):
     gt_actions_batch = list(transposed[2])    # List of tensors
     trajectories_batch = list(transposed[3])   # List of tensors
     
+    B = len(gt_actions_batch)
 
     new_data_dicts = defaultdict(list)
     for sensor in data_dicts[0]:
