@@ -27,6 +27,7 @@ class D3DiffusionPolicy(Policy):
         self.config = config
         self.navigator = D3DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.d3pm = D3PM(self.navigator,self.config.DIFFUSER.diffusion_timesteps,self.config.DIFFUSER.action_space)
+        self.histories = []
         
 
     def act(self,batch, all_pose=None, hiddens = None, encode_only=False,print_info = False):
@@ -37,14 +38,23 @@ class D3DiffusionPolicy(Policy):
         if encode_only:
             return None
 
+
+        # storing histories
+        self.histories.append(rgb_features[:, :2048, :, :].view(rgb_features.shape[0],-1).unsqueeze(1))
+
         # format batch data
         collected_data = {
         'instruction': batch['instruction'],
         'rgb_features': rgb_features.to(batch['instruction'].device),
         'depth_features': depth_features.to(batch['instruction'].device),
-        'proprioceptions': torch.tensor(all_pose,dtype=torch.float32).to(batch['instruction'].device)
+        'proprioceptions': torch.tensor(all_pose,dtype=torch.float32).to(batch['instruction'].device),
+        'histories': torch.stack(self.histories,dim=1),     # (bs,max_seq_len,32768) 
+        'his_len': 1
         }
-    
+        
+        print(collected_data["histories"].shape)
+        assert 1==2
+
         cond, next_hidden = self.navigator.get_cond(collected_data,hiddens=hiddens,inference=True)
         init_noise = torch.randint(0, self.config.DIFFUSER.action_space, (1, self.config.DIFFUSER.traj_length)).cuda()
 
@@ -75,7 +85,7 @@ class D3DiffusionPolicy(Policy):
         'proprioceptions': observations['proprioceptions'].to(observations['instruction'].device)
         }
 
-        
+
         cond, _ = self.navigator.get_cond(collected_data)
         x_0 = collected_data['gt_actions'].to(torch.int64)
 
