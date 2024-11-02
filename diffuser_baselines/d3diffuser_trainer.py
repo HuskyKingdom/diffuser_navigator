@@ -89,11 +89,9 @@ def collate_fn(batch):
 
     # Iterate through each sample in the batch
     for data_dict, prev_actions, gt_actions, trajectories in zip(data_dicts, prev_actions_batch, gt_actions_batch, trajectories_batch):
-        
-        print(data_dict['instruction'])
-        assert 1==2
+
         # Pad and collect 'instruction'
-        collected_data['instruction'].append(_pad_helper(data_dict['instruction'], max_seq_len))
+        collected_data['instruction'].append(_pad_helper(torch.tensor(data_dict['instruction']), max_seq_len))
         
         # Pad and collect 'rgb_features'
         collected_data['rgb_features'].append(_pad_helper(data_dict['rgb_features'], max_seq_len))
