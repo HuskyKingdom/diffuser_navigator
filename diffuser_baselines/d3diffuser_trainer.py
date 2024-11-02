@@ -54,7 +54,7 @@ def collate_fn(batch):
     """
 
     def _pad_helper(t, max_len, fill_val=0):
-        pad_amount = max_len - t.size(0)
+        pad_amount = max_len - len(t)
         if pad_amount == 0:
             return t
 
