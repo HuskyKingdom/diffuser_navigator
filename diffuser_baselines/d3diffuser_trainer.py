@@ -83,10 +83,10 @@ def collate_fn(batch):
         # Extract data from the sample
         sample_dict = sample[0]
         instr = torch.tensor(sample_dict['instruction'])  # (len_seq, 200)
-        rgb_feat = sample_dict['rgb_features']  # (len_seq, 2048, 4, 4)
-        depth_feat = sample_dict['depth_features']  # (len_seq, 128, 4, 4)
-        gt_actions = sample[2]  # (len_seq)
-        trajectories = sample[3]  # (len_seq, 4)
+        rgb_feat = torch.tensor(sample_dict['rgb_features'])  # (len_seq, 2048, 4, 4)
+        depth_feat = torch.tensor(sample_dict['depth_features'])  # (len_seq, 128, 4, 4)
+        gt_actions = torch.tensor(sample[2])  # (len_seq)
+        trajectories = torch.tensor(sample[3])  # (len_seq, 4)
 
         # Pad sequences to the maximum length
         pad_instr = _pad_helper(instr, max_len)
