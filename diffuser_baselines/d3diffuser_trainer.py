@@ -82,7 +82,7 @@ def collate_fn(batch):
     for sample in batch:
         # Extract data from the sample
         sample_dict = sample[0]
-        instr = sample_dict['instruction']  # (len_seq, 200)
+        instr = torch.tensor(sample_dict['instruction'])  # (len_seq, 200)
         rgb_feat = sample_dict['rgb_features']  # (len_seq, 2048, 4, 4)
         depth_feat = sample_dict['depth_features']  # (len_seq, 128, 4, 4)
         gt_actions = sample[2]  # (len_seq)
