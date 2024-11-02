@@ -83,16 +83,15 @@ def collate_fn(batch):
     for sample in batch:
         # Extract data from the sample
         sample_dict = sample[0]
-        instr = torch.tensor(sample_dict['instruction'])  # (len_seq, 200)
+        instr = torch.tensor(sample_dict['instruction'][0])  # (len_seq, 200) only take one instruction
         rgb_feat = torch.tensor(sample_dict['rgb_features'])  # (len_seq, 2048, 4, 4)
         depth_feat = torch.tensor(sample_dict['depth_features'])  # (len_seq, 128, 4, 4)
         gt_actions = torch.tensor(sample[2])  # (len_seq)
         trajectories = torch.tensor(sample[3])  # (len_seq, 4)
 
-        seq_len = instr.shape[0]
+        seq_len = gt_actions.shape[0]
 
         # Pad sequences to the maximum length
-        pad_instr = _pad_helper(instr, max_len)
         pad_rgb_feat = _pad_helper(rgb_feat, max_len)
         pad_depth_feat = _pad_helper(depth_feat, max_len)
         pad_gt_actions = _pad_helper(gt_actions, max_len)
@@ -103,7 +102,7 @@ def collate_fn(batch):
         mask[:seq_len] = False  # False represents real data
 
         # Append padded data to collected_data
-        collected_data['instruction'].append(pad_instr)
+        collected_data['instruction'].append(instr)
         collected_data['rgb_features'].append(pad_rgb_feat)
         collected_data['depth_features'].append(pad_depth_feat)
         collected_data['gt_actions'].append(pad_gt_actions)
