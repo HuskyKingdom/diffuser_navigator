@@ -63,90 +63,64 @@ def collate_fn(batch):
         )
         return torch.cat([t, pad], dim=0)
 
-    F = 2  # 预测的未来动作数量 - 1
 
     collected_data = {
-        'instruction': [],            # 时间 t 的指令
-        'rgb_features': [],           # 时间 t 的 RGB 特征
-        'depth_features': [],         # 时间 t 的深度特征
-        'gt_actions': [],             # 从 t 到 t+F 的专家动作
-        'histories': [],            # 历史序列的长度（t）
-        'his_len': [],
+        'instruction': [],           
+        'rgb_features': [],          
+        'depth_features': [],         
+        'gt_actions': [],            
         'trajectories':[],
-        'proprioceptions': []  # agent pose t -1
     }
-
-    t_list = []
-
-    # sampling t for each samples
-    for sample in batch:
-        len_seq = sample[0]['instruction'].shape[0]
-        t = random.randint(0, len_seq - 1)
-        t_list.append(t)
-
-    for idx, sample in enumerate(batch):
-        len_seq = sample[0]['instruction'].shape[0]
-        t = t_list[idx]
-
-        print(sample[0]['rgb_features'].shape)
-        assert 1==2
-        # observations at t
-        collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t]))
-        collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t]))
-        collected_data['depth_features'].append(torch.tensor(sample[0]['depth_features'][t]))
-
-        # actions from t to t+F
-        if t + F < len_seq:
-            gt_action_segment = sample[2][t:t+F+1]
-        else:
-            gt_action_segment = sample[2][t:]
-            padding_size = (t + F + 1) - len_seq
-            gt_action_segment = np.concatenate([gt_action_segment, np.full(padding_size, 0)])  # 用 STOP 动作填充
-
-        # trajectories from t+1 to t+1+F 
-        if t+1 + F < len_seq:
-            gt_traj = sample[3][t+1:t+1+F+1]
-        else:
-            last_valid_traj = sample[3][-1]
-            padding_size = (t + F + 2) - len_seq
-            gt_traj = sample[3][t+1:]
-            padding_traj = np.tile(last_valid_traj, (padding_size, 1))
-            gt_traj = np.concatenate([gt_traj, padding_traj])
-            # gt_traj = np.concatenate([gt_traj, np.full((padding_size,4), 0.0)])  # 用 zero 动作填充
-
-
-        # history RGB observations from 0 to t
-        history = torch.tensor(sample[0]['rgb_features'][:t+1]) 
-        history = history.view(history.size(0), -1)
-        collected_data['histories'].append(history)
-        his_len = sample[0]['rgb_features'][:t+1].shape[0]
-        collected_data['his_len'].append(his_len)
-
-        collected_data['gt_actions'].append(torch.tensor(gt_action_segment))
-        collected_data['trajectories'].append(torch.tensor(gt_traj))
-
-
-        # pose at t
-        collected_data['proprioceptions'].append(sample[3][t])
-
     
-    # Pad histories to the same length
-    collected_data['histories'] = torch.nn.utils.rnn.pad_sequence(
-        collected_data['histories'], batch_first=True
+    # Transpose the batch to separate each component
+    transposed = list(zip(*batch))
+    
+    # Extract individual components
+    data_dicts = transposed[0]           # List of dicts
+    prev_actions_batch = transposed[1]   # List of tensors
+    gt_actions_batch = transposed[2]     # List of tensors
+    trajectories_batch = transposed[3]   # List of tensors
+    
+    # Determine the maximum sequence length in the batch
+    max_seq_len = max(
+        max(data['instruction'].size(0) for data in data_dicts),
+        max(pa.size(0) for pa in prev_actions_batch),
+        max(ga.size(0) for ga in gt_actions_batch),
+        max(traj.size(0) for traj in trajectories_batch)
     )
+    
+    # Iterate through each sample in the batch
+    for data_dict, prev_actions, gt_actions, trajectories in zip(data_dicts, prev_actions_batch, gt_actions_batch, trajectories_batch):
+        # Pad and collect 'instruction'
+        collected_data['instruction'].append(_pad_helper(data_dict['instruction'], max_seq_len))
+        
+        # Pad and collect 'progress'
+        collected_data['progress'].append(_pad_helper(data_dict['progress'], max_seq_len))
+        
+        # Pad and collect 'rgb_features'
+        collected_data['rgb_features'].append(_pad_helper(data_dict['rgb_features'], max_seq_len))
+        
+        # Pad and collect 'depth_features'
+        collected_data['depth_features'].append(_pad_helper(data_dict['depth_features'], max_seq_len))
+        
+        # Pad and collect 'prev_actions'
+        collected_data['prev_actions'].append(_pad_helper(prev_actions, max_seq_len))
+        
+        # Pad and collect 'gt_actions'
+        collected_data['gt_actions'].append(_pad_helper(gt_actions, max_seq_len))
+        
+        # Pad and collect 'trajectories'
+        collected_data['trajectories'].append(_pad_helper(trajectories, max_seq_len))
+    
+    # Stack each list in collected_data to form a batched tensor
+    for key in collected_data:
+        collected_data[key] = torch.stack(collected_data[key], dim=0)
+    
 
 
+    print(collected_data)
 
-    # stack to batched tensors
-    collected_data['proprioceptions'] = np.array(collected_data['proprioceptions'])
-    collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
-    collected_data['rgb_features'] = torch.stack(collected_data['rgb_features'], dim=0)
-    collected_data['depth_features'] = torch.stack(collected_data['depth_features'], dim=0)
-    collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
-    collected_data['trajectories'] = torch.stack(collected_data['trajectories'], dim=0)
-    collected_data['proprioceptions'] = torch.tensor(collected_data['proprioceptions'])
-    collected_data['his_len'] = torch.tensor(collected_data['his_len'])
-
+    assert 1==2
     return collected_data
 
 

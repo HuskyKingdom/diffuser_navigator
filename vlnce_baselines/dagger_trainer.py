@@ -72,6 +72,7 @@ def collate_fn(batch):
     observations_batch = new_observations_batch
 
     max_traj_len = max(ele.size(0) for ele in prev_actions_batch)
+    
     for bid in range(B):
         for sensor in observations_batch:
             observations_batch[sensor][bid] = _pad_helper(
