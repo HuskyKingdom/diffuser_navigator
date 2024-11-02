@@ -83,7 +83,7 @@ def collate_fn(batch):
     
 
     new_data_dicts = defaultdict(list)
-    for sensor in observations_batch[0]:
+    for sensor in data_dicts[0]:
         for bid in range(B):
             new_data_dicts[sensor].append(
                 data_dicts[bid][sensor]
