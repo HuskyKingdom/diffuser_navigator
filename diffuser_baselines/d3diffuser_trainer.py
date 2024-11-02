@@ -82,6 +82,15 @@ def collate_fn(batch):
     trajectories_batch = list(transposed[3])   # List of tensors
     
 
+    new_data_dicts = defaultdict(list)
+    for sensor in observations_batch[0]:
+        for bid in range(B):
+            new_data_dicts[sensor].append(
+                data_dicts[bid][sensor]
+            )
+
+    data_dicts = new_data_dicts
+
 
     # Determine the maximum sequence length in the batch
     max_seq_len = max(len(ele) for ele in gt_actions_batch)
