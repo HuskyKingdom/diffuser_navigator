@@ -74,58 +74,44 @@ def collate_fn(batch):
     
     # Transpose the batch to separate each component
     transposed = list(zip(*batch))
-    
-    # Extract individual components
-    data_dicts = list(transposed[0])         # List of dicts
-    prev_actions_batch = list(transposed[1] )  # List of tensors
-    gt_actions_batch = list(transposed[2])    # List of tensors
-    trajectories_batch = list(transposed[3])   # List of tensors
-    
-    B = len(gt_actions_batch)
 
-    new_data_dicts = defaultdict(list)
-    for sensor in data_dicts[0]:
-        for bid in range(B):
-            new_data_dicts[sensor].append(
-                data_dicts[bid][sensor]
-            )
+    # Compute max sequence length in the batch
+    lengths = [len(sample[0]['instruction']) for sample in batch]
+    max_len = max(lengths)
 
-    data_dicts = new_data_dicts
+    print(max_len)
+    assert 1==2
 
-    print(data_dicts['rgb_features'])
+    for sample in batch:
+        # Extract data from the sample
+        sample_dict = sample[0]
+        instr = sample_dict['instruction']  # (len_seq, 200)
+        rgb_feat = sample_dict['rgb_features']  # (len_seq, 2048, 4, 4)
+        depth_feat = sample_dict['depth_features']  # (len_seq, 128, 4, 4)
+        gt_actions = sample[2]  # (len_seq)
+        trajectories = sample[3]  # (len_seq, 4)
 
-    # Determine the maximum sequence length in the batch
-    max_seq_len = max(len(ele) for ele in gt_actions_batch)
+        # Pad sequences to the maximum length
+        pad_instr = _pad_helper(instr, max_len)
+        pad_rgb_feat = _pad_helper(rgb_feat, max_len)
+        pad_depth_feat = _pad_helper(depth_feat, max_len)
+        pad_gt_actions = _pad_helper(gt_actions, max_len)
+        pad_trajectories = _pad_helper(trajectories, max_len)
 
+        # Append padded data to collected_data
+        collected_data['instruction'].append(pad_instr)
+        collected_data['rgb_features'].append(pad_rgb_feat)
+        collected_data['depth_features'].append(pad_depth_feat)
+        collected_data['gt_actions'].append(pad_gt_actions)
+        collected_data['trajectories'].append(pad_trajectories)
 
-    # Iterate through each sample in the batch
-    for data_dict, prev_actions, gt_actions, trajectories in zip(data_dicts, prev_actions_batch, gt_actions_batch, trajectories_batch):
-
-        # Pad and collect 'instruction'
-        collected_data['instruction'].append(_pad_helper(data_dict['instruction'], max_seq_len))
-        
-        
-        # Pad and collect 'rgb_features'
-        collected_data['rgb_features'].append(_pad_helper(data_dict['rgb_features'], max_seq_len))
-        
-        # Pad and collect 'depth_features'
-        collected_data['depth_features'].append(_pad_helper(data_dict['depth_features'], max_seq_len))
-        
-        # Pad and collect 'gt_actions'
-        collected_data['gt_actions'].append(_pad_helper(gt_actions, max_seq_len))
-        
-        # Pad and collect 'trajectories'
-        collected_data['trajectories'].append(_pad_helper(trajectories, max_seq_len))
-    
-    # Stack each list in collected_data to form a batched tensor
+    # Stack each list in collected_data into a tensor
     for key in collected_data:
         collected_data[key] = torch.stack(collected_data[key], dim=0)
+
+    return collected_data
     
-
-
-    print(collected_data)
-
-    assert 1==2
+   
     return collected_data
 
 
