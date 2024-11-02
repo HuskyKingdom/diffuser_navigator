@@ -82,12 +82,7 @@ def collate_fn(batch):
     trajectories_batch = transposed[3]   # List of tensors
     
     # Determine the maximum sequence length in the batch
-    max_seq_len = max(
-        max(data['instruction'].size(0) for data in data_dicts),
-        max(pa.size(0) for pa in prev_actions_batch),
-        max(ga.size(0) for ga in gt_actions_batch),
-        max(traj.size(0) for traj in trajectories_batch)
-    )
+    max_seq_len = max(ele.size(0) for ele in prev_actions_batch)
     
     # Iterate through each sample in the batch
     for data_dict, prev_actions, gt_actions, trajectories in zip(data_dicts, prev_actions_batch, gt_actions_batch, trajectories_batch):
