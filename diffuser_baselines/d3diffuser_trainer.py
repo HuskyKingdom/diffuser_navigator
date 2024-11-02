@@ -81,6 +81,8 @@ def collate_fn(batch):
     gt_actions_batch = list(transposed[2])    # List of tensors
     trajectories_batch = list(transposed[3])   # List of tensors
     
+    print(transposed[2])
+    
     # Determine the maximum sequence length in the batch
     max_seq_len = max(ele.shape(0) for ele in gt_actions_batch)
 
