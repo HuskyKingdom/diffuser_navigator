@@ -79,9 +79,6 @@ def collate_fn(batch):
     lengths = [len(sample[0]['instruction']) for sample in batch]
     max_len = max(lengths)
 
-    print(max_len)
-    assert 1==2
-
     for sample in batch:
         # Extract data from the sample
         sample_dict = sample[0]
@@ -109,7 +106,8 @@ def collate_fn(batch):
     for key in collected_data:
         collected_data[key] = torch.stack(collected_data[key], dim=0)
 
-    return collected_data
+    print(collected_data)
+    assert 1==2
     
    
     return collected_data
