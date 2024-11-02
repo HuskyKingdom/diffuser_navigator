@@ -70,6 +70,7 @@ def collate_fn(batch):
         'depth_features': [],         
         'gt_actions': [],            
         'trajectories':[],
+        'padding_mask': []
     }
     
     # Transpose the batch to separate each component
@@ -88,6 +89,8 @@ def collate_fn(batch):
         gt_actions = torch.tensor(sample[2])  # (len_seq)
         trajectories = torch.tensor(sample[3])  # (len_seq, 4)
 
+        seq_len = instr.shape[0]
+
         # Pad sequences to the maximum length
         pad_instr = _pad_helper(instr, max_len)
         pad_rgb_feat = _pad_helper(rgb_feat, max_len)
@@ -95,18 +98,25 @@ def collate_fn(batch):
         pad_gt_actions = _pad_helper(gt_actions, max_len)
         pad_trajectories = _pad_helper(trajectories, max_len)
 
+        # Create padding_mask for this sample
+        mask = torch.ones(max_len, dtype=torch.bool)
+        mask[:seq_len] = False  # False represents real data
+
         # Append padded data to collected_data
         collected_data['instruction'].append(pad_instr)
         collected_data['rgb_features'].append(pad_rgb_feat)
         collected_data['depth_features'].append(pad_depth_feat)
         collected_data['gt_actions'].append(pad_gt_actions)
         collected_data['trajectories'].append(pad_trajectories)
+        collected_data['padding_mask'].append(mask)
 
     # Stack each list in collected_data into a tensor
     for key in collected_data:
         collected_data[key] = torch.stack(collected_data[key], dim=0)
 
-    print(collected_data["rgb_features"].shape)
+    print(collected_data["instruction"].shape)
+    print(collected_data["padding_mask"])
+
     assert 1==2
     
    
