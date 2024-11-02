@@ -76,13 +76,13 @@ def collate_fn(batch):
     transposed = list(zip(*batch))
     
     # Extract individual components
-    data_dicts = transposed[0]           # List of dicts
-    prev_actions_batch = transposed[1]   # List of tensors
-    gt_actions_batch = transposed[2]     # List of tensors
-    trajectories_batch = transposed[3]   # List of tensors
+    data_dicts = list(transposed[0])         # List of dicts
+    prev_actions_batch = list(transposed[1] )  # List of tensors
+    gt_actions_batch = list(transposed[2])    # List of tensors
+    trajectories_batch = list(transposed[3])   # List of tensors
     
     # Determine the maximum sequence length in the batch
-    max_seq_len = max(ele.size[0] for ele in gt_actions_batch)
+    max_seq_len = max(ele.size(0) for ele in gt_actions_batch)
     
     # Iterate through each sample in the batch
     for data_dict, prev_actions, gt_actions, trajectories in zip(data_dicts, prev_actions_batch, gt_actions_batch, trajectories_batch):
