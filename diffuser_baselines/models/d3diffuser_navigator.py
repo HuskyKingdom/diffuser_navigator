@@ -40,8 +40,8 @@ class D3DiffusionPolicy(Policy):
 
 
         # storing histories
-        self.histories.append(rgb_features[:, :2048, :, :].view(rgb_features.shape[0],-1).unsqueeze(1))
-        self.histories.append(rgb_features[:, :2048, :, :].view(rgb_features.shape[0],-1).unsqueeze(1))
+        self.histories.append(rgb_features[:, :2048, :, :].view(rgb_features.shape[0],-1))
+        self.histories.append(rgb_features[:, :2048, :, :].view(rgb_features.shape[0],-1))
 
         # format batch data
         collected_data = {
