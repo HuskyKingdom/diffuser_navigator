@@ -53,6 +53,16 @@ def collate_fn(batch):
     ]
     """
 
+    def _pad_helper(t, max_len, fill_val=0):
+        pad_amount = max_len - t.size(0)
+        if pad_amount == 0:
+            return t
+
+        pad = torch.full_like(t[0:1], fill_val).expand(
+            pad_amount, *t.size()[1:]
+        )
+        return torch.cat([t, pad], dim=0)
+
     F = 2  # 预测的未来动作数量 - 1
 
     collected_data = {
@@ -78,6 +88,8 @@ def collate_fn(batch):
         len_seq = sample[0]['instruction'].shape[0]
         t = t_list[idx]
 
+        print(sample[0]['rgb_features'].shape)
+        assert 1==2
         # observations at t
         collected_data['instruction'].append(torch.tensor(sample[0]['instruction'][t]))
         collected_data['rgb_features'].append(torch.tensor(sample[0]['rgb_features'][t]))
