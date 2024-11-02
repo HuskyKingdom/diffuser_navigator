@@ -93,7 +93,7 @@ def collate_fn(batch):
     data_dicts = new_data_dicts
 
 
-    print(data_dict['instruction'])
+    print(data_dicts['instruction'])
 
     # Determine the maximum sequence length in the batch
     max_seq_len = max(len(ele) for ele in gt_actions_batch)
