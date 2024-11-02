@@ -98,9 +98,6 @@ def collate_fn(batch):
         # Pad and collect 'depth_features'
         collected_data['depth_features'].append(_pad_helper(data_dict['depth_features'], max_seq_len))
         
-        # Pad and collect 'prev_actions'
-        collected_data['prev_actions'].append(_pad_helper(prev_actions, max_seq_len))
-        
         # Pad and collect 'gt_actions'
         collected_data['gt_actions'].append(_pad_helper(gt_actions, max_seq_len))
         
