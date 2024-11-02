@@ -92,9 +92,6 @@ def collate_fn(batch):
         # Pad and collect 'instruction'
         collected_data['instruction'].append(_pad_helper(data_dict['instruction'], max_seq_len))
         
-        # Pad and collect 'progress'
-        collected_data['progress'].append(_pad_helper(data_dict['progress'], max_seq_len))
-        
         # Pad and collect 'rgb_features'
         collected_data['rgb_features'].append(_pad_helper(data_dict['rgb_features'], max_seq_len))
         
