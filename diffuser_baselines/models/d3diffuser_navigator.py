@@ -41,7 +41,6 @@ class D3DiffusionPolicy(Policy):
 
         # storing histories
         self.histories.append(rgb_features[:, :2048, :, :].view(rgb_features.shape[0],-1))
-        self.histories.append(rgb_features[:, :2048, :, :].view(rgb_features.shape[0],-1))
 
         # format batch data
         collected_data = {
@@ -50,13 +49,10 @@ class D3DiffusionPolicy(Policy):
         'depth_features': depth_features.to(batch['instruction'].device),
         'proprioceptions': torch.tensor(all_pose,dtype=torch.float32).to(batch['instruction'].device),
         'histories': torch.stack(self.histories,dim=1),     # (bs,max_seq_len,32768) 
-        'his_len': 1
+        'his_len': torch.tensor([len(self.histories)]).to(batch['instruction'].device),
         }
         
-        print(collected_data["histories"].shape)
-        assert 1==2
-
-        cond, next_hidden = self.navigator.get_cond(collected_data,hiddens=hiddens,inference=True)
+        cond, next_hidden = self.navigator.get_cond(collected_data,hiddens=None,inference=True)
         init_noise = torch.randint(0, self.config.DIFFUSER.action_space, (1, self.config.DIFFUSER.traj_length)).cuda()
 
         actions = self.d3pm.sample(init_noise,cond)
@@ -256,8 +252,7 @@ class D3DiffusionNavigator(nn.Module):
 
 
         if inference: # dont pack
-            input_x = observations["rgb_features"][:, :2048, :, :].view(observations["rgb_features"].shape[0],-1).unsqueeze(1) # take current as input and reshape to (bs,len,d)
-            history_tokens, next_hiddens = self.his_encoder(input_x,hiddens,inference=True)
+            history_tokens, next_hiddens = self.his_encoder(observations["histories"],hiddens,inference = True)
         else:
             history_tokens, next_hiddens = self.his_encoder(observations["histories"],hiddens,observations["his_len"],inference = False)
 
