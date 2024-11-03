@@ -244,34 +244,18 @@ class D3DiffusionNavigator(nn.Module):
 
 
 
-    def get_cond(self,observations,hiddens=None,inference=False):
+    def get_context_feature(self,observations):
 
         
 
         bs = observations["instruction"].size(0)
-        pad_mask = (observations['instruction'] == 0)
 
-        # tokenlize
-        instr_tokens = self.instruction_encoder(observations["instruction"])  # (bs, embedding_dim)
+        rgb_features = self.rgb_linear(observations["rgb_features"])  # (bs, 16, 2112) -> (bs, 16, em)
+        depth_features = self.depth_linear(observations["depth_features"]) # (bs, 16, 192) -> (bs, 16, em)
 
+        print(rgb_features.shape)
 
-        rgb_features =  observations["rgb_features"].view(bs,observations["rgb_features"].size(1),-1).permute(0,2,1)
-        depth_features =  observations["depth_features"].view(bs,observations["depth_features"].size(1),-1).permute(0,2,1)
-
-        rgb_tokens = self.rgb_linear(rgb_features)  # (bs, 16, 2112) -> (bs, 16, em)
-        depth_tokens = self.depth_linear(depth_features) # (bs, 16, 192) -> (bs, 16, em)
-
-
-        if inference: # dont pack
-            history_tokens, next_hiddens = self.his_encoder(observations["histories"],hiddens,inference = True)
-        else:
-            history_tokens, next_hiddens = self.his_encoder(observations["histories"],hiddens,observations["his_len"],inference = False)
-
-
-        
-   
-        tokens = [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask,observations["his_len"]]
-
+        assert 1==2
 
         return tokens, next_hiddens
 
@@ -286,10 +270,11 @@ class D3DiffusionNavigator(nn.Module):
 
         # encoder
         encoder_pad_mask = (observations['instruction'] == 0)
-        instr_features = self.instruction_encoder(observations["instruction"],encoder_pad_mask)
+        enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask) # (bs,200,emd)
 
-        print(encoder_pad_mask)
-        assert 1==2
+        # decoder
+        self.get_context_feature(observations)
+        
 
 
 
