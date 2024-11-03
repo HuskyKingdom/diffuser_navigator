@@ -265,6 +265,8 @@ class D3DiffusionNavigator(nn.Module):
         if inference:
             return None
         
+        print(observations["instruction"].shape)
+        assert 1==2
         B,T,_,_ = observations["rgb_features"].shape
 
 
