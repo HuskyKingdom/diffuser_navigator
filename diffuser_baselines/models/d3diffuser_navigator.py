@@ -253,7 +253,7 @@ class D3DiffusionNavigator(nn.Module):
         rgb_features = self.rgb_linear(observations["rgb_features"])  # (bs, 16, 2112) -> (bs, 16, em)
         depth_features = self.depth_linear(observations["depth_features"]) # (bs, 16, 192) -> (bs, 16, em)
 
-        print(rgb_features.shape)
+        print(observations["gt_actions"].shape)
 
         assert 1==2
 
