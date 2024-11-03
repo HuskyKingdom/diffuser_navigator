@@ -250,10 +250,14 @@ class D3DiffusionNavigator(nn.Module):
 
         bs = observations["instruction"].size(0)
 
-        rgb_features = self.rgb_linear(observations["rgb_features"])  # (bs, 16, 2112) -> (bs, 16, em)
-        depth_features = self.depth_linear(observations["depth_features"]) # (bs, 16, 192) -> (bs, 16, em)
+        rgb_features = self.rgb_linear(observations["rgb_features"])  # (bs, seq, 4,4) -> (bs, emb)
+        depth_features = self.depth_linear(observations["depth_features"]) # (bs, seq, 1,1) -> (bs, emb)
 
-       
+        observation_context = torch.cat((rgb_features,depth_features),dim=-1)
+
+
+        print(observation_context.shape)
+        assert 1==2
 
         return tokens, next_hiddens
 
@@ -267,9 +271,6 @@ class D3DiffusionNavigator(nn.Module):
         
         B,T,_,_ = observations["rgb_features"].shape
 
-        print(observations["rgb_features"].shape)
-
-        assert 1==2
 
         # encoder
         encoder_pad_mask = (observations['instruction'] == 0)

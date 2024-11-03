@@ -141,8 +141,6 @@ class Seq2SeqNet(Net):
 
     def forward(self, observations, rnn_states, prev_actions, masks):
 
-        print(observations["rgb_features"].shape)
-        assert 1==2
         
         instruction_embedding = self.instruction_encoder(observations)
         depth_embedding = self.depth_encoder(observations)
