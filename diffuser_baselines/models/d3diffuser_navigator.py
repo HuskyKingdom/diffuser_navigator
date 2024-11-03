@@ -68,8 +68,7 @@ class D3DiffusionPolicy(Policy):
     def build_loss(self,observations):
 
         
-        print(observations['rgb_features'].shape)
-        print(observations['depth_features'].shape)
+        
 
 
         # (B,T,C,H,W) -> (B+T,C,H,W)
@@ -79,6 +78,9 @@ class D3DiffusionPolicy(Policy):
         observations['depth_features'] = observations['depth_features'].view(-1,C,H,W)
         observations['gt_actions'] = observations['gt_actions'].view(-1,)
 
+        print(observations['rgb_features'].shape)
+        print(observations['depth_features'].shape)
+        
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
 
         # format batch data
