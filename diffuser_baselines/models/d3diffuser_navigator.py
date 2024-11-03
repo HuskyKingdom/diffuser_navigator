@@ -253,7 +253,7 @@ class D3DiffusionNavigator(nn.Module):
         rgb_features = self.rgb_linear(observations["rgb_features"])  # (B+T, seq, 4,4) -> (B+T, emb)
         depth_features = self.depth_linear(observations["depth_features"]) # (B+T, seq, 1,1) -> (B+T, emb)
 
-        action_features = self.action_encoder(observations["gt_actions"])
+        action_features = self.action_encoder(observations["gt_actions"].long())
 
         observation_context = torch.cat((rgb_features,depth_features,action_features),dim=-1) # (B+T, emb*2)
         
