@@ -67,11 +67,13 @@ class D3DiffusionPolicy(Policy):
 
     def build_loss(self,observations):
 
-        rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
-
         print(rgb_features.shape)
         assert 1==2
 
+
+        rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
+
+        
 
         # format batch data
         collected_data = {
