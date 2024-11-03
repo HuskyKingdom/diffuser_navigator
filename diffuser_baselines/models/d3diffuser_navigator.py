@@ -278,6 +278,7 @@ class D3DiffusionNavigator(nn.Module):
         context_feature = context_feature.view(B,T,-1)
 
         print(context_feature.shape)
+        print(observations["gt_actions"].shape)
         assert 1==2
 
 
