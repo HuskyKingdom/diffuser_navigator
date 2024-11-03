@@ -88,7 +88,7 @@ class D3DiffusionPolicy(Policy):
         }
 
 
-        loss = self.navigator(collected_data,inference = False)
+        loss = self.navigator(collected_data,(B,T), inference = False)
 
 
         return loss
@@ -259,15 +259,14 @@ class D3DiffusionNavigator(nn.Module):
 
         
 
-    def forward(self, observations, inference=False):
+    def forward(self, observations, dims, inference=False):
 
 
         if inference:
             return None
         
-        print(observations["instruction"].shape)
-        assert 1==2
-        B,T,_,_ = observations["rgb_features"].shape
+
+        B,T = dims
 
 
         # encoder
