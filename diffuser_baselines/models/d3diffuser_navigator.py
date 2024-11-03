@@ -253,9 +253,7 @@ class D3DiffusionNavigator(nn.Module):
         rgb_features = self.rgb_linear(observations["rgb_features"])  # (bs, 16, 2112) -> (bs, 16, em)
         depth_features = self.depth_linear(observations["depth_features"]) # (bs, 16, 192) -> (bs, 16, em)
 
-        print(observations["gt_actions"].shape)
-
-        assert 1==2
+       
 
         return tokens, next_hiddens
 
@@ -267,6 +265,11 @@ class D3DiffusionNavigator(nn.Module):
         if inference:
             return None
         
+        B,T = observations["rgb_features"].shape
+
+        print(observations["rgb_features"].shape)
+
+        assert 1==2
 
         # encoder
         encoder_pad_mask = (observations['instruction'] == 0)
