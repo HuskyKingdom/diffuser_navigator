@@ -183,7 +183,7 @@ class D3DiffusionNavigator(nn.Module):
 
         # Other Encoders
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
-        self.action_encoder = nn.Embedding(num_actions, embedding_dim)
+        self.action_encoder = nn.Embedding(num_actions, embedding_dim/2)
         
 
 
