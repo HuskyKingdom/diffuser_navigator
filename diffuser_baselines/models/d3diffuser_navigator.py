@@ -78,10 +78,6 @@ class D3DiffusionPolicy(Policy):
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
 
-        print(depth_features.shape)
-        assert 1==2
-        
-
         # format batch data
         collected_data = {
         'instruction': observations['instruction'],
@@ -92,12 +88,8 @@ class D3DiffusionPolicy(Policy):
         }
 
 
-        cond, _ = self.navigator.get_cond(collected_data)
-        x_0 = collected_data['gt_actions'].to(torch.int64)
+        loss = self.navigator(collected_data,inference = False)
 
-       
-        loss, info = self.d3pm(x_0, cond)
-        
 
         return loss
     
@@ -181,77 +173,73 @@ class D3DiffusionNavigator(nn.Module):
                 nn.ReLU(),
             )
         
-        self.rgb_linear = nn.Sequential(
+        self.depth_linear = nn.Sequential(
                 nn.Flatten(),
-                nn.Linear(33792, 256),
+                nn.Linear(3072, embedding_dim),
                 nn.ReLU(),
             )
 
+
         # Other Encoders
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
-    
-
         self.action_encoder = nn.Embedding(num_actions, embedding_dim)
+        
 
 
-        self.time_emb = nn.Sequential(
-            SinusoidalPosEmb(embedding_dim),
-            nn.Linear(embedding_dim, embedding_dim),
-            nn.ReLU(),
-            nn.Linear(embedding_dim, embedding_dim)
-        )
+        self.ca_decoder = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
-        self.his_encoder = HistoryGRU(32768,512,embedding_dim,2)
 
-        # for param in self.action_encoder.parameters(): # freeze action representations
-        #     param.requires_grad = False
+        # self.time_emb = nn.Sequential(
+        #     SinusoidalPosEmb(embedding_dim),
+        #     nn.Linear(embedding_dim, embedding_dim),
+        #     nn.ReLU(),
+        #     nn.Linear(embedding_dim, embedding_dim)
+        # )
 
-        # prepare action embedding targets for inference
-        # action_targets = torch.arange(self.config.DIFFUSER.action_space).unsqueeze(0)
-        # self.action_em_targets = self.action_encoder(action_targets)
+        # self.his_encoder = HistoryGRU(32768,512,embedding_dim,2)
 
-        # positional embeddings
-        self.pe_layer = PositionalEncoding(embedding_dim,0.2)
+        # # positional embeddings
+        # self.pe_layer = PositionalEncoding(embedding_dim,0.2)
 
-        # Attention layers _____________________
-        layer = ParallelAttention(
-            num_layers=num_layers,
-            d_model=embedding_dim, n_heads=num_attention_heads,
-            self_attention1=False, self_attention2=False,
-            cross_attention1=True, cross_attention2=False
-        )
-        self.vl_attention = nn.ModuleList([
-            layer
-            for _ in range(1)
-            for _ in range(1)
-        ])
-        self.traj_lang_attention = nn.ModuleList([
-            ParallelAttention(
-                num_layers=1,
-                d_model=embedding_dim, n_heads=num_attention_heads,
-                self_attention1=False, self_attention2=False,
-                cross_attention1=True, cross_attention2=False,
-                rotary_pe=False, apply_ffn=False
-            )
-        ])
+        # # Attention layers _____________________
+        # layer = ParallelAttention(
+        #     num_layers=num_layers,
+        #     d_model=embedding_dim, n_heads=num_attention_heads,
+        #     self_attention1=False, self_attention2=False,
+        #     cross_attention1=True, cross_attention2=False
+        # )
+        # self.vl_attention = nn.ModuleList([
+        #     layer
+        #     for _ in range(1)
+        #     for _ in range(1)
+        # ])
+        # self.traj_lang_attention = nn.ModuleList([
+        #     ParallelAttention(
+        #         num_layers=1,
+        #         d_model=embedding_dim, n_heads=num_attention_heads,
+        #         self_attention1=False, self_attention2=False,
+        #         cross_attention1=True, cross_attention2=False,
+        #         rotary_pe=False, apply_ffn=False
+        #     )
+        # ])
 
-        self.history_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,2,1)
-        self.action_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,2,1)
-        self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        # self.history_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,2,1)
+        # self.action_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,2,1)
+        # self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
-        self.language_his_cross_atten = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        self.context_cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        # self.language_his_cross_atten = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        # self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        # self.context_cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
-        # predictors
+        # # predictors
 
-        self.sample_predictor = nn.Sequential(
-            nn.Linear(embedding_dim, embedding_dim),
-            nn.ReLU(),
-            nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
-        )
+        # self.sample_predictor = nn.Sequential(
+        #     nn.Linear(embedding_dim, embedding_dim),
+        #     nn.ReLU(),
+        #     nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
+        # )
 
-        self.n_steps = diffusion_timesteps
+        # self.n_steps = diffusion_timesteps
     
 
 
@@ -289,15 +277,25 @@ class D3DiffusionNavigator(nn.Module):
 
         
 
-    def forward(self, x, t, cond, run_inference=False):
+    def forward(self, observations, inference=False):
 
 
-        # train _____
-        t = t.float() / self.n_steps
+        if inference:
+            return None
+        
+
+        # encoder
+        encoder_pad_mask = (observations['instruction'] == 0)
+        instr_features = self.instruction_encoder(observations["instruction"],encoder_pad_mask)
+
+        print(instr_features.shape)
+        assert 1==2
+
+
+
+
 
         
-        # predict noise
-        pred_logits = self.predict_logits(x,cond,t)
 
         return pred_logits
 

@@ -7,6 +7,7 @@ from habitat import Config
 from torch import Tensor
 
 from transformers import BertTokenizer, BertModel
+from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule
 
 
 class InstructionEncoder(nn.Module):
@@ -30,7 +31,11 @@ class InstructionEncoder(nn.Module):
                     freeze=True,
         )
 
+        
+
         self.map_layer = nn.Linear(50, embed_dim)
+
+        self.language_self_atten = FFWRelativeSelfAttentionModule(embed_dim,4,2)
 
     def _load_embeddings(self) -> Tensor:
         """Loads word embeddings from a pretrained embeddings file.
@@ -44,7 +49,7 @@ class InstructionEncoder(nn.Module):
             embeddings = torch.tensor(json.load(f))
         return embeddings
 
-    def forward(self, observations) -> Tensor:
+    def forward(self, observations,pad_mask) -> Tensor:
         """
         Tensor sizes after computation:
             instruction: [batch_size x seq_length]
@@ -56,5 +61,8 @@ class InstructionEncoder(nn.Module):
 
 
         out = self.map_layer(self.embedding_layer(input))
+
+        out = self.language_self_atten(out.transpose(0,1), diff_ts=None,
+                query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         
         return out
