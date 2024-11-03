@@ -140,6 +140,10 @@ class Seq2SeqNet(Net):
         nn.init.constant_(self.progress_monitor.bias, 0)
 
     def forward(self, observations, rnn_states, prev_actions, masks):
+
+        print(observations["rgb_features"].shape)
+        assert 1==2
+        
         instruction_embedding = self.instruction_encoder(observations)
         depth_embedding = self.depth_encoder(observations)
         rgb_embedding = self.rgb_encoder(observations)
