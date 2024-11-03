@@ -78,9 +78,7 @@ class D3DiffusionPolicy(Policy):
         observations['depth_features'] = observations['depth_features'].view(-1,C,H,W)
         observations['gt_actions'] = observations['gt_actions'].view(-1,)
 
-        print(observations['rgb_features'].shape)
-        print(observations['depth_features'].shape)
-        
+
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
 
         # format batch data
@@ -187,7 +185,7 @@ class D3DiffusionNavigator(nn.Module):
 
         # Other Encoders
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
-        self.action_encoder = nn.Embedding(num_actions, int(embedding_dim/2))
+        self.action_encoder = nn.Embedding(num_actions + 1, int(embedding_dim/2)) # additional action as start token
         
 
 
