@@ -82,7 +82,7 @@ class D3DiffusionPolicy(Policy):
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
 
-        print(self.fc(rgb_features).shape)
+        print(self.fc(rgb_features.to("cuda")).shape)
         assert 1==2
         
 
