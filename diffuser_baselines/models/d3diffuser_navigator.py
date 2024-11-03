@@ -288,7 +288,7 @@ class D3DiffusionNavigator(nn.Module):
         encoder_pad_mask = (observations['instruction'] == 0)
         instr_features = self.instruction_encoder(observations["instruction"],encoder_pad_mask)
 
-        print(instr_features.shape)
+        print(encoder_pad_mask)
         assert 1==2
 
 
