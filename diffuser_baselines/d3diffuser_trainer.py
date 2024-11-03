@@ -121,6 +121,10 @@ def collate_fn(batch):
     
     action_start_token = torch.full((collected_data['gt_actions'].shape[0], 1), 4)
     collected_data['gt_actions'] = torch.cat([action_start_token, collected_data['gt_actions']], dim=1)
+
+    mask_start_token = collected_data['padding_mask'][:, :1]
+    collected_data['padding_mask'] = torch.cat([mask_start_token, collected_data['padding_mask']], dim=1)
+
     
     return collected_data
 
