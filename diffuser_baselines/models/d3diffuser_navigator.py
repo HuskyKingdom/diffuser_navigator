@@ -67,11 +67,7 @@ class D3DiffusionPolicy(Policy):
 
     def build_loss(self,observations):
 
-        self.fc = nn.Sequential(
-                nn.Flatten(),
-                nn.Linear(33824, 256),
-                nn.ReLU(),
-            ).to("cuda")
+        
 
 
         # (B,T,C,H,W) -> (B+T,C,H,W)
@@ -82,7 +78,7 @@ class D3DiffusionPolicy(Policy):
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
 
-        print(rgb_features.shape)
+        print(depth_features.shape)
         assert 1==2
         
 
@@ -179,10 +175,21 @@ class D3DiffusionNavigator(nn.Module):
         self.depth_encoder.to(next(self.parameters()).device).train()
         self.rgb_encoder.to(next(self.parameters()).device).train()
 
+        self.rgb_linear = nn.Sequential(
+                nn.Flatten(),
+                nn.Linear(33792, embedding_dim),
+                nn.ReLU(),
+            )
+        
+        self.rgb_linear = nn.Sequential(
+                nn.Flatten(),
+                nn.Linear(33792, 256),
+                nn.ReLU(),
+            )
+
         # Other Encoders
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
-        self.rgb_linear = nn.Linear(2112,embedding_dim)
-        self.depth_linear = nn.Linear(192,embedding_dim)
+    
 
         self.action_encoder = nn.Embedding(num_actions, embedding_dim)
 
