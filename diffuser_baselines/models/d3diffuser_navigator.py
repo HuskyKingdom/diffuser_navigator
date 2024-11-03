@@ -265,7 +265,7 @@ class D3DiffusionNavigator(nn.Module):
         if inference:
             return None
         
-        B,T,_,_,_ = observations["rgb_features"].shape
+        B,T,_,_ = observations["rgb_features"].shape
 
         print(observations["rgb_features"].shape)
 
