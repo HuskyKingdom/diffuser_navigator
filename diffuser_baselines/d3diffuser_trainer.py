@@ -113,11 +113,6 @@ def collate_fn(batch):
     for key in collected_data:
         collected_data[key] = torch.stack(collected_data[key], dim=0)
 
-    print(collected_data["gt_actions"][1])
-    print(collected_data["padding_mask"][1])
-
-    assert 1==2
-    
    
     return collected_data
 

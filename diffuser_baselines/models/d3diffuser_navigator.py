@@ -69,6 +69,9 @@ class D3DiffusionPolicy(Policy):
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
 
+        print(rgb_features.shape)
+        assert 1==2
+
 
         # format batch data
         collected_data = {
@@ -76,10 +79,7 @@ class D3DiffusionPolicy(Policy):
         'rgb_features': rgb_features.to(observations['instruction'].device),
         'depth_features': depth_features.to(observations['instruction'].device),
         'gt_actions': observations['gt_actions'],
-        'histories': observations['histories'].to(observations['instruction'].device),     # (bs,max_seq_len,32768)      
-        'his_len': observations['his_len'].to(observations['instruction'].device),
         'trajectories': observations['trajectories'].to(observations['instruction'].device),
-        'proprioceptions': observations['proprioceptions'].to(observations['instruction'].device)
         }
 
 
@@ -146,7 +146,7 @@ class D3DiffusionNavigator(nn.Module):
             checkpoint=config.MODEL.DEPTH_ENCODER.ddppo_checkpoint,
             backbone=config.MODEL.DEPTH_ENCODER.backbone,
             trainable=config.MODEL.DEPTH_ENCODER.trainable,
-            spatial_output=True,
+            spatial_output=False,
         )
 
         # init the RGB visual encoder
@@ -160,7 +160,7 @@ class D3DiffusionNavigator(nn.Module):
             config.MODEL.RGB_ENCODER.output_size,
             normalize_visual_inputs=config.MODEL.normalize_rgb,
             trainable=config.MODEL.RGB_ENCODER.trainable,
-            spatial_output=True,
+            spatial_output=False,
         )
 
         self.depth_encoder.to(next(self.parameters()).device).train()
