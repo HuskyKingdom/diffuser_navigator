@@ -88,6 +88,7 @@ class D3DiffusionPolicy(Policy):
         'depth_features': depth_features.to(observations['instruction'].device),
         'gt_actions': observations['gt_actions'],
         'trajectories': observations['trajectories'].to(observations['instruction'].device),
+        'padding_mask': observations['padding_mask'].to(observations['padding_mask'].device),
         }
 
 
