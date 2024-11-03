@@ -119,8 +119,7 @@ def collate_fn(batch):
     collected_data['rgb_features'] = torch.cat([first_rgb, collected_data['rgb_features']], dim=1)
     collected_data['depth_features'] = torch.cat([first_depth, collected_data['depth_features']], dim=1)
 
-    print(collected_data['rgb_features'].shape)
-    print(collected_data['depth_features'].shape)
+    
     
     return collected_data
 

@@ -68,6 +68,8 @@ class D3DiffusionPolicy(Policy):
     def build_loss(self,observations):
 
         
+        print(collected_data['rgb_features'].shape)
+        print(collected_data['depth_features'].shape)
 
 
         # (B,T,C,H,W) -> (B+T,C,H,W)
