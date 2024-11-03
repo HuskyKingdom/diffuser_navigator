@@ -67,7 +67,11 @@ class D3DiffusionPolicy(Policy):
 
     def build_loss(self,observations):
 
-
+        self.fc = nn.Sequential(
+                nn.Flatten(),
+                nn.Linear(33824, 256),
+                nn.ReLU(),
+            )
 
 
         # (B,T,C,H,W) -> (B+T,C,H,W)
