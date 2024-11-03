@@ -155,7 +155,7 @@ class D3DiffusionNavigator(nn.Module):
             checkpoint=config.MODEL.DEPTH_ENCODER.ddppo_checkpoint,
             backbone=config.MODEL.DEPTH_ENCODER.backbone,
             trainable=config.MODEL.DEPTH_ENCODER.trainable,
-            spatial_output=True,
+            spatial_output=False,
         )
 
         # init the RGB visual encoder
@@ -169,7 +169,7 @@ class D3DiffusionNavigator(nn.Module):
             config.MODEL.RGB_ENCODER.output_size,
             normalize_visual_inputs=config.MODEL.normalize_rgb,
             trainable=config.MODEL.RGB_ENCODER.trainable,
-            spatial_output=True,
+            spatial_output=False,
         )
 
         self.depth_encoder.to(next(self.parameters()).device).train()
