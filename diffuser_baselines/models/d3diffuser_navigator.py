@@ -71,7 +71,7 @@ class D3DiffusionPolicy(Policy):
                 nn.Flatten(),
                 nn.Linear(33824, 256),
                 nn.ReLU(),
-            )
+            ).to("cuda")
 
 
         # (B,T,C,H,W) -> (B+T,C,H,W)
