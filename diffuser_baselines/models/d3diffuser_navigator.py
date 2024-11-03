@@ -250,16 +250,12 @@ class D3DiffusionNavigator(nn.Module):
 
         bs = observations["instruction"].size(0)
 
-        rgb_features = self.rgb_linear(observations["rgb_features"])  # (bs, seq, 4,4) -> (bs, emb)
-        depth_features = self.depth_linear(observations["depth_features"]) # (bs, seq, 1,1) -> (bs, emb)
+        rgb_features = self.rgb_linear(observations["rgb_features"])  # (B+T, seq, 4,4) -> (B+T, emb)
+        depth_features = self.depth_linear(observations["depth_features"]) # (B+T, seq, 1,1) -> (B+T, emb)
 
-        observation_context = torch.cat((rgb_features,depth_features),dim=-1)
-
-
-        print(observation_context.shape)
-        assert 1==2
-
-        return tokens, next_hiddens
+        observation_context = torch.cat((rgb_features,depth_features),dim=-1) # (B+T, emb*2)
+        
+        return observation_context
 
         
 
@@ -277,8 +273,11 @@ class D3DiffusionNavigator(nn.Module):
         enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask) # (bs,200,emd)
 
         # decoder
-        self.get_context_feature(observations)
-        
+        context_feature = self.get_context_feature(observations)
+        context_feature = context_feature.view(B,T,-1)
+
+        print(context_feature.shape)
+        assert 1==2
 
 
 
