@@ -75,6 +75,8 @@ class D3DiffusionPolicy(Policy):
         observations['rgb_features'] = observations['rgb_features'].view(-1,C,H,W)
         B,T,C,H,W = observations['depth_features'].shape
         observations['depth_features'] = observations['depth_features'].view(-1,C,H,W)
+        B,T,C,H,W = observations['gt_actions'].shape
+        observations['gt_actions'] = observations['gt_actions'].view(-1,C,H,W)
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
 
@@ -254,8 +256,6 @@ class D3DiffusionNavigator(nn.Module):
         depth_features = self.depth_linear(observations["depth_features"]) # (B+T, seq, 1,1) -> (B+T, emb)
 
         action_features = self.action_encoder(observations["gt_actions"].long())
-
-        print(action_features.shape)
 
         observation_context = torch.cat((rgb_features,depth_features,action_features),dim=-1) # (B+T, emb*2)
         
