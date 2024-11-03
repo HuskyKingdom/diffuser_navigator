@@ -251,12 +251,12 @@ class D3DiffusionNavigator(nn.Module):
 
         bs = observations["instruction"].size(0)
 
-        rgb_features = self.rgb_linear(observations["rgb_features"])  # (B+T, seq, 4,4) -> (B+T, emb)
-        depth_features = self.depth_linear(observations["depth_features"]) # (B+T, seq, 1,1) -> (B+T, emb)
+        rgb_features = self.rgb_linear(observations["rgb_features"])  # (B+T, channel, 4,4) -> (B+T, emb)
+        depth_features = self.depth_linear(observations["depth_features"]) # (B+T, channel, 1,1) -> (B+T, emb)
 
-        action_features = self.action_encoder(observations["gt_actions"].long())
+        action_features = self.action_encoder(observations["gt_actions"].long()) # (B+T,) -> (B+T, emb)
 
-        observation_context = torch.cat((rgb_features,depth_features,action_features),dim=-1) # (B+T, emb*2)
+        observation_context = torch.cat((rgb_features,depth_features,action_features),dim=-1) # (B+T, emb*2+emb/2)
         
         return observation_context
 
@@ -285,7 +285,7 @@ class D3DiffusionNavigator(nn.Module):
         context_feature = context_feature.view(B,T,-1)
 
         print(context_feature.shape)
-        print(observations["gt_actions"].shape)
+        print(observations["padding_mask"].shape)
         assert 1==2
 
 

@@ -113,7 +113,13 @@ def collate_fn(batch):
     for key in collected_data:
         collected_data[key] = torch.stack(collected_data[key], dim=0)
 
-   
+    # expand seq_len
+    first_rgb = collected_data['rgb_features'][:, :1, :, :, :]
+    first_depth = collected_data['depth_features'][:, :1, :, :, :]
+    collected_data['rgb_features'] = torch.cat([first_rgb, collected_data['rgb_features']], dim=1)
+    collected_data['depth_features'] = torch.cat([first_depth, collected_data['depth_features']], dim=1)
+
+
     return collected_data
 
 
