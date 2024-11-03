@@ -69,11 +69,13 @@ class D3DiffusionPolicy(Policy):
 
         
 
+        print(observations["rgb_features"].shape)
+        assert 1==2
+
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
 
-        print(rgb_features.shape)
-        assert 1==2
+        
         
 
         # format batch data
