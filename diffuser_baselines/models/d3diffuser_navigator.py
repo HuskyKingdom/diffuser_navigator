@@ -310,6 +310,7 @@ class D3DiffusionNavigator(nn.Module):
         print(decoder_pred.shape)
         print(observations["gt_actions"])
         print(observations["lengths"].shape)
+        observations["lengths"][0] = 0
         loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"])
         print(loss)
 
