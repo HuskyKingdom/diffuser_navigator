@@ -45,11 +45,21 @@ class D3DiffusionPolicy(Policy):
 
 
         # storing histories
-        self.rgb_his.append(rgb_features) # add seq_len dimension and store
         self.rgb_his.append(rgb_features)
         self.depth_his.append(depth_features)
 
         rgb_features = torch.stack(self.rgb_his, dim=1)
+        depth_features = torch.stack(self.depth_his, dim=1)
+
+
+        # (B,T,C,H,W) -> (B+T,C,H,W)
+        B,T,C,H,W = rgb_features.shape
+        rgb_features = rgb_features.view(-1,C,H,W)
+        B,T,C,H,W = depth_features.shape
+        depth_features = depth_features.view(-1,C,H,W)
+        
+
+
         print(rgb_features.shape)
         assert 1==2
 
