@@ -32,7 +32,7 @@ class D3DiffusionPolicy(Policy):
         self.d3pm = D3PM(self.navigator,self.config.DIFFUSER.diffusion_timesteps,self.config.DIFFUSER.action_space)
         self.rgb_his = []
         self.depth_his = []
-        self.pre_actions = []
+        self.pre_actions = [2]
         
 
     def act(self,observations, all_pose=None, hiddens = None, encode_only=False,print_info = False):
