@@ -60,9 +60,6 @@ class D3DiffusionPolicy(Policy):
         
 
 
-        print(observations['instruction'].shape)
-        assert 1==2
-
         # format batch data
 
         collected_data = {
@@ -74,15 +71,9 @@ class D3DiffusionPolicy(Policy):
         'padding_mask': None,
         'lengths': None,
         }
+
         
-        cond, next_hidden = self.navigator.get_cond(collected_data,hiddens=None,inference=True)
-        init_noise = torch.randint(0, self.config.DIFFUSER.action_space, (1, self.config.DIFFUSER.traj_length)).cuda()
-
-        actions = self.d3pm.sample(init_noise,cond)
-
-       
-        if print_info:
-            print(f"final actions {actions}")
+        pred = self.navigator(collected_data,(B,T), inference = True)
 
         return actions, next_hidden
         
@@ -304,15 +295,26 @@ class D3DiffusionNavigator(nn.Module):
         
 
     def forward(self, observations, dims, inference=False):
-
-
-        if inference:
-            return None
         
-
         B,T = dims
 
+        if inference:
+            # encoder
+            encoder_pad_mask = (observations['instruction'] == 0)
+            enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask) # (bs,200,emd)
+            enc_out = self.encoder_linear(enc_out)
 
+            print(enc_out.shape)
+            assert 1==2
+
+            # decoder
+            context_feature = self.get_context_feature(observations)
+            context_feature = context_feature.view(B,T,-1)
+            causal_mask = self.generate_causal_mask(T,context_feature.device)
+            decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
+            
+
+        
         # encoder
         encoder_pad_mask = (observations['instruction'] == 0)
         enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask) # (bs,200,emd)
