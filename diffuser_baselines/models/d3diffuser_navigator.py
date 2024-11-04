@@ -318,7 +318,7 @@ class D3DiffusionNavigator(nn.Module):
             torch.Tensor: 形状为 (seq_length, seq_length) 的因果掩码张量。
         """
         # 创建一个全1的矩阵
-        mask = torch.ones((seq_length, seq_length), device=device, dtype=dtype)
+        mask = torch.ones((seq_length, seq_length), dtype=dtype, device=device)
         
         # 将对角线以上的元素设置为负无穷
         mask = torch.triu(mask, diagonal=1).masked_fill(torch.triu(torch.ones_like(mask), diagonal=1) == 1, float('-inf'))
