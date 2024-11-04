@@ -306,27 +306,10 @@ class D3DiffusionNavigator(nn.Module):
 
     
     def generate_causal_mask(self, seq_length, device=None, dtype=None):
-        """
-        生成一个因果掩码，用于解码器自注意力。
-
-        Args:
-            seq_length (int): 序列的长度。
-            device (torch.device, optional): 掩码所在的设备。默认为 None，使用当前默认设备。
-            dtype (torch.dtype, optional): 掩码的数据类型。默认为 None，使用默认的浮点类型。
-
-        Returns:
-            torch.Tensor: 形状为 (seq_length, seq_length) 的因果掩码张量。
-        """
- 
-        # 将对角线以上的元素设置为负无穷
-        mask = torch.triu(torch.ones((seq_length, seq_length), device=device, dtype=dtype), diagonal=1)
-        mask = mask.masked_fill(mask == 1, float('-inf'))
-        mask = mask + torch.eye(seq_length, device=device, dtype=dtype)  # 保留对角线及以下为 1
-
+        mask = torch.triu(torch.full((seq_length, seq_length), float('-inf'), device=device, dtype=dtype), diagonal=1)
         print(mask)
-        
         return mask
-            
+                
 
     def forward(self, observations, dims, inference=False):
         
