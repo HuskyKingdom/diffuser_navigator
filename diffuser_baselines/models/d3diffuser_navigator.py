@@ -189,6 +189,7 @@ class D3DiffusionNavigator(nn.Module):
         # Encoders
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
         self.action_encoder = nn.Embedding(num_actions + 1, int(embedding_dim/2)) # additional action as start token
+        self.encoder_linear = nn.Linear(embedding_dim,int(embedding_dim*2 + embedding_dim/2))
         
         # Decoder
         self.decoder = TrajectoryDecoder(config,embedding_dim,num_attention_heads,num_layers)
@@ -291,6 +292,7 @@ class D3DiffusionNavigator(nn.Module):
         # encoder
         encoder_pad_mask = (observations['instruction'] == 0)
         enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask) # (bs,200,emd)
+        enc_out = self.encoder_linear(enc_out)
 
         # decoder
         context_feature = self.get_context_feature(observations)
