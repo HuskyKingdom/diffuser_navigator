@@ -304,26 +304,27 @@ class D3DiffusionNavigator(nn.Module):
         return observation_context
 
 
-    def generate_causal_mask(seq_length, device=None, dtype=torch.float32):
+    
+    def generate_causal_mask(seq_length, device=None, dtype=None):
         """
-        生成一个因果（自回归）掩码，用于注意力机制。
+        生成一个因果掩码，用于解码器自注意力。
 
         Args:
             seq_length (int): 序列的长度。
-            device (torch.device, optional): 掩码所在的设备。默认为 None。
-            dtype (torch.dtype, optional): 掩码的数据类型。默认为 torch.float32。
+            device (torch.device, optional): 掩码所在的设备。默认为 None，使用当前默认设备。
+            dtype (torch.dtype, optional): 掩码的数据类型。默认为 None，使用默认的浮点类型。
 
         Returns:
-            torch.Tensor: 形状为 (seq_length, seq_length) 的因果掩码，
-                        下三角和对角线为0，上三角为 -inf。
+            torch.Tensor: 形状为 (seq_length, seq_length) 的因果掩码张量。
         """
-        # 创建一个上三角矩阵，其中对角线以上的元素为1，其余为0
-        mask = torch.triu(torch.ones(seq_length, seq_length, device=device, dtype=dtype), diagonal=1)
-        # 将上三角的1替换为 -inf，其余保持为0
-        mask = mask.masked_fill(mask == 1, float('-inf'))
-        print(mask)
-        return mask
+        # 创建一个全1的矩阵
+        mask = torch.ones((seq_length, seq_length), device=device, dtype=dtype)
         
+        # 将对角线以上的元素设置为负无穷
+        mask = torch.triu(mask, diagonal=1).masked_fill(torch.triu(torch.ones_like(mask), diagonal=1) == 1, float('-inf'))
+        
+        return mask
+            
 
     def forward(self, observations, dims, inference=False):
         
