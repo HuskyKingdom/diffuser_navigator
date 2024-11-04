@@ -75,6 +75,8 @@ class D3DiffusionPolicy(Policy):
         
         action = self.navigator(collected_data,(B,T), inference = True)
         self.pre_actions.append(action.item())
+
+        print(self.pre_actions)
         
 
         return action
