@@ -319,9 +319,12 @@ class D3DiffusionNavigator(nn.Module):
             # decoder
             context_feature = self.get_context_feature(observations,inference=inference)
             context_feature = context_feature.view(B,T,-1)
-            decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, None)
+            decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, None) # (bs,seq_len,4)
 
-            print(decoder_pred.shape)
+            # action sampling
+            last_step_logits = decoder_pred[:, -1, :] 
+            classification_output = last_step_logits.argmax(dim=-1)
+            print(classification_output)
             assert 1==2
             
 
