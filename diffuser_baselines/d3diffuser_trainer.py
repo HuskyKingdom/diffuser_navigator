@@ -114,11 +114,10 @@ def collate_fn(batch):
         collected_data[key] = torch.stack(collected_data[key], dim=0)
 
     # expand seq_len
-    rgb_start_token = collected_data['rgb_features'][:, :1, :, :, :]
-    depth_start_token = collected_data['depth_features'][:, :1, :, :, :]
-    collected_data['rgb_features'] = torch.cat([rgb_start_token, collected_data['rgb_features']], dim=1)
-    collected_data['depth_features'] = torch.cat([depth_start_token, collected_data['depth_features']], dim=1)
-    
+    # rgb_start_token = collected_data['rgb_features'][:, :1, :, :, :]
+    # depth_start_token = collected_data['depth_features'][:, :1, :, :, :]
+    # collected_data['rgb_features'] = torch.cat([rgb_start_token, collected_data['rgb_features']], dim=1)
+    # collected_data['depth_features'] = torch.cat([depth_start_token, collected_data['depth_features']], dim=1)
     
     # mask_start_token = collected_data['padding_mask'][:, :1]
     # collected_data['padding_mask'] = torch.cat([mask_start_token, collected_data['padding_mask']], dim=1)
