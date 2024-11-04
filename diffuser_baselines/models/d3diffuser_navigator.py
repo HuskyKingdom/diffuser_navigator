@@ -76,8 +76,6 @@ class D3DiffusionPolicy(Policy):
         action = self.navigator(collected_data,(B,T), inference = True)
         self.pre_actions.append(action.item())
 
-        print(self.pre_actions)
-        
 
         return action
         
@@ -341,6 +339,8 @@ class D3DiffusionNavigator(nn.Module):
         enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask) # (bs,200,emd)
         enc_out = self.encoder_linear(enc_out)
 
+        print(observations['instruction'].shape)
+
         # decoder
         context_feature = self.get_context_feature(observations)
         context_feature = context_feature.view(B,T,-1)
@@ -350,8 +350,8 @@ class D3DiffusionNavigator(nn.Module):
         loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"]).sum()
 
 
-        print("pred", decoder_pred[0,-10:])
-        print("gt", observations["gt_actions"].long()[0,-10:])
+        print("pred", decoder_pred[0,:5])
+        print("gt", observations["gt_actions"].long()[0,:5])
 
 
         return loss
