@@ -629,7 +629,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         num_epoch_batch += 1
 
                     
-                    if (diffuser_it * self.config.IL.epochs + epoch) % 200 == 0:
+                    if (diffuser_it * self.config.IL.epochs + epoch) % 25 == 0:
                         self.save_checkpoint(
                             f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
                         )
