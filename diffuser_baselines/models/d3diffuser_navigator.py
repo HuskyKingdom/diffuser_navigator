@@ -263,6 +263,8 @@ class D3DiffusionNavigator(nn.Module):
         observations['gt_actions'] = observations['gt_actions'].view(-1,) # # (B,T) -> (B+T,)
         action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
 
+        print(action_features.shape)
+
         observation_context = torch.cat((rgb_features,depth_features,action_features),dim=-1) # (B+T, emb*2+emb/2)
         
         return observation_context
