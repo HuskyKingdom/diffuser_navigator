@@ -258,12 +258,15 @@ class D3DiffusionNavigator(nn.Module):
         depth_features = self.depth_linear(observations["depth_features"]) # (B+T, channel, 1,1) -> (B+T, emb)
 
         # construct input as [<start>,...]
+        action_except = observations['gt_actions'][:, :-1] # remove last element
         action_start_token = torch.full((observations['gt_actions'].shape[0], 1), 4).to(observations['gt_actions'].device)
-        action_input = torch.cat([action_start_token, observations['gt_actions']], dim=1)
+
+        action_input = torch.cat([action_start_token, action_except], dim=1)
+        print(action_features.shape,observations['gt_actions'].shape)
         action_input = action_input.view(-1,) # # (B,T) -> (B+T,)
         action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
 
-        print(action_features.shape)
+        
 
         observation_context = torch.cat((rgb_features,depth_features,action_features),dim=-1) # (B+T, emb*2+emb/2)
         
