@@ -309,8 +309,8 @@ class D3DiffusionNavigator(nn.Module):
 
         loss /= B
 
-        print("pred", decoder_pred[0])
-        print("gt", observations["gt_actions"].long()[0])
+        print("pred", decoder_pred[0,-10:])
+        print("gt", observations["gt_actions"].long()[0,-10:])
 
 
         return loss
