@@ -322,6 +322,8 @@ class D3DiffusionNavigator(nn.Module):
         
         # Set the upper triangular part (excluding the diagonal) to -inf
         mask = torch.triu(mask, diagonal=1).fill_(float('-inf'))
+
+        print(mask)
         
         return mask
         
@@ -363,7 +365,6 @@ class D3DiffusionNavigator(nn.Module):
         context_feature = self.get_context_feature(observations)
         context_feature = context_feature.view(B,T,-1)
         causal_mask = self.generate_causal_mask(T,context_feature.device)
-        print(causal_mask)
         decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
 
         loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"]).sum()
