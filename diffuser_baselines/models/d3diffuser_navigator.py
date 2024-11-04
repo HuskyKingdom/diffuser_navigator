@@ -196,6 +196,8 @@ class D3DiffusionNavigator(nn.Module):
         # Decoder
         self.decoder = TrajectoryDecoder(config,decoder_dim,num_attention_heads,num_layers,num_actions)
 
+        self.masked_CE = MaskedSoftmaxCELoss()
+
 
         # self.time_emb = nn.Sequential(
         #     SinusoidalPosEmb(embedding_dim),
@@ -300,13 +302,16 @@ class D3DiffusionNavigator(nn.Module):
         context_feature = self.get_context_feature(observations)
         context_feature = context_feature.view(B,T,-1)
         causal_mask = self.generate_causal_mask(T,context_feature.device)
-        decoder_out = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
+        decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
 
 
-        print(decoder_out.shape)
+        loss = self.masked_CE(decoder_pred,observations["gt_actions"], observations["lengths"])
+
+        print(decoder_pred.shape)
         print(observations["gt_actions"].shape)
         print(observations["lengths"].shape)
-        print(observations["lengths"])
+        print(loss)
+
         assert 1==2
 
 
