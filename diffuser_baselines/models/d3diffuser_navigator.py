@@ -273,9 +273,7 @@ class D3DiffusionNavigator(nn.Module):
 
     def generate_causal_mask(self, seq_length, device=None, dtype=None):
 
-        mask = torch.ones((seq_length, seq_length), device=device, dtype=dtype)
-        mask = torch.triu(mask, diagonal=1).masked_fill(torch.triu(torch.ones_like(mask), diagonal=1) == 1, True)
-        
+        mask = torch.triu(torch.ones((seq_length, seq_length), device=device, dtype=torch.bool), diagonal=1)
         print(mask)
         return mask
 
