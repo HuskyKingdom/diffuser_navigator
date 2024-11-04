@@ -185,14 +185,14 @@ class D3DiffusionNavigator(nn.Module):
                 nn.ReLU(),
             )
 
-
+        decoder_dim = int(embedding_dim*2 + embedding_dim/2)
         # Encoders
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
         self.action_encoder = nn.Embedding(num_actions + 1, int(embedding_dim/2)) # additional action as start token
-        self.encoder_linear = nn.Linear(embedding_dim,int(embedding_dim*2 + embedding_dim/2))
+        self.encoder_linear = nn.Linear(embedding_dim,decoder_dim)
         
         # Decoder
-        self.decoder = TrajectoryDecoder(config,embedding_dim,num_attention_heads,num_layers)
+        self.decoder = TrajectoryDecoder(config,decoder_dim,num_attention_heads,num_layers)
 
 
         # self.time_emb = nn.Sequential(

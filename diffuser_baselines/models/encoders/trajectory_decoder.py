@@ -17,11 +17,9 @@ class TrajectoryDecoder(nn.Module):
 
         self.config = config
 
-        dec_dim = int(embedding_dim*2+embedding_dim/2)
-
-        self.pe_layer = PositionalEncoding(dec_dim,0.2)
-        self.sa_decoder = FFWRelativeSelfAttentionModule(dec_dim,num_attention_heads,num_layers)
-        self.ca_decoder = FFWRelativeCrossAttentionModule(dec_dim,num_attention_heads,num_layers)
+        self.pe_layer = PositionalEncoding(embedding_dim,0.2)
+        self.sa_decoder = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        self.ca_decoder = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
 
 
     def forward(self, dec_input,dec_pad_mask, enc_out, enc_pad_mask, causal_mask) -> Tensor:
