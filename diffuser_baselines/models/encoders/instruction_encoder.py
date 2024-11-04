@@ -8,7 +8,7 @@ from torch import Tensor
 
 from transformers import BertTokenizer, BertModel
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule
-
+from diffuser_baselines.models.common.position_encodings import PositionalEncoding
 
 class InstructionEncoder(nn.Module):
     def __init__(self, config: Config,embed_dim) -> None:
@@ -32,7 +32,7 @@ class InstructionEncoder(nn.Module):
         )
 
         
-
+        self.pe_layer = PositionalEncoding(embed_dim,0.2)
         self.map_layer = nn.Linear(50, embed_dim)
 
         self.language_self_atten = FFWRelativeSelfAttentionModule(embed_dim,4,2)
@@ -61,7 +61,7 @@ class InstructionEncoder(nn.Module):
 
 
         out = self.map_layer(self.embedding_layer(input))
-
+        out = self.pe_layer(out)
         out = self.language_self_atten(out.transpose(0,1), diff_ts=None,
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
         

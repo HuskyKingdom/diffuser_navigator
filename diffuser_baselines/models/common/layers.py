@@ -343,7 +343,7 @@ class RelativeCrossAttentionLayer(nn.Module):
             self.adaln = AdaLN(embedding_dim)
 
     def forward(self, query, value, diff_ts=None,
-                query_pos=None, value_pos=None, pad_mask=None):
+                query_pos=None, value_pos=None, pad_mask=None, causal_mask=None):
         
 
         if diff_ts is not None:
@@ -357,7 +357,8 @@ class RelativeCrossAttentionLayer(nn.Module):
             key=value,
             value=value,
             rotary_pe=None if query_pos is None else (query_pos, value_pos),
-            key_padding_mask=pad_mask
+            key_padding_mask=pad_mask,
+            attn_mask=causal_mask
         )
 
  
@@ -412,11 +413,11 @@ class FFWRelativeCrossAttentionModule(nn.Module):
             ))
 
     def forward(self, query, value, diff_ts=None,
-                query_pos=None, value_pos=None,pad_mask=None):
+                query_pos=None, value_pos=None,pad_mask=None,causal_mask=None):
         output = []
         for i in range(self.num_layers):
             query , _ = self.attn_layers[i](
-                query, value, diff_ts, query_pos, value_pos,pad_mask
+                query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask
             )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
@@ -491,11 +492,11 @@ class FFWRelativeSelfAttentionModule(nn.Module):
             ))
 
     def forward(self, query, diff_ts=None,
-                query_pos=None, context=None, context_pos=None,pad_mask=None,vis=False):
+                query_pos=None, context=None, context_pos=None,pad_mask=None,vis=False,causal_mask=None):
         output = []
         for i in range(self.num_layers):
             query, attn_output_weights = self.attn_layers[i](
-                query, query, diff_ts, query_pos, query_pos,pad_mask
+                query, query, diff_ts, query_pos, query_pos,pad_mask,causal_mask
             )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)

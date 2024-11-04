@@ -190,8 +190,6 @@ class D3DiffusionNavigator(nn.Module):
         
 
 
-        self.ca_decoder = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-
 
         # self.time_emb = nn.Sequential(
         #     SinusoidalPosEmb(embedding_dim),
@@ -298,8 +296,8 @@ class D3DiffusionNavigator(nn.Module):
         context_feature = context_feature.view(B,T,-1)
         causal_mask = self.generate_causal_mask(T,context_feature.device)
 
-        print(causal_mask.shape)
-        print(causal_mask)
+        print(context_feature.shape)
+        print(observations["padding_mask"].shape)
         assert 1==2
 
 
