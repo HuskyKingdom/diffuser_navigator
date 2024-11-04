@@ -330,7 +330,7 @@ class D3DiffusionNavigator(nn.Module):
             last_step_logits = decoder_pred[:, -1, :] 
             action_inferenced = last_step_logits.argmax(dim=-1).unsqueeze(-1)
 
-            print("pred", decoder_pred.shape)
+            print("pred", decoder_pred[0,:])
 
             return action_inferenced
             
