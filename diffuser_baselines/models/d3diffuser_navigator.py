@@ -304,11 +304,26 @@ class D3DiffusionNavigator(nn.Module):
         return observation_context
 
 
-    def generate_causal_mask(self, seq_length, device=None, dtype=None):
+    def generate_causal_mask(self, seq_length, device=None, dtype=torch.float32):
+        """
+        Generates a causal (autoregressive) mask for attention mechanisms.
 
-        mask = torch.triu(torch.ones((seq_length, seq_length), device=device, dtype=torch.float16), diagonal=1)
+        Args:
+            seq_length (int): The length of the sequence for which to generate the mask.
+            device (torch.device, optional): The device on which to create the mask. Defaults to None.
+            dtype (torch.dtype, optional): The desired data type of the mask. Defaults to torch.float32.
+
+        Returns:
+            torch.Tensor: A causal mask of shape (seq_length, seq_length) with 
+                        `0` in the lower triangle and diagonal, and `-inf` in the upper triangle.
+        """
+        # Initialize a tensor filled with zeros
+        mask = torch.zeros((seq_length, seq_length), device=device, dtype=dtype)
+        
+        # Set the upper triangular part (excluding the diagonal) to -inf
+        mask = torch.triu(mask, diagonal=1).fill_(float('-inf'))
+        
         return mask
-
         
 
     def forward(self, observations, dims, inference=False):
