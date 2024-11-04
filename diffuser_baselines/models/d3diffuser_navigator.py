@@ -304,27 +304,24 @@ class D3DiffusionNavigator(nn.Module):
         return observation_context
 
 
-    def generate_causal_mask(self, seq_length, device=None, dtype=torch.float32):
+    def generate_causal_mask(seq_length, device=None, dtype=torch.float32):
         """
-        Generates a causal (autoregressive) mask for attention mechanisms.
+        生成一个因果（自回归）掩码，用于注意力机制。
 
         Args:
-            seq_length (int): The length of the sequence for which to generate the mask.
-            device (torch.device, optional): The device on which to create the mask. Defaults to None.
-            dtype (torch.dtype, optional): The desired data type of the mask. Defaults to torch.float32.
+            seq_length (int): 序列的长度。
+            device (torch.device, optional): 掩码所在的设备。默认为 None。
+            dtype (torch.dtype, optional): 掩码的数据类型。默认为 torch.float32。
 
         Returns:
-            torch.Tensor: A causal mask of shape (seq_length, seq_length) with 
-                        `0` in the lower triangle and diagonal, and `-inf` in the upper triangle.
+            torch.Tensor: 形状为 (seq_length, seq_length) 的因果掩码，
+                        下三角和对角线为0，上三角为 -inf。
         """
-        # Initialize a tensor filled with zeros
-        mask = torch.zeros((seq_length, seq_length), device=device, dtype=dtype)
-        
-        # Set the upper triangular part (excluding the diagonal) to -inf
-        mask = torch.triu(mask, diagonal=1).fill_(float('-inf'))
-
+        # 创建一个上三角矩阵，其中对角线以上的元素为1，其余为0
+        mask = torch.triu(torch.ones(seq_length, seq_length, device=device, dtype=dtype), diagonal=1)
+        # 将上三角的1替换为 -inf，其余保持为0
+        mask = mask.masked_fill(mask == 1, float('-inf'))
         print(mask)
-        
         return mask
         
 
