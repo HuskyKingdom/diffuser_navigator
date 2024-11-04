@@ -18,7 +18,7 @@ EVAL:
 
 IL:
   ckpt_to_load: data/checkpoints/d3diffuser/ckpt.0.pth
-  load_from_ckpt: True # for testing overfitting only 
+  load_from_ckpt: False # for testing overfitting only 
   epochs: 2000
   batch_size: 5
   is_requeue: False # continuo training
@@ -43,7 +43,7 @@ DIFFUSER:
   num_layers: 2
   diffusion_timesteps: 100
   logging_file: data/loggings/train.log
-  LR: 1.0e-6
+  LR: 1.0e-
   traj_length: 3
   beta: 0.1
   action_space: 4
