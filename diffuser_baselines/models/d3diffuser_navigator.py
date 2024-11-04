@@ -258,7 +258,7 @@ class D3DiffusionNavigator(nn.Module):
         depth_features = self.depth_linear(observations["depth_features"]) # (B+T, channel, 1,1) -> (B+T, emb)
 
         # construct input as [<start>,...]
-        action_start_token = torch.full((observations['gt_actions'].shape[0], 1), 4)
+        action_start_token = torch.full((observations['gt_actions'].shape[0], 1), 4).to(observations['gt_actions'].device)
         action_input = torch.cat([action_start_token, observations['gt_actions']], dim=1)
         action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
 
