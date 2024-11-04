@@ -30,7 +30,9 @@ class D3DiffusionPolicy(Policy):
         self.config = config
         self.navigator = D3DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.d3pm = D3PM(self.navigator,self.config.DIFFUSER.diffusion_timesteps,self.config.DIFFUSER.action_space)
-        self.histories = []
+        self.rgb_his = []
+        self.depth_his = []
+        self.pre_actions = []
         
 
     def act(self,observations, all_pose=None, hiddens = None, encode_only=False,print_info = False):
@@ -43,7 +45,10 @@ class D3DiffusionPolicy(Policy):
 
 
         # storing histories
+        self.rgb_his.append(rgb_features.unsqueeze(1)) # add seq_len dimension and store
+        self.depth_his.append(depth_features)
 
+        rgb_features = torch.stack(self.rgb_his, dim=1)
         print(rgb_features.shape)
         assert 1==2
 
