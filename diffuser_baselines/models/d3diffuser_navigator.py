@@ -339,7 +339,6 @@ class D3DiffusionNavigator(nn.Module):
         enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask) # (bs,200,emd)
         enc_out = self.encoder_linear(enc_out)
 
-        print(observations['instruction'].shape)
 
         # decoder
         context_feature = self.get_context_feature(observations)
