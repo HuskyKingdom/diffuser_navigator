@@ -259,23 +259,24 @@ class D3DiffusionNavigator(nn.Module):
 
         # construct input as [<start>,...]
         action_except = observations['gt_actions'][:, :-1] # remove last element
-        action_start_token = torch.full((observations['gt_actions'].shape[0], 1), 4).to(observations['gt_actions'].device)
+        action_start_token = torch.full((observations['gt_actions'].shape[0], 1), 4).to(observations['gt_actions'].device) # add start token
+        action_input = torch.cat([action_start_token, action_except], dim=1) # construct input
 
-        action_input = torch.cat([action_start_token, action_except], dim=1)
-        print(action_input.shape,observations['gt_actions'].shape)
         action_input = action_input.view(-1,) # # (B,T) -> (B+T,)
         action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
-
-        
 
         observation_context = torch.cat((rgb_features,depth_features,action_features),dim=-1) # (B+T, emb*2+emb/2)
         
         return observation_context
 
 
-    def get_decoder_input(self,context_seq,action_seq):
+    def generate_causal_mask(self, seq_length, device=None, dtype=None):
 
-        pass
+        mask = torch.ones((seq_length, seq_length), device=device, dtype=dtype)
+        mask = torch.triu(mask, diagonal=1).masked_fill(torch.triu(torch.ones_like(mask), diagonal=1) == 1, float('-inf'))
+        
+        return mask
+
         
 
     def forward(self, observations, dims, inference=False):
@@ -295,16 +296,13 @@ class D3DiffusionNavigator(nn.Module):
         # decoder
         context_feature = self.get_context_feature(observations)
         context_feature = context_feature.view(B,T,-1)
+        causal_mask = self.generate_causal_mask(T,context_feature.device)
 
-        print(context_feature.shape)
-        print(observations["padding_mask"].shape)
+        print(causal_mask.shape)
+        print(causal_mask)
         assert 1==2
 
 
-
-
-
-        
 
         return pred_logits
 
