@@ -45,7 +45,7 @@ class D3DiffusionPolicy(Policy):
 
 
         # storing histories
-        self.rgb_his.append(rgb_features.unsqueeze(1)) # add seq_len dimension and store
+        self.rgb_his.append(rgb_features) # add seq_len dimension and store
         self.depth_his.append(depth_features)
 
         rgb_features = torch.stack(self.rgb_his, dim=1)
