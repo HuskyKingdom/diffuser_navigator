@@ -303,6 +303,7 @@ class D3DiffusionNavigator(nn.Module):
 
 
         print(decoder_out.shape)
+        print(observations["gt_actions"].shape)
         assert 1==2
 
 
