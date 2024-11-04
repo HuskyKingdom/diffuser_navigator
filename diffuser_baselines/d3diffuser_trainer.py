@@ -70,7 +70,8 @@ def collate_fn(batch):
         'depth_features': [],         
         'gt_actions': [],            
         'trajectories':[],
-        'padding_mask': []
+        'padding_mask': [],
+        'lengths': []
     }
     
     # Transpose the batch to separate each component
@@ -78,6 +79,7 @@ def collate_fn(batch):
 
     # Compute max sequence length in the batch
     lengths = [len(sample[0]['instruction']) for sample in batch]
+    collected_data['lengths'] = torch.tensor(lengths).long()
     max_len = max(lengths)
 
     for sample in batch:

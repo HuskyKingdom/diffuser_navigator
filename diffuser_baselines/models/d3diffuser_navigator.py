@@ -91,7 +91,8 @@ class D3DiffusionPolicy(Policy):
         'depth_features': depth_features.to(observations['instruction'].device),
         'gt_actions': observations['gt_actions'],
         'trajectories': observations['trajectories'].to(observations['instruction'].device),
-        'padding_mask': observations['padding_mask'].to(observations['padding_mask'].device).bool(),
+        'padding_mask': observations['padding_mask'].to(observations['instruction'].device).bool(),
+        'lengths': observations['lengths'].to(observations['instruction'].device),
         }
 
 
@@ -304,6 +305,8 @@ class D3DiffusionNavigator(nn.Module):
 
         print(decoder_out.shape)
         print(observations["gt_actions"].shape)
+        print(observations["lengths"].shape)
+        print(observations["lengths"])
         assert 1==2
 
 
