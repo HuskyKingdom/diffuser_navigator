@@ -90,11 +90,9 @@ class D3DiffusionPolicy(Policy):
         'depth_features': depth_features.to(observations['instruction'].device),
         'gt_actions': observations['gt_actions'],
         'trajectories': observations['trajectories'].to(observations['instruction'].device),
-        'padding_mask': observations['padding_mask'].to(observations['padding_mask'].device),
+        'padding_mask': observations['padding_mask'].to(observations['padding_mask'].device).bool(),
         }
 
-
-        print("0000000000000000 - ", collected_data['padding_mask'])
 
         loss = self.navigator(collected_data,(B,T), inference = False)
 
@@ -298,8 +296,6 @@ class D3DiffusionNavigator(nn.Module):
         context_feature = self.get_context_feature(observations)
         context_feature = context_feature.view(B,T,-1)
         causal_mask = self.generate_causal_mask(T,context_feature.device)
-
-        print("0000000000000000 - ", causal_mask,observations["padding_mask"],encoder_pad_mask)
         decoder_out = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
 
 
