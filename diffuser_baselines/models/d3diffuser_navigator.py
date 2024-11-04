@@ -33,26 +33,27 @@ class D3DiffusionPolicy(Policy):
         self.histories = []
         
 
-    def act(self,batch, all_pose=None, hiddens = None, encode_only=False,print_info = False):
+    def act(self,observations, all_pose=None, hiddens = None, encode_only=False,print_info = False):
 
         
-        rgb_features,depth_features = self.navigator.encode_visions(batch,self.config) # raw batch
+        rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
 
         if encode_only:
             return None
 
 
         # storing histories
-        self.histories.append(rgb_features[:, :2048, :, :].view(rgb_features.shape[0],-1))
 
         # format batch data
+
         collected_data = {
-        'instruction': batch['instruction'],
-        'rgb_features': rgb_features.to(batch['instruction'].device),
-        'depth_features': depth_features.to(batch['instruction'].device),
-        'proprioceptions': torch.tensor(all_pose,dtype=torch.float32).to(batch['instruction'].device),
-        'histories': torch.stack(self.histories,dim=1),     # (bs,max_seq_len,32768) 
-        'his_len': torch.tensor([len(self.histories)]).to(batch['instruction'].device),
+        'instruction': observations['instruction'],
+        'rgb_features': rgb_features.to(observations['instruction'].device),
+        'depth_features': depth_features.to(observations['instruction'].device),
+        'gt_actions': None,
+        'trajectories': None,
+        'padding_mask': observations['padding_mask'].to(observations['instruction'].device).bool(),
+        'lengths': observations['lengths'].to(observations['instruction'].device),
         }
         
         cond, next_hidden = self.navigator.get_cond(collected_data,hiddens=None,inference=True)
@@ -304,21 +305,10 @@ class D3DiffusionNavigator(nn.Module):
         causal_mask = self.generate_causal_mask(T,context_feature.device)
         decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
 
-
-        
-
-        print(decoder_pred.shape)
-        print(observations["gt_actions"])
-        print(observations["lengths"].shape)
-        observations["lengths"][0] = 0
         loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"])
-        print(loss)
-
-        assert 1==2
 
 
-
-        return pred_logits
+        return loss
 
 
 
