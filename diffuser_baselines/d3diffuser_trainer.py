@@ -25,7 +25,7 @@ from vlnce_baselines.common.env_utils import construct_envs
 from vlnce_baselines.common.utils import extract_instruction_tokens
 
 import torch.nn.functional as Fuc
-
+import torch.nn as nn
 
 
 class ObservationsDict(dict):
@@ -641,6 +641,16 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     num_epoch_batch = 0
                     logger.info(f"epoch loss: {loss} | Batches processed: {step_id}. | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
 
+    def grad_clipping(self,net, theta):  #@save
+        """Clip the gradient."""
+        if isinstance(net, nn.Module):
+            params = [p for p in net.parameters() if p.requires_grad]
+        else:
+            params = net.params
+        norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
+        if norm > theta:
+            for param in params:
+                param.grad[:] *= theta / norm
 
     def _update_agent(
         self,
@@ -658,6 +668,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         loss = loss / loss_accumulation_scalar
         loss.backward()
 
+        self.grad_clipping(self.policy, 1)
         if step_grad:
             self.optimizer.step()
             self.optimizer.zero_grad()
