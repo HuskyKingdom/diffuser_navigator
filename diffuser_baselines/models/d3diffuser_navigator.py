@@ -44,6 +44,9 @@ class D3DiffusionPolicy(Policy):
 
         # storing histories
 
+        print(rgb_features.shape)
+        assert 1==2
+
         # format batch data
 
         collected_data = {
