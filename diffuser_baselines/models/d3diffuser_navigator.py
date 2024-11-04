@@ -305,7 +305,7 @@ class D3DiffusionNavigator(nn.Module):
         causal_mask = self.generate_causal_mask(T,context_feature.device)
         decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
 
-        loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"])
+        loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"]).sum()
 
 
         return loss
