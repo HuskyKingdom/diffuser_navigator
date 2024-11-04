@@ -113,6 +113,8 @@ def collate_fn(batch):
 
     # Stack each list in collected_data into a tensor
     for key in collected_data:
+        if key == 'lengths':
+            continue
         collected_data[key] = torch.stack(collected_data[key], dim=0)
 
     # expand seq_len
