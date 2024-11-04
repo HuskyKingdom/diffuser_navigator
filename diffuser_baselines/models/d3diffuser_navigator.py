@@ -76,6 +76,8 @@ class D3DiffusionPolicy(Policy):
         action = self.navigator(collected_data,(B,T), inference = True)
         self.pre_actions.append(action.item())
 
+        print(f"Action inferenced : {action.item()}, with history length {len(self.pre_actions)}")
+
 
         return action
         
@@ -329,8 +331,6 @@ class D3DiffusionNavigator(nn.Module):
             # action sampling
             last_step_logits = decoder_pred[:, -1, :] 
             action_inferenced = last_step_logits.argmax(dim=-1).unsqueeze(-1)
-
-            print("pred", decoder_pred)
 
             return action_inferenced
             
