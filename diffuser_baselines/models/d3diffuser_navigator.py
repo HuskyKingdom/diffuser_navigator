@@ -306,7 +306,7 @@ class D3DiffusionNavigator(nn.Module):
 
     def generate_causal_mask(self, seq_length, device=None, dtype=None):
 
-        mask = torch.triu(torch.ones((seq_length, seq_length), device=device, dtype=torch.bool), diagonal=1)
+        mask = torch.triu(torch.ones((seq_length, seq_length), device=device, dtype=torch.float16), diagonal=1)
         return mask
 
         
@@ -348,6 +348,7 @@ class D3DiffusionNavigator(nn.Module):
         context_feature = self.get_context_feature(observations)
         context_feature = context_feature.view(B,T,-1)
         causal_mask = self.generate_causal_mask(T,context_feature.device)
+        print(causal_mask)
         decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
 
         loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"]).sum()
