@@ -287,7 +287,7 @@ class D3DiffusionNavigator(nn.Module):
         else: # compute action featrues based on decoder outputs
 
             
-            action_start_token = torch.full((observations['gt_actions'].shape[0], 1), 4).to(observations['gt_actions'].device) # add start token
+            action_start_token = torch.full((observations['prev_actions'].shape[0], 1), 4).to(observations['prev_actions'].device) # add start token
             action_input = torch.cat([action_start_token, observations['prev_actions']], dim=1) # construct input
             print(action_input)
             
