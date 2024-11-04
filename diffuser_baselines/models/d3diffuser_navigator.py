@@ -274,6 +274,9 @@ class D3DiffusionNavigator(nn.Module):
         rgb_features = self.rgb_linear(observations["rgb_features"])  # (B+T, channel, 4,4) -> (B+T, emb)
         depth_features = self.depth_linear(observations["depth_features"]) # (B+T, channel, 1,1) -> (B+T, emb)
 
+        print(rgb_features.shape)
+        assert 1==2
+
         # construct input as [<start>,...]
         action_except = observations['gt_actions'][:, :-1] # remove last element
         action_start_token = torch.full((observations['gt_actions'].shape[0], 1), 4).to(observations['gt_actions'].device) # add start token
