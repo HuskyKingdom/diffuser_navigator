@@ -76,7 +76,7 @@ class D3DiffusionPolicy(Policy):
         observations['rgb_features'] = observations['rgb_features'].view(-1,C,H,W)
         B,T,C,H,W = observations['depth_features'].shape
         observations['depth_features'] = observations['depth_features'].view(-1,C,H,W)
-        observations['gt_actions'] = observations['gt_actions'].view(-1,)
+        
 
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
