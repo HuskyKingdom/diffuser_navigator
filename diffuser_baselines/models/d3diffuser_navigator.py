@@ -73,7 +73,11 @@ class D3DiffusionPolicy(Policy):
         }
 
         
-        pred = self.navigator(collected_data,(B,T), inference = True)
+        action = self.navigator(collected_data,(B,T), inference = True)
+        self.pre_actions.append(action.item())
+        
+        print(self.pre_actions)
+        assert 1==2
 
         return actions, next_hidden
         
@@ -323,9 +327,9 @@ class D3DiffusionNavigator(nn.Module):
 
             # action sampling
             last_step_logits = decoder_pred[:, -1, :] 
-            classification_output = last_step_logits.argmax(dim=-1)
-            print(last_step_logits)
-            assert 1==2
+            action_inferenced = last_step_logits.argmax(dim=-1) 
+
+            return action_inferenced
             
 
         
