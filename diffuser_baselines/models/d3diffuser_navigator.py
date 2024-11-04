@@ -304,14 +304,14 @@ class D3DiffusionNavigator(nn.Module):
             enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask) # (bs,200,emd)
             enc_out = self.encoder_linear(enc_out)
 
-            print(enc_out.shape)
-            assert 1==2
-
             # decoder
             context_feature = self.get_context_feature(observations)
             context_feature = context_feature.view(B,T,-1)
             causal_mask = self.generate_causal_mask(T,context_feature.device)
-            decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
+            decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, None)
+
+            print(decoder_pred.shape)
+            assert 1==2
             
 
         
