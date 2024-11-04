@@ -60,7 +60,7 @@ class D3DiffusionPolicy(Policy):
         
 
 
-        print(rgb_features.shape)
+        print(observations['instruction'].shape)
         assert 1==2
 
         # format batch data
@@ -71,8 +71,8 @@ class D3DiffusionPolicy(Policy):
         'depth_features': depth_features.to(observations['instruction'].device),
         'gt_actions': None,
         'trajectories': None,
-        'padding_mask': observations['padding_mask'].to(observations['instruction'].device).bool(),
-        'lengths': observations['lengths'].to(observations['instruction'].device),
+        'padding_mask': None,
+        'lengths': None,
         }
         
         cond, next_hidden = self.navigator.get_cond(collected_data,hiddens=None,inference=True)
