@@ -259,6 +259,7 @@ class D3DiffusionNavigator(nn.Module):
 
         # construct input as [<start>,...]
         action_start_token = torch.full((observations['gt_actions'].shape[0], 1), 4).to(observations['gt_actions'].device)
+        print(action_start_token.shape,observations['gt_actions'].shape)
         action_input = torch.cat([action_start_token, observations['gt_actions']], dim=1)
         action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
 
