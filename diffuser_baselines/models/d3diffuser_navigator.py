@@ -32,7 +32,7 @@ class D3DiffusionPolicy(Policy):
         self.d3pm = D3PM(self.navigator,self.config.DIFFUSER.diffusion_timesteps,self.config.DIFFUSER.action_space)
         self.rgb_his = []
         self.depth_his = []
-        self.pre_actions = [2]
+        self.pre_actions = []
         
 
     def act(self,observations, all_pose=None, hiddens = None, encode_only=False,print_info = False):
@@ -286,7 +286,11 @@ class D3DiffusionNavigator(nn.Module):
 
         else: # compute action featrues based on decoder outputs
 
-            print(observations['prev_actions'])
+            
+            action_start_token = torch.full((observations['gt_actions'].shape[0], 1), 4).to(observations['gt_actions'].device) # add start token
+            action_input = torch.cat([action_start_token, observations['prev_actions']], dim=1) # construct input
+            print(action_input)
+            
             assert 1==2
 
 
