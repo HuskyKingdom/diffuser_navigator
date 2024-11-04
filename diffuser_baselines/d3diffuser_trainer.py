@@ -121,8 +121,6 @@ def collate_fn(batch):
     
     # mask_start_token = collected_data['padding_mask'][:, :1]
     # collected_data['padding_mask'] = torch.cat([mask_start_token, collected_data['padding_mask']], dim=1)
-
-    print("0000000000000000 - ", collected_data['padding_mask'])
     
     return collected_data
 

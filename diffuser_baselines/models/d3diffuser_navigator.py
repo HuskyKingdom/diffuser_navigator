@@ -94,6 +94,8 @@ class D3DiffusionPolicy(Policy):
         }
 
 
+        print("0000000000000000 - ", collected_data['padding_mask'])
+
         loss = self.navigator(collected_data,(B,T), inference = False)
 
 
