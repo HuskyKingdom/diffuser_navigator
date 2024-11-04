@@ -35,7 +35,7 @@ class D3DiffusionPolicy(Policy):
         self.pre_actions = []
         
 
-    def act(self,observations, all_pose=None, hiddens = None, encode_only=False,print_info = False):
+    def act(self,observations, encode_only=False,print_info = False):
 
         
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
@@ -76,10 +76,8 @@ class D3DiffusionPolicy(Policy):
         action = self.navigator(collected_data,(B,T), inference = True)
         self.pre_actions.append(action.item())
         
-        print(self.pre_actions)
-        assert 1==2
 
-        return actions, next_hidden
+        return action
         
     
 
@@ -135,7 +133,10 @@ class D3DiffusionPolicy(Policy):
         return one_hot
     
     def clear_his(self):
-        self.histories = []
+
+        self.rgb_his = []
+        self.depth_his = []
+        self.pre_actions = []
 
 
 

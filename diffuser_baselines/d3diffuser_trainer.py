@@ -20,7 +20,7 @@ from habitat_baselines.common.tensorboard_utils import TensorboardWriter
 from habitat_baselines.utils.common import batch_obs
 
 from vlnce_baselines.common.aux_losses import AuxLosses
-from diffuser_baselines.common.base_il_trainer import BaseVLNCETrainer
+from diffuser_baselines.common.base_il_d3trainer import BaseVLNCETrainer
 from vlnce_baselines.common.env_utils import construct_envs
 from vlnce_baselines.common.utils import extract_instruction_tokens
 
