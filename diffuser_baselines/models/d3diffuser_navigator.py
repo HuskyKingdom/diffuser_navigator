@@ -305,7 +305,7 @@ class D3DiffusionNavigator(nn.Module):
 
 
     
-    def generate_causal_mask(seq_length, device=None, dtype=None):
+    def generate_causal_mask(self, seq_length, device=None, dtype=None):
         """
         生成一个因果掩码，用于解码器自注意力。
 
@@ -322,6 +322,8 @@ class D3DiffusionNavigator(nn.Module):
         
         # 将对角线以上的元素设置为负无穷
         mask = torch.triu(mask, diagonal=1).masked_fill(torch.triu(torch.ones_like(mask), diagonal=1) == 1, float('-inf'))
+
+        print(mask)
         
         return mask
             
@@ -339,7 +341,7 @@ class D3DiffusionNavigator(nn.Module):
             # decoder
             context_feature = self.get_context_feature(observations,inference=inference)
             context_feature = context_feature.view(B,T,-1)
-            causal_mask = self.generate_causal_mask(T,context_feature.device)
+            causal_mask = self.generate_causal_mask(T,device=context_feature.device)
             decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, causal_mask) # (bs,seq_len,4)
 
             # action sampling
