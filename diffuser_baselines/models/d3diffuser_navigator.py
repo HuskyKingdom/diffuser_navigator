@@ -276,6 +276,7 @@ class D3DiffusionNavigator(nn.Module):
         mask = torch.ones((seq_length, seq_length), device=device, dtype=dtype)
         mask = torch.triu(mask, diagonal=1).masked_fill(torch.triu(torch.ones_like(mask), diagonal=1) == 1, True)
         
+        print(mask)
         return mask
 
         
