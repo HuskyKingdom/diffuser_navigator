@@ -629,7 +629,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         num_epoch_batch += 1
 
                     
-                    if (diffuser_it * self.config.IL.epochs + epoch) % 25 == 0:
+                    if (diffuser_it * self.config.IL.epochs + epoch) % 20 == 0:
                         self.save_checkpoint(
                             f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
                         )
@@ -639,7 +639,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     epoch_loss /= num_epoch_batch
                     epoch_loss = 0
                     num_epoch_batch = 0
-                    logger.info(f"epoch loss: {loss} | Batches processed: {step_id}. | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
+                    logger.info(f"epoch loss: {epoch_loss} | Batches processed: {step_id}. | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
 
     def grad_clipping(self, net, theta):  # @save
         """Clip the gradient."""
@@ -673,6 +673,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         if step_grad:
             self.optimizer.step()
             self.optimizer.zero_grad()
+            self.scheduler.step()
 
 
 
@@ -701,6 +702,9 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             self.policy.d3pm.x0_model.parameters(), lr=self.config.IL.lr
         )
 
+        if not load_from_ckpt: # train
+            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.IL.lr, pct_start=0.35, 
+                                                steps_per_epoch=721, epochs=2000)
 
         if load_from_ckpt:
             ckpt_path = config.IL.ckpt_to_load

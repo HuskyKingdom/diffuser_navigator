@@ -19,7 +19,7 @@ EVAL:
 IL:
   ckpt_to_load: data/checkpoints/d3diffuser/ckpt.0.pth
   load_from_ckpt: False # for testing overfitting only 
-  epochs: 2000
+  epochs: 500
   batch_size: 15
   is_requeue: False # continuo training
   
