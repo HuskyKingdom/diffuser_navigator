@@ -307,6 +307,12 @@ class D3DiffusionNavigator(nn.Module):
 
         loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"]).sum()
 
+        loss(torch.ones(3, 4, 10), torch.ones((3, 4), dtype=torch.long),
+        torch.tensor([4, 2, 0]))
+
+        print(loss)
+        assert 1==2
+
         print(self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"]))
 
 
