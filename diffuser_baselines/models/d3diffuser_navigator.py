@@ -307,7 +307,6 @@ class D3DiffusionNavigator(nn.Module):
     
     def generate_causal_mask(self, seq_length, device=None, dtype=None):
         mask = torch.triu(torch.full((seq_length, seq_length), float('-inf'), device=device, dtype=dtype), diagonal=1)
-        print(mask)
         return mask
                 
 
@@ -332,7 +331,6 @@ class D3DiffusionNavigator(nn.Module):
             action_inferenced = last_step_logits.argmax(dim=-1).unsqueeze(-1)
 
             print("pred", decoder_pred)
-            print(causal_mask)
 
             return action_inferenced
             
@@ -352,7 +350,6 @@ class D3DiffusionNavigator(nn.Module):
 
         loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"]).sum()
 
-        print(causal_mask)
         print("pred", decoder_pred[0,:5])
         print("gt", observations["gt_actions"].long()[0,:5])
 
