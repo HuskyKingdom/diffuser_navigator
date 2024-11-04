@@ -641,12 +641,13 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     num_epoch_batch = 0
                     logger.info(f"epoch loss: {loss} | Batches processed: {step_id}. | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
 
-    def grad_clipping(self,net, theta):  #@save
+    def grad_clipping(self, net, theta):  # @save
         """Clip the gradient."""
         if isinstance(net, nn.Module):
-            params = [p for p in net.parameters() if p.requires_grad]
+            params = [p for p in net.parameters() if p.requires_grad and p.grad is not None]
         else:
-            params = net.params
+            params = [p for p in net.params if p.grad is not None]
+            
         norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
         if norm > theta:
             for param in params:
