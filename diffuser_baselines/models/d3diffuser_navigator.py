@@ -284,17 +284,13 @@ class D3DiffusionNavigator(nn.Module):
             action_input = action_input.view(-1,) # # (B,T) -> (B+T,)
             action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
 
-        else: # compute action featrues based on decoder outputs
+        else: # compute action featrues based on decoder outputs (prev actions)
 
-            
             action_start_token = torch.full((observations['prev_actions'].shape[0], 1), 4).to(observations['prev_actions'].device) # add start token
             action_input = torch.cat([action_start_token, observations['prev_actions']], dim=1) # construct input
             action_input = action_input.view(-1,) # # (B,T) -> (B+T,)
             action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
 
-            print(action_features.shape)
-            
-            assert 1==2
 
 
 
@@ -323,7 +319,6 @@ class D3DiffusionNavigator(nn.Module):
             # decoder
             context_feature = self.get_context_feature(observations,inference=inference)
             context_feature = context_feature.view(B,T,-1)
-            causal_mask = self.generate_causal_mask(T,context_feature.device)
             decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, None)
 
             print(decoder_pred.shape)
