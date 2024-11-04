@@ -7,6 +7,8 @@ from habitat_baselines.common.baseline_registry import baseline_registry
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule,ParallelAttention
 from habitat_baselines.rl.ppo.policy import Policy
 from diffuser_baselines.models.encoders.instruction_encoder import InstructionEncoder
+from diffuser_baselines.models.encoders.trajectory_decoder import TrajectoryDecoder
+
 from diffuser_baselines.models.common.position_encodings import RotaryPositionEncoding,SinusoidalPosEmb, PositionalEncoding
 
 from diffuser_baselines.models.encoders import resnet_encoders
@@ -184,11 +186,12 @@ class D3DiffusionNavigator(nn.Module):
             )
 
 
-        # Other Encoders
+        # Encoders
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
         self.action_encoder = nn.Embedding(num_actions + 1, int(embedding_dim/2)) # additional action as start token
         
-
+        # Decoder
+        self.decoder = TrajectoryDecoder(config,embedding_dim,num_attention_heads,num_layers)
 
 
         # self.time_emb = nn.Sequential(
@@ -295,9 +298,10 @@ class D3DiffusionNavigator(nn.Module):
         context_feature = self.get_context_feature(observations)
         context_feature = context_feature.view(B,T,-1)
         causal_mask = self.generate_causal_mask(T,context_feature.device)
+        decoder_out = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
 
-        print(context_feature.shape)
-        print(observations["padding_mask"].shape)
+
+        print(decoder_out.shape)
         assert 1==2
 
 

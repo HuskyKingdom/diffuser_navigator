@@ -107,7 +107,7 @@ def collate_fn(batch):
         collected_data['depth_features'].append(pad_depth_feat)
         collected_data['gt_actions'].append(pad_gt_actions)
         collected_data['trajectories'].append(pad_trajectories)
-        collected_data['padding_mask'].append(mask)
+        collected_data['padding_mask'].append(mask) # padding mask for dec_input
 
     # Stack each list in collected_data into a tensor
     for key in collected_data:
