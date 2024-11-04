@@ -46,7 +46,6 @@ class D3DiffusionPolicy(Policy):
 
         # storing histories
         self.rgb_his.append(rgb_features)
-        self.rgb_his.append(rgb_features)
         self.depth_his.append(depth_features)
 
         rgb_features = torch.stack(self.rgb_his, dim=1)
@@ -67,7 +66,7 @@ class D3DiffusionPolicy(Policy):
         'instruction': observations['instruction'],
         'rgb_features': rgb_features.to(observations['instruction'].device),
         'depth_features': depth_features.to(observations['instruction'].device),
-        'gt_actions': None,
+        'prev_actions': torch.tensor([self.pre_actions]).to(observations['instruction'].device).long(),
         'trajectories': None,
         'padding_mask': None,
         'lengths': None,
@@ -266,7 +265,7 @@ class D3DiffusionNavigator(nn.Module):
 
 
 
-    def get_context_feature(self,observations):
+    def get_context_feature(self,observations,inference=False):
 
         
 
@@ -275,16 +274,22 @@ class D3DiffusionNavigator(nn.Module):
         rgb_features = self.rgb_linear(observations["rgb_features"])  # (B+T, channel, 4,4) -> (B+T, emb)
         depth_features = self.depth_linear(observations["depth_features"]) # (B+T, channel, 1,1) -> (B+T, emb)
 
-        print(rgb_features.shape)
-        assert 1==2
+        if not inference: # compute action featrues based on gt actions
 
-        # construct input as [<start>,...]
-        action_except = observations['gt_actions'][:, :-1] # remove last element
-        action_start_token = torch.full((observations['gt_actions'].shape[0], 1), 4).to(observations['gt_actions'].device) # add start token
-        action_input = torch.cat([action_start_token, action_except], dim=1) # construct input
+            # construct input as [<start>,...]
+            action_except = observations['gt_actions'][:, :-1] # remove last element
+            action_start_token = torch.full((observations['gt_actions'].shape[0], 1), 4).to(observations['gt_actions'].device) # add start token
+            action_input = torch.cat([action_start_token, action_except], dim=1) # construct input
 
-        action_input = action_input.view(-1,) # # (B,T) -> (B+T,)
-        action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
+            action_input = action_input.view(-1,) # # (B,T) -> (B+T,)
+            action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
+
+        else: # compute action featrues based on decoder outputs
+
+            print(observations['prev_actions'])
+            assert 1==2
+
+
 
         observation_context = torch.cat((rgb_features,depth_features,action_features),dim=-1) # (B+T, emb*2+emb/2)
         
@@ -309,7 +314,7 @@ class D3DiffusionNavigator(nn.Module):
             enc_out = self.encoder_linear(enc_out)
 
             # decoder
-            context_feature = self.get_context_feature(observations)
+            context_feature = self.get_context_feature(observations,inference=inference)
             context_feature = context_feature.view(B,T,-1)
             causal_mask = self.generate_causal_mask(T,context_feature.device)
             decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, None)
