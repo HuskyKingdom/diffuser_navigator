@@ -328,6 +328,9 @@ class D3DiffusionNavigator(nn.Module):
 
             # action sampling
             last_step_logits = decoder_pred[:, -1, :] 
+            print(last_step_logits.argmax(dim=-1) .shape)
+            print(last_step_logits.shape)
+            assert 1==2
             action_inferenced = last_step_logits.argmax(dim=-1) 
 
             return action_inferenced
