@@ -35,7 +35,7 @@ class InstructionEncoder(nn.Module):
         self.pe_layer = PositionalEncoding(embed_dim,0.2)
         self.map_layer = nn.Linear(50, embed_dim)
 
-        self.language_self_atten = FFWRelativeSelfAttentionModule(embed_dim,4,2)
+        self.language_self_atten = FFWRelativeSelfAttentionModule(embed_dim,8,4)
 
     def _load_embeddings(self) -> Tensor:
         """Loads word embeddings from a pretrained embeddings file.
