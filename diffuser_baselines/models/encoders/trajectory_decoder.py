@@ -11,7 +11,7 @@ from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionMod
 from diffuser_baselines.models.common.position_encodings import PositionalEncoding
 
 class TrajectoryDecoder(nn.Module):
-    def __init__(self, config: Config,embedding_dim,num_attention_heads,num_layers) -> None:
+    def __init__(self, config: Config,embedding_dim,num_attention_heads,num_layers, action_dim) -> None:
 
         super().__init__()
 
@@ -20,6 +20,12 @@ class TrajectoryDecoder(nn.Module):
         self.pe_layer = PositionalEncoding(embedding_dim,0.2)
         self.sa_decoder = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
         self.ca_decoder = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+
+        self.action_predictor = nn.Sequential(
+            nn.Linear(embedding_dim, embedding_dim),
+            nn.ReLU(),
+            nn.Linear(embedding_dim, action_dim)
+        )
 
 
     def forward(self, dec_input,dec_pad_mask, enc_out, enc_pad_mask, causal_mask) -> Tensor:
@@ -40,5 +46,7 @@ class TrajectoryDecoder(nn.Module):
             value_pos=None,
             diff_ts=None,pad_mask=enc_pad_mask)[-1].transpose(0,1)
         
+        pred_action_logits = self.action_predictor(crossatten_out)
+        
 
-        return crossatten_out
+        return pred_action_logits

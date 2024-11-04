@@ -13,6 +13,7 @@ from diffuser_baselines.models.common.position_encodings import RotaryPositionEn
 
 from diffuser_baselines.models.encoders import resnet_encoders
 from diffuser_baselines.models.encoders.his_encoder import HistoryGRU
+from diffuser_baselines.models.utils import MaskedSoftmaxCELoss
 
 from gym import spaces
 import numpy as np
@@ -192,7 +193,7 @@ class D3DiffusionNavigator(nn.Module):
         self.encoder_linear = nn.Linear(embedding_dim,decoder_dim)
         
         # Decoder
-        self.decoder = TrajectoryDecoder(config,decoder_dim,num_attention_heads,num_layers)
+        self.decoder = TrajectoryDecoder(config,decoder_dim,num_attention_heads,num_layers,num_actions)
 
 
         # self.time_emb = nn.Sequential(
