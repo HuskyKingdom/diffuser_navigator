@@ -324,7 +324,7 @@ class D3DiffusionNavigator(nn.Module):
             # action sampling
             last_step_logits = decoder_pred[:, -1, :] 
             classification_output = last_step_logits.argmax(dim=-1)
-            print(classification_output)
+            print(last_step_logits)
             assert 1==2
             
 
