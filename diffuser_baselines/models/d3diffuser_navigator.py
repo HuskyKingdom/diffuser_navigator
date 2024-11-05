@@ -335,6 +335,7 @@ class D3DiffusionNavigator(nn.Module):
             probabilities = probabilities.squeeze(1)
             m = torch.distributions.Categorical(probabilities)
             action_inferenced = m.sample()
+            print(action_inferenced.shape)
 
             return action_inferenced
             
