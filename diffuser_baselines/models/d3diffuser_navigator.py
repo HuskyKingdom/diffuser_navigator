@@ -333,7 +333,6 @@ class D3DiffusionNavigator(nn.Module):
             # action_inferenced = last_step_logits.argmax(dim=-1).unsqueeze(-1)
             probabilities = torch.softmax(last_step_logits, dim=-1)
             probabilities = probabilities.squeeze(1)
-            print(probabilities)
             m = torch.distributions.Categorical(probabilities)
             action_inferenced = m.sample().unsqueeze(-1)
 
