@@ -50,12 +50,7 @@ class InstructionEncoder(nn.Module):
         return embeddings
 
     def forward(self, observations,pad_mask) -> Tensor:
-        """
-        Tensor sizes after computation:
-            instruction: [batch_size x seq_length]
-            lengths: [batch_size]
-            hidden_state: [batch_size x hidden_size]
-        """
+
 
         input = observations.long()
 
