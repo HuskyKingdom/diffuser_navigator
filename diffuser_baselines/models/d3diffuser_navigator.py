@@ -330,7 +330,11 @@ class D3DiffusionNavigator(nn.Module):
 
             # action sampling
             last_step_logits = decoder_pred[:, -1, :] 
-            action_inferenced = last_step_logits.argmax(dim=-1).unsqueeze(-1)
+            # action_inferenced = last_step_logits.argmax(dim=-1).unsqueeze(-1)
+            probabilities = torch.softmax(last_step_logits, dim=-1)
+            probabilities = probabilities.squeeze(1)
+            m = torch.distributions.Categorical(probabilities)
+            action_inferenced = m.sample()
 
             return action_inferenced
             
