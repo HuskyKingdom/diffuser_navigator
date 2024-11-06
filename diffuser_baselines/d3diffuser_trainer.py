@@ -628,9 +628,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         step_id += 1  # noqa: SIM113
                         num_epoch_batch += 1
 
-                        if step_id % 100 == 0:
-                            break
-
                     # epoch ends
 
 
@@ -643,13 +640,14 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
 
 
-                    if True: # evaluate model
+                    if (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0: # evaluate model
                         val_suc = self._train_eval_checkpoint()
                         writer.add_scalar(
                             f"traing_eval_{diffuser_it}", val_suc, (diffuser_it * self.config.IL.epochs + epoch + 1)
                         )
                     
                     self.policy.train()
+                    
                     
 
                     epoch_loss /= num_epoch_batch

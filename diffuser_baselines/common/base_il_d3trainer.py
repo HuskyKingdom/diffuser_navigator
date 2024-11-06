@@ -337,8 +337,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                         )
                     )
 
-
-                print(f"infos: {infos[i]}")
+                # print(f"infos: {infos[i]}")
 
             observations = extract_instruction_tokens(
                 observations,
