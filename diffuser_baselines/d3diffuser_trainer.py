@@ -556,9 +556,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             self.config.IL.load_from_ckpt,
             4, 
         )
-        self.save_checkpoint(
-                            f"test_ckp.pth"
-        )
 
         # self.policy.eval()
         
