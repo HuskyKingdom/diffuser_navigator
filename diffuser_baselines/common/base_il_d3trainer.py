@@ -275,7 +275,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         if config.EVAL.EPISODE_COUNT > -1:
             num_eps = min(config.EVAL.EPISODE_COUNT, num_eps)
 
-        pbar = tqdm.tqdm(total=100) if config.use_pbar else None
+        pbar = tqdm.tqdm(total=180) if config.use_pbar else None
         log_str = (
             f"Test"
             " [Episodes evaluated: {evaluated}/{total}]"
@@ -286,7 +286,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         action_candidates = [[]]
     
 
-        while envs.num_envs > 0 and len(stats_episodes) < 100:
+        while envs.num_envs > 0 and len(stats_episodes) < 180:
             
             # retrive pose & append history rgb
             all_pose = []
