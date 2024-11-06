@@ -267,7 +267,7 @@ class BaseVLNCETrainer(BaseILTrainer):
 
         self._initialize_policy(
             self.config,
-            True,
+            False,
             4, 
         )
         self.policy.eval()
