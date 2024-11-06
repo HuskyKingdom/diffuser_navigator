@@ -275,7 +275,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         if config.EVAL.EPISODE_COUNT > -1:
             num_eps = min(config.EVAL.EPISODE_COUNT, num_eps)
 
-        pbar = tqdm.tqdm(total=num_eps) if config.use_pbar else None
+        pbar = tqdm.tqdm(total=100) if config.use_pbar else None
         log_str = (
             f"Test"
             " [Episodes evaluated: {evaluated}/{total}]"
@@ -296,7 +296,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             
             current_episodes = envs.current_episodes()
 
-            actions = self.policy.act(batch,print_info=True)
+            actions = self.policy.act(batch,print_info=False)
 
             outputs = envs.step([a[0].item() for a in actions])
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
@@ -377,9 +377,9 @@ class BaseVLNCETrainer(BaseILTrainer):
             aggregated_stats[k] = (
                 sum(v[k] for v in stats_episodes.values()) / num_episodes
             )
-
-
         logger.info(f"Episodes evaluated: {num_episodes}")
+
+
         return aggregated_stats["success"]
 
         

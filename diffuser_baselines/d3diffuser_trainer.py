@@ -628,6 +628,9 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         step_id += 1  # noqa: SIM113
                         num_epoch_batch += 1
 
+                        if step_id % 100 == 0:
+                            break
+
                     # epoch ends
 
 
@@ -647,7 +650,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         )
                     
                     self.policy.train()
-                    
                     
 
                     epoch_loss /= num_epoch_batch
