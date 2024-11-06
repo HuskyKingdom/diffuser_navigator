@@ -631,7 +631,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     
                     if (diffuser_it * self.config.IL.epochs + epoch + 1) % 10 == 0:
                         self.save_checkpoint(
-                            f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
+                            f"ckpt.{diffuser_it * self.config.IL.epochs + epoch + 1}.pth"
                         )
                     else:
                         print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
