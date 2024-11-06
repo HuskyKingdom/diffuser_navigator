@@ -210,6 +210,181 @@ class BaseVLNCETrainer(BaseILTrainer):
 
     def action_pop(): # 
         return
+    
+
+    def _train_eval_checkpoint(
+        self,
+    ) -> None:
+        """Evaluates a single checkpoint.
+
+        Args:
+            checkpoint_path: path of checkpoint
+            writer: tensorboard writer object
+            checkpoint_index: index of the current checkpoint
+        """
+        logger.info(f"checkpointing...")
+
+        config = self.config.clone()
+        if self.config.EVAL.USE_CKPT_CONFIG:
+            config = self._setup_eval_config(ckpt)
+
+        split = config.EVAL.SPLIT
+
+        config.defrost()
+        config.TASK_CONFIG.DATASET.SPLIT = split
+        config.TASK_CONFIG.DATASET.ROLES = ["guide"]
+        config.TASK_CONFIG.DATASET.LANGUAGES = config.EVAL.LANGUAGES
+        config.TASK_CONFIG.TASK.NDTW.SPLIT = split
+        config.TASK_CONFIG.ENVIRONMENT.ITERATOR_OPTIONS.SHUFFLE = False
+        config.TASK_CONFIG.ENVIRONMENT.ITERATOR_OPTIONS.MAX_SCENE_REPEAT_STEPS = (
+            -1
+        )
+        config.use_pbar = not is_slurm_batch_job()
+
+        if len(config.VIDEO_OPTION) > 0:
+            config.TASK_CONFIG.TASK.MEASUREMENTS.append("TOP_DOWN_MAP_VLNCE")
+
+        config.freeze()
+
+        envs = construct_envs_auto_reset_false(
+            config, get_env_class(config.ENV_NAME)
+        )
+
+        # init policy
+
+        self.policy.eval()
+
+        observations = envs.reset()
+        
+        observations = extract_instruction_tokens(
+            observations, self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID
+        )
+
+  
+
+        batch = batch_obs(observations, self.device)
+        batch = apply_obs_transforms_batch(batch, self.obs_transforms)
+
+        stats_episodes = {}
+
+        rgb_frames = [[] for _ in range(envs.num_envs)]
+        if len(config.VIDEO_OPTION) > 0:
+            os.makedirs(config.VIDEO_DIR, exist_ok=True)
+
+        num_eps = sum(envs.number_of_episodes)
+        if config.EVAL.EPISODE_COUNT > -1:
+            num_eps = min(config.EVAL.EPISODE_COUNT, num_eps)
+
+        pbar = tqdm.tqdm(total=num_eps) if config.use_pbar else None
+        log_str = (
+            f"Test"
+            " [Episodes evaluated: {evaluated}/{total}]"
+            " [Time elapsed (s): {time}]"
+        )
+        start_time = time.time()
+
+        action_candidates = [[]]
+    
+
+        while envs.num_envs > 0 and len(stats_episodes) < 100:
+            
+            # retrive pose & append history rgb
+            all_pose = []
+            for i in range(envs.num_envs):
+                pos = envs.call_at(i, "get_state", {"observations": {}})
+                all_pose.append(pos)
+            
+            current_episodes = envs.current_episodes()
+
+            actions = self.policy.act(batch,print_info=True)
+
+            outputs = envs.step([a[0].item() for a in actions])
+            observations, _, dones, infos = [list(x) for x in zip(*outputs)]
+
+
+            not_done_masks = torch.tensor(
+                [[0] if done else [1] for done in dones],
+                dtype=torch.uint8,
+                device=self.device,
+            )
+
+            # reset envs and observations if necessary
+            for i in range(envs.num_envs):
+                if len(config.VIDEO_OPTION) > 0:
+                    frame = observations_to_image(observations[i], infos[i])
+                    frame = append_text_to_image(
+                        frame, current_episodes[i].instruction.instruction_text
+                    )
+                    rgb_frames[i].append(frame)
+
+                if not dones[i]:
+                    continue
+
+                ep_id = current_episodes[i].episode_id
+                stats_episodes[ep_id] = infos[i]
+                observations[i] = envs.reset_at(i)[0]
+                # reset
+                self.policy.clear_his()
+
+                if config.use_pbar:
+                    pbar.update()
+                else:
+                    logger.info(
+                        log_str.format(
+                            evaluated=len(stats_episodes),
+                            total=num_eps,
+                            time=round(time.time() - start_time),
+                        )
+                    )
+
+
+                print(f"infos: {infos[i]}")
+
+            observations = extract_instruction_tokens(
+                observations,
+                self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID,
+            )
+            batch = batch_obs(observations, self.device)
+            batch = apply_obs_transforms_batch(batch, self.obs_transforms)
+
+            envs_to_pause = []
+            next_episodes = envs.current_episodes()
+
+            for i in range(envs.num_envs):
+                if next_episodes[i].episode_id in stats_episodes:
+                    envs_to_pause.append(i)
+
+            (
+                envs,
+                not_done_masks,
+                batch,
+                rgb_frames,
+            ) = self._pause_envs(
+                envs_to_pause,
+                envs,
+                not_done_masks,
+                batch,
+                rgb_frames,
+            )
+
+        envs.close()
+        if config.use_pbar:
+            pbar.close()
+
+        aggregated_stats = {}
+        num_episodes = len(stats_episodes)
+        for k in next(iter(stats_episodes.values())).keys():
+            aggregated_stats[k] = (
+                sum(v[k] for v in stats_episodes.values()) / num_episodes
+            )
+
+
+        logger.info(f"Episodes evaluated: {num_episodes}")
+        return aggregated_stats["success"]
+
+        
+
+
 
     def _eval_checkpoint(
         self,
