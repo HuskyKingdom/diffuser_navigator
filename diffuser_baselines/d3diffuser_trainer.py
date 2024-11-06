@@ -629,7 +629,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         num_epoch_batch += 1
 
                     
-                    if (diffuser_it * self.config.IL.epochs + epoch + 1) % 10 == 0:
+                    if (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0:
                         self.save_checkpoint(
                             f"ckpt.{diffuser_it * self.config.IL.epochs + epoch + 1}.pth"
                         )
@@ -669,11 +669,11 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         loss = loss / loss_accumulation_scalar
         loss.backward()
 
-        self.grad_clipping(self.policy, 1)
+        # self.grad_clipping(self.policy, 1)
         if step_grad:
             self.optimizer.step()
             self.optimizer.zero_grad()
-            self.scheduler.step()
+            # self.scheduler.step()
 
 
 
@@ -702,9 +702,9 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             self.policy.d3pm.x0_model.parameters(), lr=self.config.IL.lr
         )
 
-        if not load_from_ckpt: # train
-            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.IL.lr, pct_start=0.35, 
-                                                steps_per_epoch=721, epochs=2000)
+        # if not load_from_ckpt: # train
+        #     self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.IL.lr, pct_start=0.35, 
+        #                                         steps_per_epoch=721, epochs=2000)
 
         if load_from_ckpt:
             ckpt_path = config.IL.ckpt_to_load
