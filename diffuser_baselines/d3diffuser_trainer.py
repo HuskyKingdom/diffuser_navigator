@@ -556,6 +556,9 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             self.config.IL.load_from_ckpt,
             4, 
         )
+        self.save_checkpoint(
+                            f"test_ckp.pth"
+        )
 
         # self.policy.eval()
         
@@ -637,9 +640,10 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
 
                     epoch_loss /= num_epoch_batch
+                    logger.info(f"epoch loss: {epoch_loss} | Batches processed: {step_id}. | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
                     epoch_loss = 0
                     num_epoch_batch = 0
-                    logger.info(f"epoch loss: {epoch_loss} | Batches processed: {step_id}. | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
+                    
 
     def grad_clipping(self, net, theta):  # @save
         """Clip the gradient."""
