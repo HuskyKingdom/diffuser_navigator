@@ -228,7 +228,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         if self.config.EVAL.USE_CKPT_CONFIG:
             config = self._setup_eval_config(ckpt)
 
-        split = config.EVAL.SPLIT
+        split = "val_unseen" # evaluation split
 
         config.defrost()
         config.TASK_CONFIG.DATASET.SPLIT = split
