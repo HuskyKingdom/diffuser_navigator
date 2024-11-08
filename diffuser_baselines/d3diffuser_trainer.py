@@ -112,7 +112,7 @@ def collate_fn(batch):
         pad_trajectories = _pad_helper(trajectories, max_len)
         pad_weights = _pad_helper(weights, max_len)
 
-        print(pad_weights.shape)
+        print(rgb_feat.shape)
         assert 1==2
 
         # Create padding_mask for this sample
