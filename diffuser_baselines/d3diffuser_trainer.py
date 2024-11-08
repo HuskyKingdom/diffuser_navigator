@@ -71,7 +71,8 @@ def collate_fn(batch):
         'gt_actions': [],            
         'trajectories':[],
         'padding_mask': [],
-        'lengths': []
+        'lengths': [],
+        'weights': [],
     }
     
     # Transpose the batch to separate each component
@@ -90,6 +91,17 @@ def collate_fn(batch):
         depth_feat = torch.tensor(sample_dict['depth_features'])  # (len_seq, 128, 4, 4)
         gt_actions = torch.tensor(sample[2])  # (len_seq)
         trajectories = torch.tensor(sample[3])  # (len_seq, 4)
+
+
+        inflections = torch.cat(
+            [
+                torch.tensor([1], dtype=torch.long),
+                (gt_actions[1:] != gt_actions[:-1]).long(),
+            ]
+        )
+
+        print(inflections.shape)
+        assert 1==2
 
         seq_len = gt_actions.shape[0]
 
