@@ -92,7 +92,7 @@ def collate_fn(batch):
         gt_actions = torch.tensor(sample[2])  # (len_seq)
         trajectories = torch.tensor(sample[3])  # (len_seq, 4)
 
-
+        inflection_weights = torch.tensor([1.0, 3.2])
         inflections = torch.cat(
             [
                 torch.tensor([1], dtype=torch.long),
@@ -100,7 +100,7 @@ def collate_fn(batch):
             ]
         )
 
-        print(inflections)
+        print(inflection_weights[inflection_weights])
         print(gt_actions)
         assert 1==2
 
