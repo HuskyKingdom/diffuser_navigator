@@ -23,7 +23,7 @@ IL:
 
   DAGGER:
     iterations: 1
-    update_size: 50
+    update_size: 10819
     p: 1.0
     preload_lmdb_features: True
     lmdb_features_dir: data/trajectories_dirs/seq2seq/trajectories.lmdb
