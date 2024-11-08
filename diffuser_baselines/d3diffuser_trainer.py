@@ -84,6 +84,7 @@ def collate_fn(batch):
     max_len = max(lengths)
 
     for sample in batch:
+
         # Extract data from the sample
         sample_dict = sample[0]
         instr = torch.tensor(sample_dict['instruction'][0])  # (len_seq, 200) only take one instruction
@@ -92,6 +93,7 @@ def collate_fn(batch):
         gt_actions = torch.tensor(sample[2])  # (len_seq)
         trajectories = torch.tensor(sample[3])  # (len_seq, 4)
 
+        # compute weights
         inflection_weights = torch.tensor([1.0, 3.2])
         inflections = torch.cat(
             [
@@ -99,10 +101,7 @@ def collate_fn(batch):
                 (gt_actions[1:] != gt_actions[:-1]).long(),
             ]
         )
-
-        print(inflection_weights[inflections])
-        print(gt_actions)
-        assert 1==2
+        weights = inflection_weights[inflections]
 
         seq_len = gt_actions.shape[0]
 
@@ -111,6 +110,10 @@ def collate_fn(batch):
         pad_depth_feat = _pad_helper(depth_feat, max_len)
         pad_gt_actions = _pad_helper(gt_actions, max_len)
         pad_trajectories = _pad_helper(trajectories, max_len)
+        pad_weights = _pad_helper(weights, max_len)
+
+        print(pad_weights.shape)
+        assert 1==2
 
         # Create padding_mask for this sample
         mask = torch.ones(max_len, dtype=torch.bool)
