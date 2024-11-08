@@ -333,7 +333,11 @@ class MaskedSoftmaxCELoss(nn.CrossEntropyLoss):
         unweighted_loss = super(MaskedSoftmaxCELoss, self).forward(
             pred.permute(0, 2, 1), label)
         
+
         weighted_weights = (unweighted_loss * weights).sum(dim=1)
+        print(weighted_weights[0])
+        print(valid_len[0])
+        assert 1==2
         weighted_loss = torch.where(
             valid_len != 0, weighted_weights / valid_len, torch.tensor(0.0, device=pred.device)
         )

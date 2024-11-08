@@ -70,6 +70,7 @@ class D3DiffusionPolicy(Policy):
         'trajectories': None,
         'padding_mask': None,
         'lengths': None,
+        'weights': None,
         }
 
         
@@ -111,9 +112,6 @@ class D3DiffusionPolicy(Policy):
         'lengths': observations['lengths'].to(observations['instruction'].device),
         'weights': observations['weights'].to(observations['instruction'].device),
         }
-
-        print(collected_data)
-        assert 1==2
 
         loss = self.navigator(collected_data,(B,T), inference = False)
 
