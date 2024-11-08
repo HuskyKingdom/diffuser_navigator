@@ -112,8 +112,7 @@ def collate_fn(batch):
         pad_trajectories = _pad_helper(trajectories, max_len)
         pad_weights = _pad_helper(weights, max_len)
 
-        print(rgb_feat.shape)
-        assert 1==2
+
 
         # Create padding_mask for this sample
         mask = torch.ones(max_len, dtype=torch.bool)
@@ -126,6 +125,7 @@ def collate_fn(batch):
         collected_data['gt_actions'].append(pad_gt_actions)
         collected_data['trajectories'].append(pad_trajectories)
         collected_data['padding_mask'].append(mask) # padding mask for dec_input
+        collected_data["weights"].append(pad_weights)
 
     # Stack each list in collected_data into a tensor
     for key in collected_data:
