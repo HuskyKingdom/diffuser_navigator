@@ -100,7 +100,7 @@ def collate_fn(batch):
             ]
         )
 
-        print(inflections.shape)
+        print(inflections)
         assert 1==2
 
         seq_len = gt_actions.shape[0]
