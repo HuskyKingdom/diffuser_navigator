@@ -4,13 +4,13 @@ SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 1
 TENSORBOARD_DIR: data/tensorboard_dirs/seq2seq
-CHECKPOINT_FOLDER: data/checkpoints/seq2seq
+CHECKPOINT_FOLDER: data/checkpoints/seq2seq/ckpt.19.pth
 EVAL_CKPT_PATH_DIR: data/checkpoints/seq2seq
 RESULTS_DIR: data/checkpoints/seq2seq/evals
 
 EVAL:
   USE_CKPT_CONFIG: False
-  SPLIT: val_unseen
+  SPLIT: val_seen
   EPISODE_COUNT: -1
 
 IL:

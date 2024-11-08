@@ -285,7 +285,7 @@ class D3DiffusionNavigator(nn.Module):
         if not inference: # compute action featrues based on gt actions
 
             # construct input as [<start>,...]
-            action_except = observations['gt_actions'][:, :-1] # remove last element
+            action_except = observations['gt_actions'][:, :-1] # remove last element <end>
             action_start_token = torch.full((observations['gt_actions'].shape[0], 1), 4).to(observations['gt_actions'].device) # add start token
             action_input = torch.cat([action_start_token, action_except], dim=1) # construct input
 
