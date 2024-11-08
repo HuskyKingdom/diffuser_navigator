@@ -100,7 +100,7 @@ def collate_fn(batch):
             ]
         )
 
-        print(inflection_weights[inflection_weights])
+        print(inflection_weights[inflections])
         print(gt_actions)
         assert 1==2
 
