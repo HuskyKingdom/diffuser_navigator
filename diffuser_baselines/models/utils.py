@@ -335,8 +335,8 @@ class MaskedSoftmaxCELoss(nn.CrossEntropyLoss):
         
 
         weighted_weights = (unweighted_loss * weights).sum(dim=1)
-        print(weights[0])
-        print(valid_len[0])
+        print(weights[1])
+        print(valid_len[1])
         assert 1==2
         weighted_loss = torch.where(
             valid_len != 0, weighted_weights / valid_len, torch.tensor(0.0, device=pred.device)
