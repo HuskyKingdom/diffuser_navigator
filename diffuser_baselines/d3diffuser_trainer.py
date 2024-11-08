@@ -656,7 +656,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
 
 
-                    if (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0: # evaluate model
+                    if (diffuser_it * self.config.IL.epochs + epoch + 1) == 1 or (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0: # evaluate model
                         val_suc = self._train_eval_checkpoint()
                         writer.add_scalar(
                             f"traing_eval_{diffuser_it}", val_suc, (diffuser_it * self.config.IL.epochs + epoch + 1)
