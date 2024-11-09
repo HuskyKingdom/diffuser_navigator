@@ -26,7 +26,7 @@ IL:
     update_size: 10819
     p: 1.0
     preload_lmdb_features: True
-    lmdb_features_dir: data/trajectories_dirs/diffuser/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/seq2seq/trajectories.lmdb
 
 MODEL:
   policy_name: CMAPolicy
