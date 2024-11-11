@@ -107,7 +107,7 @@ class D3DiffusionPolicy(Policy):
         'rgb_features': rgb_features.to(observations['instruction'].device),
         'depth_features': depth_features.to(observations['instruction'].device),
         'gt_actions': observations['gt_actions'],
-        'prev_actions': observations['prev_actions'],
+        'prev_actions': observations['prev_actions'].to(observations['instruction'].device),
         'trajectories': observations['trajectories'].to(observations['instruction'].device),
         'padding_mask': observations['padding_mask'].to(observations['instruction'].device).bool(),
         'lengths': observations['lengths'].to(observations['instruction'].device),
@@ -288,11 +288,12 @@ class D3DiffusionNavigator(nn.Module):
 
             # construct input as [<start>,...]
             action_except = observations['gt_actions'][:, :-1] # remove last element <end>
-            action_start_token = torch.full((observations['gt_actions'].shape[0], 1), 4).to(observations['gt_actions'].device) # add start token
+            action_start_token = torch.full((observations['prev_actions'].shape[0], 1), 4).to(observations['prev_actions'].device) # add start token
             
-            action_input = torch.cat([action_start_token, action_except], dim=1) # construct input
+            o_input = torch.cat([action_start_token, action_except], dim=1)
+            action_input = torch.cat([action_start_token, observations['prev_actions']], dim=1) # construct input
 
-            print(f"original actions {action_input} | new actions {observations['prev_actions']}")
+            print(f"o {action_except} | n {action_input}")
 
             action_input = action_input.view(-1,) # # (B,T) -> (B+T,)
             action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
