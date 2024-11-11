@@ -707,7 +707,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         if step_grad:
             self.optimizer.step()
             self.optimizer.zero_grad()
-            if self.config.lr_scheduler:
+            if self.config.lr_Schedule:
                 self.scheduler.step()
 
 
@@ -737,7 +737,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             self.policy.d3pm.x0_model.parameters(), lr=self.config.IL.lr
         )
 
-        if not load_from_ckpt and config.lr_scheduler: # train
+        if not load_from_ckpt and config.lr_Schedule: # train
             self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.IL.lr, pct_start=0.35, 
                                                 steps_per_epoch=540, epochs=self.config.IL.epochs)
 
