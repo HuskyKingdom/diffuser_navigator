@@ -279,7 +279,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         if config.EVAL.EPISODE_COUNT > -1:
             num_eps = min(config.EVAL.EPISODE_COUNT, num_eps)
 
-        pbar = tqdm.tqdm(total=200) if config.use_pbar else None
+        pbar = tqdm.tqdm(total=10) if config.use_pbar else None
         log_str = (
             f"Test"
             " [Episodes evaluated: {evaluated}/{total}]"
@@ -290,7 +290,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         action_candidates = [[]]
     
 
-        while envs.num_envs > 0 and len(stats_episodes) < 200:
+        while envs.num_envs > 0 and len(stats_episodes) < 10:
             
             # retrive pose & append history rgb
             all_pose = []
@@ -466,6 +466,10 @@ class BaseVLNCETrainer(BaseILTrainer):
         batch = batch_obs(observations, self.device)
         batch = apply_obs_transforms_batch(batch, self.obs_transforms)
 
+        prev_actions = torch.zeros(
+            envs.num_envs, 1, device=self.device, dtype=torch.long
+        )
+
         stats_episodes = {}
 
         rgb_frames = [[] for _ in range(envs.num_envs)]
@@ -498,10 +502,12 @@ class BaseVLNCETrainer(BaseILTrainer):
             
             current_episodes = envs.current_episodes()
 
-            actions = self.policy.act(batch,print_info=True)
+            actions = self.policy.act(batch,prev_actions,print_info=True)
+            prev_actions.copy_(actions)
 
             outputs = envs.step([a[0].item() for a in actions])
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
+            
 
 
             not_done_masks = torch.tensor(
@@ -526,6 +532,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 stats_episodes[ep_id] = infos[i]
                 observations[i] = envs.reset_at(i)[0]
                 # reset
+                prev_actions[i] = torch.zeros(1, dtype=torch.long)
                 self.policy.clear_his()
 
                 if config.use_pbar:
