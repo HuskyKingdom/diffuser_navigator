@@ -35,7 +35,7 @@ class D3DiffusionPolicy(Policy):
         self.pre_actions = []
         
 
-    def act(self,observations, prev_actions, encode_only=False,print_info = False): # in dagger act(), set self_action_source=false since the prev action actually performed not necceary comes from the model
+    def act(self,observations, prev_actions, encode_only=False,print_info = False): 
 
         
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
@@ -58,8 +58,6 @@ class D3DiffusionPolicy(Policy):
         B,T,C,H,W = depth_features.shape
         depth_features = depth_features.view(-1,C,H,W)
         
-        print(prev_actions)
-    
 
 
         # format batch data
@@ -77,7 +75,7 @@ class D3DiffusionPolicy(Policy):
 
         
         action = self.navigator(collected_data,(B,T), inference = True)
-        self.pre_actions.append(action.item())
+        self.pre_actions.append(prev_actions.item())
 
         if print_info:
             print(f"Action inferenced : {action.item()}, with history length {len(self.pre_actions)}")
