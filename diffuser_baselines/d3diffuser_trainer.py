@@ -475,6 +475,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     batch,encode_only = False
                 ) # inference for getting features only
 
+                print(f"action {actions} | expert action {batch[expert_uuid].long()}")
+
                 actions = torch.where(
                     torch.rand_like(actions, dtype=torch.float) < beta,
                     batch[expert_uuid].long(),
@@ -520,7 +522,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 )
                 
                 
-                print(f"action {actions} | expert action {batch[expert_uuid].long()}")
+                
                     
                 batch = batch_obs(observations, self.device)
                 batch = apply_obs_transforms_batch(batch, self.obs_transforms)
