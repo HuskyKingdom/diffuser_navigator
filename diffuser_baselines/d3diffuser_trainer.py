@@ -548,6 +548,9 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             rgb_hook.remove()
         if depth_hook is not None:
             depth_hook.remove()
+        
+        # reset
+        self.policy.clear_his()
 
     def train(self) -> None:
         """Main method for training DAgger."""
