@@ -329,8 +329,8 @@ class D3DiffusionNavigator(nn.Module):
             context_feature = context_feature.view(B,T,-1)
             causal_mask = self.generate_causal_mask(T,device=context_feature.device)
 
-            print(f"context {context_feature.shape}")
-            
+            # print(f"context {context_feature.shape}")
+
             decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, causal_mask) # (bs,seq_len,4)
 
             # action sampling
