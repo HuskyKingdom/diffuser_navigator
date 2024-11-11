@@ -58,7 +58,8 @@ class D3DiffusionPolicy(Policy):
         B,T,C,H,W = depth_features.shape
         depth_features = depth_features.view(-1,C,H,W)
         
-
+        if prev_actions.item() != 0:
+            self.pre_actions.append(prev_actions.item())
 
         # format batch data
 
@@ -75,8 +76,7 @@ class D3DiffusionPolicy(Policy):
 
         
         action = self.navigator(collected_data,(B,T), inference = True)
-        if prev_actions.item() != 0:
-            self.pre_actions.append(prev_actions.item())
+        
 
         if print_info:
             print(f"Action inferenced : {action.item()}, with history length {len(self.pre_actions)}")
