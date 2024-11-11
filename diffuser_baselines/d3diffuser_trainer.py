@@ -70,6 +70,7 @@ def collate_fn(batch):
         'depth_features': [],         
         'gt_actions': [],            
         'trajectories':[],
+        'prev_actions':[],
         'padding_mask': [],
         'lengths': [],
         'weights': [],
@@ -92,6 +93,7 @@ def collate_fn(batch):
         depth_feat = torch.tensor(sample_dict['depth_features'])  # (len_seq, 128, 4, 4)
         gt_actions = torch.tensor(sample[2])  # (len_seq)
         trajectories = torch.tensor(sample[3])  # (len_seq, 4)
+        prev_actions = torch.tensor(sample[1]) 
 
         # compute weights
         inflection_weights = torch.tensor([1.0, 3.2])
@@ -109,6 +111,7 @@ def collate_fn(batch):
         pad_rgb_feat = _pad_helper(rgb_feat, max_len)
         pad_depth_feat = _pad_helper(depth_feat, max_len)
         pad_gt_actions = _pad_helper(gt_actions, max_len)
+        pad_prev_actions = _pad_helper(prev_actions, max_len)
         pad_trajectories = _pad_helper(trajectories, max_len)
         pad_weights = _pad_helper(weights, max_len)
 
@@ -123,6 +126,7 @@ def collate_fn(batch):
         collected_data['rgb_features'].append(pad_rgb_feat)
         collected_data['depth_features'].append(pad_depth_feat)
         collected_data['gt_actions'].append(pad_gt_actions)
+        collected_data["prev_actions"].append(pad_prev_actions)
         collected_data['trajectories'].append(pad_trajectories)
         collected_data['padding_mask'].append(mask) # padding mask for dec_input
         collected_data["weights"].append(pad_weights)
@@ -423,7 +427,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             np.array([step[2] for step in ep], dtype=np.int64),
                             np.array([step[3] for step in ep], dtype=np.float32),
                         ]
-                        print(f"prev {np.array([step[1] for step in ep], dtype=np.int64)} | oracle {np.array([step[2] for step in ep], dtype=np.int64)}")
+                        # print(f"prev {np.array([step[1] for step in ep], dtype=np.int64)} | oracle {np.array([step[2] for step in ep], dtype=np.int64)}")
                         txn.put(
                             str(start_id + collected_eps).encode(),
                             msgpack_numpy.packb(
