@@ -415,13 +415,16 @@ class DaggerTrainer(BaseVLNCETrainer):
                     not_done_masks,
                     deterministic=False,
                 )
+
+                print(f"action {actions} | expert action {batch[expert_uuid].long()}")
+                
                 actions = torch.where(
                     torch.rand_like(actions, dtype=torch.float) < beta,
                     batch[expert_uuid].long(),
                     actions,
                 )
 
-                print(f"action {actions} | expert action {batch[expert_uuid].long()}")
+                
 
                 for i in range(envs.num_envs):
                     if rgb_features is not None:
