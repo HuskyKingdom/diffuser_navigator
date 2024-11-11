@@ -31,8 +31,8 @@ IL:
     
   DAGGER:
     iterations: 10
-    update_size: 20
-    p: 0.10
+    update_size: 5000
+    p: 0.75
     preload_lmdb_features: False
     lmdb_features_dir: data/trajectories_dirs/d3diffuser_da/trajectories.lmdb
     
