@@ -416,8 +416,7 @@ class DaggerTrainer(BaseVLNCETrainer):
                     deterministic=False,
                 )
 
-                print(f"action {actions} | expert action {batch[expert_uuid].long()}")
-                
+
                 actions = torch.where(
                     torch.rand_like(actions, dtype=torch.float) < beta,
                     batch[expert_uuid].long(),

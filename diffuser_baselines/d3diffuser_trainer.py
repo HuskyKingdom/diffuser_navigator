@@ -407,6 +407,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 for i in range(envs.num_envs):
                     if dones[i] and not skips[i]:
                         ep = episodes[i]
+                        print(f"prev {ep[1]} | oracle {ep[2]}")
                         traj_obs = batch_obs(
                             [step[0] for step in ep],
                             device=torch.device("cpu"),
@@ -475,7 +476,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     batch,encode_only = False
                 ) # inference for getting features only
 
-                print(f"action {actions} | expert action {batch[expert_uuid].long()}")
+                # print(f"action {actions} | expert action {batch[expert_uuid].long()}")
 
                 actions = torch.where(
                     torch.rand_like(actions, dtype=torch.float) < beta,
@@ -510,6 +511,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     skips, torch.zeros_like(actions), actions
                 )
                 skips = skips.squeeze(-1).to(device="cpu", non_blocking=True)
+                prev_actions.copy_(actions)
 
                 outputs = envs.step([a[0].item() for a in actions])
                 observations, _, dones, _ = [list(x) for x in zip(*outputs)]
