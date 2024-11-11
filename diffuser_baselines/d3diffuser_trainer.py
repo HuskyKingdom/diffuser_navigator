@@ -753,6 +753,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 self.start_epoch = ckpt_dict["epoch"] + 1
                 self.step_id = ckpt_dict["step_id"]
             logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
+            assert 1==2
 
         params = sum(param.numel() for param in self.policy.parameters())
         params_t = sum(
