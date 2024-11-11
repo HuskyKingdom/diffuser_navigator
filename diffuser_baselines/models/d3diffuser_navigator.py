@@ -61,6 +61,8 @@ class D3DiffusionPolicy(Policy):
         if prev_actions.item() != 0:
             self.pre_actions.append(prev_actions.item())
 
+        print(f"rgb {rgb_features.shape}")
+
         # format batch data
 
         collected_data = {
