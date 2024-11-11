@@ -520,8 +520,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 )
                 
                 
-                print(actions)
-                print(batch[expert_uuid].long())
+                print(f"action {actions} | expert action {batch[expert_uuid].long()}")
                     
                 batch = batch_obs(observations, self.device)
                 batch = apply_obs_transforms_batch(batch, self.obs_transforms)
