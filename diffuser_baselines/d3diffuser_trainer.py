@@ -453,6 +453,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                     if dones[i]:
                         episodes[i] = []
+                        # reset
+                        self.policy.clear_his()
 
                 if ensure_unique_episodes:
                     (
