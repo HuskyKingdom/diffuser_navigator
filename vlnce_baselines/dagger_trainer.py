@@ -421,6 +421,8 @@ class DaggerTrainer(BaseVLNCETrainer):
                     actions,
                 )
 
+                print(f"action {actions} | expert action {batch[expert_uuid].long()}")
+
                 for i in range(envs.num_envs):
                     if rgb_features is not None:
                         observations[i]["rgb_features"] = rgb_features[i]
