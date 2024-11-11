@@ -476,7 +476,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     batch,encode_only = False
                 ) # inference for getting features only
 
-                print(f"action {actions} | expert action {batch[expert_uuid].long()}")
+                #print(f"action {actions} | expert action {batch[expert_uuid].long()}")
 
                 actions = torch.where(
                     torch.rand_like(actions, dtype=torch.float) < beta,
