@@ -35,7 +35,7 @@ class D3DiffusionPolicy(Policy):
         self.pre_actions = []
         
 
-    def act(self,observations, encode_only=False,print_info = False):
+    def act(self,observations, prev_actions, encode_only=False,print_info = False): # in dagger act(), set self_action_source=false since the prev action actually performed not necceary comes from the model
 
         
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
@@ -58,6 +58,8 @@ class D3DiffusionPolicy(Policy):
         B,T,C,H,W = depth_features.shape
         depth_features = depth_features.view(-1,C,H,W)
         
+        print(prev_actions)
+    
 
 
         # format batch data
@@ -87,7 +89,6 @@ class D3DiffusionPolicy(Policy):
 
     def build_loss(self,observations):
 
-        
         
 
 
@@ -287,15 +288,10 @@ class D3DiffusionNavigator(nn.Module):
         if not inference: # compute action featrues based on gt actions
 
             # construct input as [<start>,...]
-            action_except = observations['gt_actions'][:, :-1] # remove last element <end>
+            # action_except = observations['gt_actions'][:, :-1] # remove last element <end>
             action_start_token = torch.full((observations['prev_actions'].shape[0], 1), 4).to(observations['prev_actions'].device) # add start token
-            
-            action_except_1 = observations['prev_actions'][:, 1:] # remove first
-            o_input = torch.cat([action_start_token, action_except], dim=1)
-            action_input = torch.cat([action_start_token, action_except_1], dim=1) # construct input
-
-            print(f"o {o_input } | n {action_input}")
-
+            action_except = observations['prev_actions'][:, 1:] # remove first
+            action_input = torch.cat([action_start_token, action_except], dim=1) # construct input
             action_input = action_input.view(-1,) # # (B,T) -> (B+T,)
             action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
 
