@@ -75,7 +75,8 @@ class D3DiffusionPolicy(Policy):
 
         
         action = self.navigator(collected_data,(B,T), inference = True)
-        self.pre_actions.append(prev_actions.item())
+        if prev_actions.item() != 0:
+            self.pre_actions.append(prev_actions.item())
 
         if print_info:
             print(f"Action inferenced : {action.item()}, with history length {len(self.pre_actions)}")
