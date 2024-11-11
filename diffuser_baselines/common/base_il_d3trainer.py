@@ -331,6 +331,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 observations[i] = envs.reset_at(i)[0]
                 # reset
                 self.policy.clear_his()
+                prev_actions[i] = torch.zeros(1, dtype=torch.long)
 
                 if config.use_pbar:
                     pbar.update()
