@@ -265,6 +265,10 @@ class BaseVLNCETrainer(BaseILTrainer):
         batch = batch_obs(observations, self.device)
         batch = apply_obs_transforms_batch(batch, self.obs_transforms)
 
+        prev_actions = torch.zeros(
+            envs.num_envs, 1, device=self.device, dtype=torch.long
+        )
+
         stats_episodes = {}
 
         rgb_frames = [[] for _ in range(envs.num_envs)]
@@ -296,7 +300,9 @@ class BaseVLNCETrainer(BaseILTrainer):
             
             current_episodes = envs.current_episodes()
 
-            actions = self.policy.act(batch,print_info=False)
+  
+            actions = self.policy.act(batch,prev_actions,print_info=False)
+            prev_actions.copy_(actions)
 
             outputs = envs.step([a[0].item() for a in actions])
             observations, _, dones, infos = [list(x) for x in zip(*outputs)]
