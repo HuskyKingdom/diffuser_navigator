@@ -470,10 +470,14 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         break
 
                 actions = self.policy.act(
-                    batch,[1],encode_only = True
+                    batch,encode_only = False
                 ) # inference for getting features only
 
-                actions = batch[expert_uuid].long() # oracle actions only
+                actions = torch.where(
+                    torch.rand_like(actions, dtype=torch.float) < beta,
+                    batch[expert_uuid].long(),
+                    actions,
+                )
 
                 for i in range(envs.num_envs):
                     if rgb_features is not None:
@@ -581,14 +585,12 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             purge_step=0,
         ) as writer:
             for diffuser_it in range(self.config.IL.DAGGER.iterations):
-
                 # get dataset ---
                 step_id = 0
                 if not self.config.IL.DAGGER.preload_lmdb_features:
                     self._update_dataset(
                         diffuser_it + (1 if self.config.IL.load_from_ckpt else 0)
                     )
-                    assert 1==2
                 # get dataset ---
                     
                 diffusion_dataset = TrajectoryDataset(self.lmdb_features_dir,self.config.IL.DAGGER.lmdb_map_size,self.config.IL.batch_size)
@@ -689,6 +691,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         observations,
         step_grad: bool = True,
         loss_accumulation_scalar: int = 1,
+        config = None,
     ):
         
 
@@ -704,7 +707,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         if step_grad:
             self.optimizer.step()
             self.optimizer.zero_grad()
-            self.scheduler.step()
+            if self.config.lr_scheduler:
+                self.scheduler.step()
 
 
 
@@ -733,7 +737,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             self.policy.d3pm.x0_model.parameters(), lr=self.config.IL.lr
         )
 
-        if not load_from_ckpt: # train
+        if not load_from_ckpt and config.lr_scheduler: # train
             self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.IL.lr, pct_start=0.35, 
                                                 steps_per_epoch=540, epochs=self.config.IL.epochs)
 

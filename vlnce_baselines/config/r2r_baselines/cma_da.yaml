@@ -6,6 +6,8 @@ TENSORBOARD_DIR: data/tensorboard_dirs/cma_da
 CHECKPOINT_FOLDER: data/checkpoints/cma_da
 EVAL_CKPT_PATH_DIR: data/checkpoints/cma_da
 RESULTS_DIR: data/checkpoints/cma_da/evals
+lr_Schedule: False
+
 
 EVAL:
   USE_CKPT_CONFIG: False
