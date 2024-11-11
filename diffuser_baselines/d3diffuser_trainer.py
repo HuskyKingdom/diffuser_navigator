@@ -407,7 +407,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 for i in range(envs.num_envs):
                     if dones[i] and not skips[i]:
                         ep = episodes[i]
-                        print(f"prev {ep[1]} | oracle {ep[2]}")
                         traj_obs = batch_obs(
                             [step[0] for step in ep],
                             device=torch.device("cpu"),
@@ -424,6 +423,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             np.array([step[2] for step in ep], dtype=np.int64),
                             np.array([step[3] for step in ep], dtype=np.float32),
                         ]
+                        print(f"prev {np.array([step[1] for step in ep], dtype=np.int64)} | oracle {np.array([step[2] for step in ep], dtype=np.int64)}")
                         txn.put(
                             str(start_id + collected_eps).encode(),
                             msgpack_numpy.packb(
