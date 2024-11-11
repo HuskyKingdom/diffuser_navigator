@@ -423,7 +423,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             np.array([step[2] for step in ep], dtype=np.int64),
                             np.array([step[3] for step in ep], dtype=np.float32),
                         ]
-                        print(f"prev {np.array([step[1] for step in ep], dtype=np.int64)} | oracle {np.array([step[2] for step in ep], dtype=np.int64)}")
+                        # print(f"prev {np.array([step[1] for step in ep], dtype=np.int64)} | oracle {np.array([step[2] for step in ep], dtype=np.int64)}")
                         txn.put(
                             str(start_id + collected_eps).encode(),
                             msgpack_numpy.packb(
