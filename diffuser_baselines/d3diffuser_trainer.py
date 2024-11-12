@@ -486,8 +486,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     batch,prev_actions,encode_only = False
                     )
 
-                print(beta)
-
  
                 # actions = self.policy.act(
                 #     batch,prev_actions,encode_only = False
