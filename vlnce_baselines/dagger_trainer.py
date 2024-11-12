@@ -518,9 +518,9 @@ class DaggerTrainer(BaseVLNCETrainer):
             flush_secs=self.flush_secs,
             purge_step=0,
         ) as writer:
-            for dagger_it in range(2,self.config.IL.DAGGER.iterations):
+            for dagger_it in range(self.config.IL.DAGGER.iterations):
                 step_id = 0
-                print(dagger_it)
+
                 if not self.config.IL.DAGGER.preload_lmdb_features:
                     self._update_dataset(
                         dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
