@@ -661,22 +661,31 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                     # epoch ends
 
-
-                    
-                    if (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0: # saving model
+                    if self.config.dagger != None:
                         self.save_checkpoint(
                             f"ckpt.{diffuser_it * self.config.IL.epochs + epoch + 1}.pth"
                         )
+
+                        if (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0: # evaluate model
+                            val_suc = self._train_eval_checkpoint()
+                            writer.add_scalar(
+                                f"traing_eval_{diffuser_it}", val_suc, (diffuser_it * self.config.IL.epochs + epoch + 1)
+                            )
                     else:
-                        print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
+                        if (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0: # saving model
+                            self.save_checkpoint(
+                                f"ckpt.{diffuser_it * self.config.IL.epochs + epoch + 1}.pth"
+                            )
+                        else:
+                            print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
 
 
-                    if (diffuser_it * self.config.IL.epochs + epoch + 1) == 1 or (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0: # evaluate model
-                        val_suc = self._train_eval_checkpoint()
-                        writer.add_scalar(
-                            f"traing_eval_{diffuser_it}", val_suc, (diffuser_it * self.config.IL.epochs + epoch + 1)
-                        )
-                    
+                        if (diffuser_it * self.config.IL.epochs + epoch + 1) == 1 or (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0: # evaluate model
+                            val_suc = self._train_eval_checkpoint()
+                            writer.add_scalar(
+                                f"traing_eval_{diffuser_it}", val_suc, (diffuser_it * self.config.IL.epochs + epoch + 1)
+                            )
+                        
                     self.policy.train()
                     
                     
