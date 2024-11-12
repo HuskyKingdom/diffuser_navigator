@@ -43,6 +43,8 @@ class D3DiffusionPolicy(Policy):
         # storing histories
         self.rgb_his.append(rgb_features)
         self.depth_his.append(depth_features)
+        if prev_actions.item() != 0:
+            self.pre_actions.append(prev_actions.item())
 
         if encode_only:
             return None
@@ -60,8 +62,7 @@ class D3DiffusionPolicy(Policy):
         B,T,C,H,W = depth_features.shape
         depth_features = depth_features.view(-1,C,H,W)
         
-        if prev_actions.item() != 0:
-            self.pre_actions.append(prev_actions.item())
+        
 
 
         # format batch data

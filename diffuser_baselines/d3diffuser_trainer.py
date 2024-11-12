@@ -488,7 +488,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                 print(beta)
 
-
+ 
                 # actions = self.policy.act(
                 #     batch,prev_actions,encode_only = False
                 # ) # inference for getting features only
