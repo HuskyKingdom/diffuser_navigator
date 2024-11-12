@@ -40,13 +40,15 @@ class D3DiffusionPolicy(Policy):
         
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
 
+        # storing histories
+        self.rgb_his.append(rgb_features)
+        self.depth_his.append(depth_features)
+
         if encode_only:
             return None
 
 
-        # storing histories
-        self.rgb_his.append(rgb_features)
-        self.depth_his.append(depth_features)
+        # action inference
 
         rgb_features = torch.stack(self.rgb_his, dim=1)
         depth_features = torch.stack(self.depth_his, dim=1)

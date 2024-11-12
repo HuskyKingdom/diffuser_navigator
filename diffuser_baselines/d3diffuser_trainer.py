@@ -475,18 +475,31 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     )
                     if envs.num_envs == 0:
                         break
-
-                actions = self.policy.act(
+                
+                if (torch.rand_like(actions, dtype=torch.float) < beta):
+                    actions = self.policy.act(
+                    batch,prev_actions,encode_only = True
+                    ) # inference for getting features only
+                    actions = batch[expert_uuid].long()
+                else:
+                    actions = self.policy.act(
                     batch,prev_actions,encode_only = False
-                ) # inference for getting features only
+                    )
 
-                #print(f"action {actions} | expert action {batch[expert_uuid].long()}")
+                print(self.iterations)
 
-                actions = torch.where(
-                    torch.rand_like(actions, dtype=torch.float) < beta,
-                    batch[expert_uuid].long(),
-                    actions,
-                )
+
+                # actions = self.policy.act(
+                #     batch,prev_actions,encode_only = False
+                # ) # inference for getting features only
+
+                # #print(f"action {actions} | expert action {batch[expert_uuid].long()}")
+
+                # actions = torch.where(
+                #     torch.rand_like(actions, dtype=torch.float) < beta,
+                #     batch[expert_uuid].long(),
+                #     actions,
+                # )
 
                 for i in range(envs.num_envs):
                     if rgb_features is not None:
