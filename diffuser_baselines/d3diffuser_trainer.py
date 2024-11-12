@@ -608,7 +608,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             flush_secs=self.flush_secs,
             purge_step=0,
         ) as writer:
-            for diffuser_it in range(2,self.config.IL.DAGGER.iterations):
+            for diffuser_it in range(self.config.IL.DAGGER.iterations):
                 # get dataset ---
                 step_id = 0
                 if not self.config.IL.DAGGER.preload_lmdb_features:
