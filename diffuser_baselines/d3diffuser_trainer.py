@@ -476,7 +476,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     if envs.num_envs == 0:
                         break
                 
-                if (torch.rand_like(batch[expert_uuid].long(), dtype=torch.float) < beta):
+                if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta):
                     actions = self.policy.act(
                     batch,prev_actions,encode_only = True
                     ) # inference for getting features only
