@@ -406,6 +406,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             checkpoint_index: index of the current checkpoint
         """
         logger.info(f"checkpoint_path: {checkpoint_path}")
+        assert 1==2
 
         config = self.config.clone()
         if self.config.EVAL.USE_CKPT_CONFIG:
