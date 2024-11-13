@@ -46,7 +46,7 @@ DIFFUSER:
   diffusion_timesteps: 100
   logging_file: data/loggings/train.log
   saving_frequency: 20
-  LR: 2.5e-3
+  LR: 2.5e-5
   traj_length: 3
   beta: 0.1 
   action_space: 4
