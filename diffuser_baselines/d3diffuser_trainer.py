@@ -775,7 +775,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         self.policy.to(self.device)
 
         self.optimizer = torch.optim.AdamW(
-            self.policy.d3pm.x0_model.parameters(), lr=self.config.IL.lr
+            self.policy.parameters(), lr=self.config.IL.lr
         )
 
         if not load_from_ckpt and config.lr_Schedule: # train

@@ -29,7 +29,6 @@ class D3DiffusionPolicy(Policy):
         super(Policy, self).__init__()
         self.config = config
         self.navigator = D3DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
-        self.d3pm = D3PM(self.navigator,self.config.DIFFUSER.diffusion_timesteps,self.config.DIFFUSER.action_space)
         self.rgb_his = []
         self.depth_his = []
         self.pre_actions = []
