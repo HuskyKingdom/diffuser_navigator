@@ -5,7 +5,7 @@ TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 1
 TENSORBOARD_DIR: data/tensorboard_dirs/d3diffuser_da
 CHECKPOINT_FOLDER: data/checkpoints/d3diffuser_da
-EVAL_CKPT_PATH_DIR: data/checkpoints/d3diffuser_da/ckpt.28.pth
+EVAL_CKPT_PATH_DIR: data/checkpoints/d3diffuser_da/ckpt.100.pth
 RESULTS_DIR: data/checkpoints/d3diffuser_da/evals
 VIDEO_OPTION: []
 lr_Schedule: False
@@ -19,7 +19,7 @@ EVAL:
   ACTION_POP: True
 
 IL:
-  ckpt_to_load: data/checkpoints/d3diffuser_da/ckpt.28.pth
+  ckpt_to_load: data/checkpoints/d3diffuser_da/ckpt.100.pth
   load_from_ckpt: True # for testing overfitting only 
   epochs: 4
   batch_size: 20
