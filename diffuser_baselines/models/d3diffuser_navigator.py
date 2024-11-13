@@ -118,6 +118,7 @@ class D3DiffusionPolicy(Policy):
         'weights': observations['weights'].to(observations['instruction'].device),
         }
 
+        print(f"gt {collected_data['gt_actions'][0]} | prev {collected_data['prev_actions'][0]}")
         loss = self.navigator(collected_data,(B,T), inference = False)
 
 
