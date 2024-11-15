@@ -398,7 +398,7 @@ class SelfAttentionLayer(nn.Module):
 class FFWRelativeCrossAttentionModule(nn.Module):
 
     def __init__(self, embedding_dim, num_attn_heads, num_layers,
-                 use_adaln=True,reversing=False):
+                 use_adaln=True,reversing=False,dropout=0.0):
         super().__init__()
 
         self.num_layers = num_layers
@@ -406,10 +406,10 @@ class FFWRelativeCrossAttentionModule(nn.Module):
         self.ffw_layers = nn.ModuleList()
         for _ in range(num_layers):
             self.attn_layers.append(RelativeCrossAttentionLayer(
-                embedding_dim, num_attn_heads, use_adaln=use_adaln,reversing=reversing
+                embedding_dim, num_attn_heads, use_adaln=use_adaln,reversing=reversing,dropout=dropout
             ))
             self.ffw_layers.append(FeedforwardLayer(
-                embedding_dim, embedding_dim, use_adaln=use_adaln
+                embedding_dim, embedding_dim, use_adaln=use_adaln,dropout=dropout
             ))
 
     def forward(self, query, value, diff_ts=None,
@@ -477,7 +477,7 @@ def vis_attention(weights, pad_mask, k=None):
 class FFWRelativeSelfAttentionModule(nn.Module):
 
     def __init__(self, embedding_dim, num_attn_heads, num_layers,
-                 use_adaln=True):
+                 use_adaln=True,dropout=0.0):
         super().__init__()
 
         self.num_layers = num_layers
@@ -485,10 +485,10 @@ class FFWRelativeSelfAttentionModule(nn.Module):
         self.ffw_layers = nn.ModuleList()
         for _ in range(num_layers):
             self.attn_layers.append(RelativeCrossAttentionLayer(
-                embedding_dim, num_attn_heads, use_adaln=use_adaln
+                embedding_dim, num_attn_heads, use_adaln=use_adaln,dropout=dropout
             ))
             self.ffw_layers.append(FeedforwardLayer(
-                embedding_dim, embedding_dim, use_adaln=use_adaln
+                embedding_dim, embedding_dim, use_adaln=use_adaln,dropout=dropout
             ))
 
     def forward(self, query, diff_ts=None,

@@ -18,8 +18,8 @@ class TrajectoryDecoder(nn.Module):
         self.config = config
 
         self.pe_layer = PositionalEncoding(embedding_dim,0.2)
-        self.sa_decoder = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        self.ca_decoder = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
+        self.sa_decoder = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers,dropout=0.2)
+        self.ca_decoder = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers,dropout=0.2)
 
         self.action_predictor = nn.Sequential(
             nn.Linear(embedding_dim, embedding_dim),
