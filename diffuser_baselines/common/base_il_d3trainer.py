@@ -532,8 +532,12 @@ class BaseVLNCETrainer(BaseILTrainer):
                         frame, current_episodes[i].instruction.instruction_text
                     )
                     rgb_frames[i].append(frame)
-                    print(self.policy.navigator.decoder.avg_weights.shape)
 
+                    # vis cross attention weights
+                    avg_weights = self.policy.navigator.decoder.avg_weights
+                    avg_weights.squeeze(0).tolist()
+                    print(avg_weights)
+                  
                                     
 
                     
