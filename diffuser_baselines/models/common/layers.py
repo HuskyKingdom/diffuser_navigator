@@ -442,6 +442,8 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None):
     import torch
     import re
 
+    print(weights.shape)
+
     # 确保输入是CPU上的numpy数组
     weights = weights.squeeze(0).detach().cpu().numpy()  # (8, 200, 200)
     pad_mask = pad_mask.squeeze(0).detach().cpu().numpy()  # (200,)
