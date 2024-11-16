@@ -427,7 +427,7 @@ class FFWRelativeCrossAttentionModule(nn.Module):
                 )
             else:
                 query , _ = self.attn_layers[i](
-                    query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask,vis=vis,ins_text=ins_text,self_attn=False
+                    query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask,vis=vis,ins_text=ins_text,self_atten=False
                 )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
