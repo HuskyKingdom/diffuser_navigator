@@ -314,7 +314,9 @@ class BaseVLNCETrainer(BaseILTrainer):
                 device=self.device,
             )
 
-            # reset envs and observations if necessary
+            print(len(config.VIDEO_OPTION))
+            assert 1==2
+            # reset envs and obserations if necessary
             for i in range(envs.num_envs):
                 if len(config.VIDEO_OPTION) > 0:
                     frame = observations_to_image(observations[i], infos[i])
