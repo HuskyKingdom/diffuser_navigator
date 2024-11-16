@@ -44,7 +44,7 @@ class TrajectoryDecoder(nn.Module):
             value=enc_out.transpose(0, 1),
             query_pos=None,
             value_pos=None,
-            diff_ts=None,pad_mask=enc_pad_mask,vis=True,ins_text=ins_text)[-1].transpose(0,1)
+            diff_ts=None,pad_mask=enc_pad_mask,vis=False,ins_text=ins_text)[-1].transpose(0,1)
         
         pred_action_logits = self.action_predictor(crossatten_out)
         
