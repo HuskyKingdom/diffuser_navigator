@@ -343,7 +343,7 @@ class RelativeCrossAttentionLayer(nn.Module):
             self.adaln = AdaLN(embedding_dim)
 
     def forward(self, query, value, diff_ts=None,
-                query_pos=None, value_pos=None, pad_mask=None, causal_mask=None):
+                query_pos=None, value_pos=None, pad_mask=None, causal_mask=None,vis=False):
         
 
         if diff_ts is not None:
@@ -360,6 +360,13 @@ class RelativeCrossAttentionLayer(nn.Module):
             key_padding_mask=pad_mask,
             attn_mask=causal_mask
         )
+
+        if vis:
+                choise = input("vis?")
+                if choise == "1":
+                    print(attn_weights.shape)
+                    assert 1==2
+                    vis_attention(attn_weights,pad_mask)
 
  
         output = query + self.dropout(attn_output)
@@ -413,11 +420,11 @@ class FFWRelativeCrossAttentionModule(nn.Module):
             ))
 
     def forward(self, query, value, diff_ts=None,
-                query_pos=None, value_pos=None,pad_mask=None,causal_mask=None):
+                query_pos=None, value_pos=None,pad_mask=None,causal_mask=None,vis=False):
         output = []
         for i in range(self.num_layers):
             query , _ = self.attn_layers[i](
-                query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask
+                query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask,vis=vis
             )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
@@ -496,13 +503,12 @@ class FFWRelativeSelfAttentionModule(nn.Module):
         output = []
         for i in range(self.num_layers):
             query, attn_output_weights = self.attn_layers[i](
-                query, query, diff_ts, query_pos, query_pos,pad_mask,causal_mask
+                query, query, diff_ts, query_pos, query_pos,pad_mask,causal_mask,vis=vis
             )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
 
-            if vis:
-                vis_attention(attn_output_weights,pad_mask)
+            
 
         return output
 
