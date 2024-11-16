@@ -314,8 +314,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 device=self.device,
             )
 
-            print(len(config.VIDEO_OPTION))
-            assert 1==2
+
             # reset envs and obserations if necessary
             for i in range(envs.num_envs):
                 if len(config.VIDEO_OPTION) > 0:
@@ -324,9 +323,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                         frame, current_episodes[i].instruction.instruction_text
                     )
                     rgb_frames[i].append(frame)
-                    print("111")
-                    print(self.policy.trajectory_decoder.avg_weights.shape)
-                    assert 1==2
+                    
 
                 if not dones[i]:
                     continue
@@ -535,6 +532,8 @@ class BaseVLNCETrainer(BaseILTrainer):
                         frame, current_episodes[i].instruction.instruction_text
                     )
                     rgb_frames[i].append(frame)
+                    print(self.policy.trajectory_decoder.avg_weights.shape)
+
                                     
 
                     
