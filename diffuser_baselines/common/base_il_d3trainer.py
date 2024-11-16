@@ -390,7 +390,61 @@ class BaseVLNCETrainer(BaseILTrainer):
 
         return aggregated_stats["success"]
 
-        
+    
+    def append_text_with_weights_to_image(self, image, text, weights):
+        import numpy as np
+        import cv2
+        import textwrap
+        from matplotlib import cm
+        import re
+       
+
+        tokens = re.findall(r'\w+|[^\w\s]', text, re.UNICODE)
+        assert len(tokens) == len(weights), "Tokens and weights must have the same length."
+        assert all(0 <= w <= 1 for w in weights), "Weights must be between 0 and 1."
+
+        h, w, c = image.shape
+        font_size = 0.5
+        font_thickness = 1
+        font = cv2.FONT_HERSHEY_SIMPLEX
+
+        # Create a blank canvas for the text
+        blank_image = np.zeros((100, w, 3), dtype=np.uint8)
+
+        # Map weights to colors using a colormap
+        colormap = cm.get_cmap("viridis")
+        colors = [tuple(int(c * 255) for c in colormap(weight)[:3]) for weight in weights]
+
+        # Determine starting positions for the text
+        x, y = 10, 30
+        for token, color in zip(tokens, colors):
+            # Get text size
+            textsize = cv2.getTextSize(token, font, font_size, font_thickness)[0]
+            # Add token to the image with the corresponding color
+            cv2.putText(
+                blank_image,
+                token,
+                (x, y),
+                font,
+                font_size,
+                color,
+                font_thickness,
+                lineType=cv2.LINE_AA,
+            )
+            # Move to the next token's position
+            x += textsize[0] + 10  # Add some spacing
+
+            # Break to a new line if the text exceeds image width
+            if x >= w - 10:
+                x = 10
+                y += textsize[1] + 10
+
+        # Adjust the final blank image height based on the last y-coordinate
+        blank_image = blank_image[: y + 10, :, :]
+
+        # Concatenate the original image with the new text image
+        final = np.concatenate((image, blank_image), axis=0)
+        return final
 
 
 
@@ -531,12 +585,26 @@ class BaseVLNCETrainer(BaseILTrainer):
                     frame = append_text_to_image(
                         frame, current_episodes[i].instruction.instruction_text
                     )
-                    rgb_frames[i].append(frame)
+                    
 
                     # vis cross attention weights
                     avg_weights = self.policy.navigator.decoder.avg_weights
                     avg_weights.squeeze(0).tolist()
-                    print(avg_weights)
+                    frame = self.append_text_with_weights_to_image(frame,current_episodes[i].instruction.instruction_text,avg_weights)
+
+                    # show frame
+                    import cv2
+                    import matplotlib.pyplot as plt
+                    image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    # 显示图片
+                    plt.imshow(image_rgb)
+                    plt.axis('off')  # 关闭坐标轴
+                    plt.title("Image Display")  # 可选：添加标题
+                    plt.show()
+
+
+                    rgb_frames[i].append(frame)
+                    
                   
                                     
 
@@ -575,7 +643,6 @@ class BaseVLNCETrainer(BaseILTrainer):
                     )
                     del stats_episodes[ep_id]["top_down_map_vlnce"]
                     rgb_frames[i] = []
-                    print("fku")
 
                 print(f"infos: {infos[i]}")
 
