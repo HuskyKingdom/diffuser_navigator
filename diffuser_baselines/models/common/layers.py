@@ -364,9 +364,8 @@ class RelativeCrossAttentionLayer(nn.Module):
         if vis:
                 choise = input("vis?")
                 if choise == "1":
-                    print(attn_weights.shape)
-                    assert 1==2
                     vis_attention(attn_weights,pad_mask)
+                    assert 1==2
 
  
         output = query + self.dropout(attn_output)
@@ -442,47 +441,37 @@ def vis_attention(weights, pad_mask, k=None):
     import numpy as np
     import torch
 
-    k = torch.sum(~pad_mask)
-    k.item()
+    # 确保输入是CPU上的numpy数组
+    weights = weights.squeeze(0).detach().cpu().numpy()  # (8, 200, 200)
+    pad_mask = pad_mask.squeeze(0).detach().cpu().numpy()  # (200,)
+    
+    # 获取非padding的索引
+    non_pad_idx = np.where(pad_mask == False)[0]
 
-    text = "Walk down the stairs, turn right, and walk towards place with a rug. Wait near the bench and piano along the right side of the wall."
-    tokens = text.replace(".", " .").split()
+    # 筛选非padding部分
+    weights_non_pad = weights[:, non_pad_idx, :][:, :, non_pad_idx]  # (8, N, N)
+    
+    # 如果指定了特定头，处理单个头的情况
+    if k is not None:
+        if k >= weights_non_pad.shape[0]:
+            raise ValueError(f"Invalid head index k={k}. It must be in the range [0, {weights_non_pad.shape[0] - 1}].")
+        weights_non_pad = weights_non_pad[k:k+1]  # 只保留第 k 个头，形状变为 (1, N, N)
 
-    # 获取平均注意力权重，形状为 [seq_len, seq_len]
-    avg_weights = weights.mean(dim=1)[0]
-    
-    # 切片操作，保留前k个 key 和 query
-    sliced_weights = avg_weights[:k, :k]
-    
-    # 对 key positions（列方向）进行求和
-    sum_weights = sliced_weights.sum(dim=0)
-    
-    # 将注意力权重转换为numpy数组
-    weights_np = sum_weights.detach().cpu().numpy()
+    # 可视化
+    num_heads = weights_non_pad.shape[0]
+    fig, axes = plt.subplots(1, num_heads, figsize=(15, 5), squeeze=False)
 
-    # 确保tokens长度和权重矩阵匹配
-    if len(tokens) > k:
-        tokens = tokens[:k]
-    elif len(tokens) < k:
-        k = len(tokens)  # 限制k为tokens的长度
-
-    print(sliced_weights)
-    print(sum_weights)
+    for i in range(num_heads):
+        ax = axes[0, i]
+        sns.heatmap(weights_non_pad[i], ax=ax, cmap="viridis", cbar=True, square=True)
+        ax.set_title(f"Head {i}" if k is None else f"Head {k}")
+        ax.set_xlabel("Key")
+        ax.set_ylabel("Query")
     
-    # 绘图
-    plt.figure(figsize=(10, 6))
-    
-    # 在key positions上绘制权重和
-    sns.barplot(x=np.arange(len(tokens)), y=weights_np[:k], palette='Blues')
-    
-    # 设置标签为tokens
-    plt.xticks(np.arange(len(tokens)), tokens, rotation=45, ha='right')
-    
-    plt.xlabel('Key Tokens')
-    plt.ylabel('Attention Sum')
-    plt.title(f'Attention Distribution for Each Key Position')
     plt.tight_layout()
     plt.show()
+
+    
 
 
 
