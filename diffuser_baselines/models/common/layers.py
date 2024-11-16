@@ -458,52 +458,57 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
         # 非 Self-Attention：仅 Key 应用 pad_mask，Query 保持完整
         weights_non_pad = weights[:, :, non_pad_idx]  # (8, 200, N)
 
-    # 如果指定了特定头，处理单个头的情况
-    if k is not None:
-        if k >= weights_non_pad.shape[0]:
-            raise ValueError(f"Invalid head index k={k}. It must be in the range [0, {weights_non_pad.shape[0] - 1}].")
-        weights_non_pad = weights_non_pad[k:k+1]  # 只保留第 k 个头，形状变为 (1, N, N) 或 (1, 200, N)
+    if self_atten:
+        # 如果是 Self-Attention，逐个头进行可视化
+        num_heads = weights_non_pad.shape[0]
+        n_cols = 4  # 每行显示的头数量
+        n_rows = (num_heads + n_cols - 1) // n_cols  # 计算总行数
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, n_rows * 5), squeeze=False)
 
-    # 分词处理文本指令
-    tokens = None
-    if ins_text is not None:
-        # 使用正则表达式按单词和标点分词
-        tokens = re.findall(r'\w+|[^\w\s]', ins_text, re.UNICODE)
+        for i in range(num_heads):
+            ax = axes[i // n_cols, i % n_cols]  # 找到对应的子图位置
+            sns.heatmap(weights_non_pad[i], ax=ax, cmap="viridis", cbar=True, square=True)
 
-    # 可视化
-    num_heads = weights_non_pad.shape[0]
-    
-    # 调整布局，采用网格排列
-    n_cols = 4  # 每行的图像数量
-    n_rows = (num_heads + n_cols - 1) // n_cols  # 计算总行数
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, n_rows * 5), squeeze=False)
+            # 设置标题和轴标签
+            ax.set_title(f"Head {i}")
+            ax.set_xlabel("Key")
+            ax.set_ylabel("Query")
 
-    for i in range(num_heads):
-        ax = axes[i // n_cols, i % n_cols]  # 找到对应的子图位置
-        sns.heatmap(weights_non_pad[i], ax=ax, cmap="viridis", cbar=True, square=True)
+            # 如果有分词结果，标注在Key轴上
+            if ins_text:
+                tokens = re.findall(r'\w+|[^\w\s]', ins_text, re.UNICODE)
+                if len(tokens) == weights_non_pad.shape[1]:
+                    ax.set_xticks(np.arange(len(tokens)) + 0.5)
+                    ax.set_xticklabels(tokens, rotation=90, fontsize=8)
+
+        # 清理未使用的子图
+        for j in range(num_heads, n_rows * n_cols):
+            fig.delaxes(axes[j // n_cols, j % n_cols])
+
+        plt.tight_layout()
+        plt.show()
+
+    else:
+        # 如果不是 Self-Attention，对所有头取平均
+        avg_weights = weights_non_pad.mean(axis=0)  # (200, N) 或 (N, N)
+
+        # 可视化平均注意力
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(avg_weights, cmap="viridis", cbar=True, square=True)
 
         # 设置标题和轴标签
-        ax.set_title(f"Head {i}" if k is None else f"Head {k}")
-        ax.set_xlabel("Key")
-        ax.set_ylabel("Query")
+        plt.title("Average Attention")
+        plt.xlabel("Key")
+        plt.ylabel("Query")
 
         # 如果有分词结果，标注在Key轴上
-        if tokens:
-            # 如果 self_atten=True，tokens 应该与非padding的 Key 对应
-            # 如果 self_atten=False，tokens 应与完整的 Query 对应
-            if self_atten and len(tokens) == weights_non_pad.shape[1]:
-                ax.set_xticks(np.arange(len(tokens)) + 0.5)
-                ax.set_xticklabels(tokens, rotation=90, fontsize=8)
-            elif not self_atten and len(tokens) == weights_non_pad.shape[2]:
-                ax.set_xticks(np.arange(len(tokens)) + 0.5)
-                ax.set_xticklabels(tokens, rotation=90, fontsize=8)
+        if ins_text:
+            tokens = re.findall(r'\w+|[^\w\s]', ins_text, re.UNICODE)
+            if len(tokens) == avg_weights.shape[1]:
+                plt.xticks(np.arange(len(tokens)) + 0.5, tokens, rotation=90, fontsize=8)
 
-    # 清理未使用的子图
-    for j in range(num_heads, n_rows * n_cols):
-        fig.delaxes(axes[j // n_cols, j % n_cols])
-
-    plt.tight_layout()
-    plt.show()
+        plt.tight_layout()
+        plt.show()
 
     
 
