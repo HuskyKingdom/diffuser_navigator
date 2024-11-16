@@ -490,6 +490,9 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
         # 如果不是 Self-Attention，对所有头取平均
         avg_weights = weights_non_pad.mean(axis=0)  # (200, N) 或 (N, N)
 
+        print(avg_weights.shape)
+        assert 1==2
+
         # 可视化平均注意力
         plt.figure(figsize=(10, 8))
         sns.heatmap(avg_weights, cmap="viridis", cbar=True, square=True)

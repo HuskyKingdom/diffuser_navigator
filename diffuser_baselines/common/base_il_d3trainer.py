@@ -530,14 +530,6 @@ class BaseVLNCETrainer(BaseILTrainer):
                         frame, current_episodes[i].instruction.instruction_text
                     )
                     rgb_frames[i].append(frame)
-
-                    import cv2
-                    import matplotlib.pyplot as plt
-                    image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    plt.imshow(image_rgb)
-                    plt.axis('off')  # 关闭坐标轴
-                    plt.title("Image Display")  # 可选：添加标题
-                    plt.show()
                                     
 
                     
