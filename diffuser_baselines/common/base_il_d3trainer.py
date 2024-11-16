@@ -594,7 +594,7 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                     # vis cross attention weights
                     avg_weights = self.policy.navigator.decoder.avg_weights
-                    avg_weights.squeeze(0).tolist()
+                    avg_weights = avg_weights.squeeze(0).tolist()
                     avg_weights = avg_weights[0]
 
                     min_val = min(avg_weights) # norm
@@ -602,7 +602,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                     if min_val == max_val:  # avoid /0
                         avg_weights =  [0.0 for _ in avg_weights]
                     else:
-                        [(x - min_val) / (max_val - min_val) for x in avg_weights]
+                        avg_weights = [(x - min_val) / (max_val - min_val) for x in avg_weights]
                     
                     print(avg_weights)
                     frame = self.append_text_with_weights_to_image(frame,current_episodes[i].instruction.instruction_text,avg_weights)
