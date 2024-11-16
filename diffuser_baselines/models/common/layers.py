@@ -436,15 +436,7 @@ class FFWRelativeCrossAttentionModule(nn.Module):
 
 
 def vis_attention(weights, pad_mask, k=None, ins_text=None):
-    """
-    可视化注意力热力图，每个头单独画一个图，只显示非padding部分，并支持标注分词文本。
-
-    Args:
-        weights (torch.Tensor): Attention权重，形状为 (1, 8, 200, 200)。
-        pad_mask (torch.Tensor): Padding掩码，形状为 (1, 200)。True表示padding，False表示非padding。
-        k (int, optional): 可选的头索引，仅可视化特定头。默认None时可视化所有头。
-        ins_text (str, optional): 分词前的文本指令，用于在Key轴上标注。默认None。
-    """
+  
     import matplotlib.pyplot as plt
     import seaborn as sns
     import numpy as np
@@ -475,10 +467,14 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None):
 
     # 可视化
     num_heads = weights_non_pad.shape[0]
-    fig, axes = plt.subplots(1, num_heads, figsize=(15, 5), squeeze=False)
+    
+    # 调整布局，采用网格排列
+    n_cols = 4  # 每行的图像数量
+    n_rows = (num_heads + n_cols - 1) // n_cols  # 计算总行数
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, n_rows * 5), squeeze=False)
 
     for i in range(num_heads):
-        ax = axes[0, i]
+        ax = axes[i // n_cols, i % n_cols]  # 找到对应的子图位置
         sns.heatmap(weights_non_pad[i], ax=ax, cmap="viridis", cbar=True, square=True)
 
         # 设置标题和轴标签
@@ -490,6 +486,10 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None):
         if tokens and len(tokens) == weights_non_pad.shape[1]:
             ax.set_xticks(np.arange(len(tokens)) + 0.5)
             ax.set_xticklabels(tokens, rotation=90, fontsize=8)
+
+    # 清理未使用的子图
+    for j in range(num_heads, n_rows * n_cols):
+        fig.delaxes(axes[j // n_cols, j % n_cols])
 
     plt.tight_layout()
     plt.show()
