@@ -532,7 +532,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                         frame, current_episodes[i].instruction.instruction_text
                     )
                     rgb_frames[i].append(frame)
-                    print(self.policy.navigator.trajectory_decoder.avg_weights.shape)
+                    print(self.policy.navigator.decoder.avg_weights.shape)
 
                                     
 
