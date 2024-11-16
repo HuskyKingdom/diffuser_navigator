@@ -362,9 +362,7 @@ class RelativeCrossAttentionLayer(nn.Module):
         )
 
         if vis:
-                choise = input("vis?")
-                if choise == "1":
-                    vis_attention(attn_weights,pad_mask,ins_text=ins_text,self_atten=self_atten)
+            vis_attention(attn_weights,pad_mask,ins_text=ins_text,self_atten=self_atten)
 
  
         output = query + self.dropout(attn_output)
