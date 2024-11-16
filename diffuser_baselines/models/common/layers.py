@@ -345,6 +345,7 @@ class RelativeCrossAttentionLayer(nn.Module):
     def forward(self, query, value, diff_ts=None,
                 query_pos=None, value_pos=None, pad_mask=None, causal_mask=None,vis=False,ins_text=None,self_atten=True):
         
+        avg_weights = None
 
         if diff_ts is not None:
             adaln_query = self.adaln(query, diff_ts)
