@@ -398,9 +398,10 @@ class BaseVLNCETrainer(BaseILTrainer):
         from matplotlib import cm
         import re
        
-
+        print(tokens,len(tokens))
+        print(weights,len(weights))
+        assert 1==2
         tokens = re.findall(r'\w+|[^\w\s]', text, re.UNICODE)
-        print(tokens)
         assert len(tokens) == len(weights), "Tokens and weights must have the same length."
         assert all(0 <= w <= 1 for w in weights), "Weights must be between 0 and 1."
 
