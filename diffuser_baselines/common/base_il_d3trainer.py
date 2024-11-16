@@ -597,6 +597,8 @@ class BaseVLNCETrainer(BaseILTrainer):
                     avg_weights = avg_weights.squeeze(0).tolist()
                     avg_weights = avg_weights[0]
 
+                    print(avg_weights)
+
                     min_val = min(avg_weights) # norm
                     max_val = max(avg_weights)
                     if min_val == max_val:  # avoid /0
