@@ -343,7 +343,7 @@ class RelativeCrossAttentionLayer(nn.Module):
             self.adaln = AdaLN(embedding_dim)
 
     def forward(self, query, value, diff_ts=None,
-                query_pos=None, value_pos=None, pad_mask=None, causal_mask=None,vis=False,ins_text=None):
+                query_pos=None, value_pos=None, pad_mask=None, causal_mask=None,vis=False,ins_text=None,self_atten=True):
         
 
         if diff_ts is not None:
@@ -364,7 +364,7 @@ class RelativeCrossAttentionLayer(nn.Module):
         if vis:
                 choise = input("vis?")
                 if choise == "1":
-                    vis_attention(attn_weights,pad_mask,ins_text=ins_text)
+                    vis_attention(attn_weights,pad_mask,ins_text=ins_text,self_atten=self_atten)
 
  
         output = query + self.dropout(attn_output)
@@ -427,14 +427,14 @@ class FFWRelativeCrossAttentionModule(nn.Module):
                 )
             else:
                 query , _ = self.attn_layers[i](
-                    query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask,vis=vis,ins_text=ins_text
+                    query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask,vis=vis,ins_text=ins_text,self_attn=False
                 )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
         return output
 
 
-def vis_attention(weights, pad_mask, k=None, ins_text=None):
+def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
   
     import matplotlib.pyplot as plt
     import seaborn as sns
@@ -442,7 +442,6 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None):
     import torch
     import re
 
-    print(weights.shape)
 
     # 确保输入是CPU上的numpy数组
     weights = weights.squeeze(0).detach().cpu().numpy()  # (8, 200, 200)
@@ -451,14 +450,19 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None):
     # 获取非padding的索引
     non_pad_idx = np.where(pad_mask == False)[0]
 
-    # 筛选非padding部分
-    weights_non_pad = weights[:, non_pad_idx, :][:, :, non_pad_idx]  # (8, N, N)
-    
+    # 根据 self_atten 参数调整 Query 和 Key 的范围
+    if self_atten:
+        # Self-Attention：Query 和 Key 都应用 pad_mask
+        weights_non_pad = weights[:, non_pad_idx, :][:, :, non_pad_idx]  # (8, N, N)
+    else:
+        # 非 Self-Attention：仅 Key 应用 pad_mask，Query 保持完整
+        weights_non_pad = weights[:, :, non_pad_idx]  # (8, 200, N)
+
     # 如果指定了特定头，处理单个头的情况
     if k is not None:
         if k >= weights_non_pad.shape[0]:
             raise ValueError(f"Invalid head index k={k}. It must be in the range [0, {weights_non_pad.shape[0] - 1}].")
-        weights_non_pad = weights_non_pad[k:k+1]  # 只保留第 k 个头，形状变为 (1, N, N)
+        weights_non_pad = weights_non_pad[k:k+1]  # 只保留第 k 个头，形状变为 (1, N, N) 或 (1, 200, N)
 
     # 分词处理文本指令
     tokens = None
@@ -484,9 +488,15 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None):
         ax.set_ylabel("Query")
 
         # 如果有分词结果，标注在Key轴上
-        if tokens and len(tokens) == weights_non_pad.shape[1]:
-            ax.set_xticks(np.arange(len(tokens)) + 0.5)
-            ax.set_xticklabels(tokens, rotation=90, fontsize=8)
+        if tokens:
+            # 如果 self_atten=True，tokens 应该与非padding的 Key 对应
+            # 如果 self_atten=False，tokens 应与完整的 Query 对应
+            if self_atten and len(tokens) == weights_non_pad.shape[1]:
+                ax.set_xticks(np.arange(len(tokens)) + 0.5)
+                ax.set_xticklabels(tokens, rotation=90, fontsize=8)
+            elif not self_atten and len(tokens) == weights_non_pad.shape[2]:
+                ax.set_xticks(np.arange(len(tokens)) + 0.5)
+                ax.set_xticklabels(tokens, rotation=90, fontsize=8)
 
     # 清理未使用的子图
     for j in range(num_heads, n_rows * n_cols):
@@ -526,7 +536,7 @@ class FFWRelativeSelfAttentionModule(nn.Module):
             )
             else:
                 query, attn_output_weights = self.attn_layers[i](
-                query, query, diff_ts, query_pos, query_pos,pad_mask,causal_mask,vis=vis,ins_text=ins_text
+                query, query, diff_ts, query_pos, query_pos,pad_mask,causal_mask,vis=vis,ins_text=ins_text,self_atten=True
             )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
