@@ -604,6 +604,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                     else:
                         [(x - min_val) / (max_val - min_val) for x in avg_weights]
                     
+                    print(avg_weights)
                     frame = self.append_text_with_weights_to_image(frame,current_episodes[i].instruction.instruction_text,avg_weights)
 
                     # show frame
