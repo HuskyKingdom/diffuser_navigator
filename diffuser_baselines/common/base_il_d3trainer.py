@@ -594,7 +594,7 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                     # vis cross attention weights
                     avg_weights = self.policy.navigator.decoder.avg_weights
-                    print(avg_weights)
+                    avg_weights = avg_weights[-1]
                     avg_weights = avg_weights.squeeze(0).tolist()
 
  
