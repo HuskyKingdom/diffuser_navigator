@@ -326,7 +326,7 @@ class D3DiffusionNavigator(nn.Module):
         if inference:
             # encoder
             encoder_pad_mask = (observations['instruction'] == 0)
-            enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask) # (bs,200,emd)
+            enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask,ins_text) # (bs,200,emd) | ins_text for visulization
             enc_out = self.encoder_linear(enc_out)
 
             # decoder
@@ -350,7 +350,7 @@ class D3DiffusionNavigator(nn.Module):
         
         # encoder
         encoder_pad_mask = (observations['instruction'] == 0)
-        enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask,ins_text) # (bs,200,emd)
+        enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask) # (bs,200,emd)
         enc_out = self.encoder_linear(enc_out)
 
 
