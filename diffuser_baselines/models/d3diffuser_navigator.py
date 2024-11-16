@@ -34,7 +34,7 @@ class D3DiffusionPolicy(Policy):
         self.pre_actions = []
         
 
-    def act(self,observations, prev_actions, encode_only=False,print_info = False): 
+    def act(self,observations, prev_actions, encode_only=False,print_info = False,ins_text=None): 
 
         
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
@@ -78,7 +78,7 @@ class D3DiffusionPolicy(Policy):
         }
 
         
-        action = self.navigator(collected_data,(B,T), inference = True)
+        action = self.navigator(collected_data,(B,T), inference = True, ins_text=ins_text)
         
 
         if print_info:
@@ -319,7 +319,7 @@ class D3DiffusionNavigator(nn.Module):
         return mask
                 
 
-    def forward(self, observations, dims, inference=False):
+    def forward(self, observations, dims, inference=False, ins_text=None):
         
         B,T = dims
 
@@ -350,7 +350,7 @@ class D3DiffusionNavigator(nn.Module):
         
         # encoder
         encoder_pad_mask = (observations['instruction'] == 0)
-        enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask) # (bs,200,emd)
+        enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask,ins_text) # (bs,200,emd)
         enc_out = self.encoder_linear(enc_out)
 
 

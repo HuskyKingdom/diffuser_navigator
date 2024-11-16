@@ -504,10 +504,10 @@ class BaseVLNCETrainer(BaseILTrainer):
             current_episodes = envs.current_episodes()
 
             # print info for anylyze
-            print(current_episodes[i].instruction.instruction_text)
+            ins_text = current_episodes[i].instruction.instruction_text
 
 
-            actions = self.policy.act(batch,prev_actions,print_info=True)
+            actions = self.policy.act(batch,prev_actions,print_info=True,ins_text=ins_text)
             prev_actions.copy_(actions)
 
             outputs = envs.step([a[0].item() for a in actions])
