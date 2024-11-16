@@ -322,6 +322,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                         frame, current_episodes[i].instruction.instruction_text
                     )
                     rgb_frames[i].append(frame)
+                    print("111")
                     print(self.policy.trajectory_decoder.avg_weights.shape)
 
                 if not dones[i]:
