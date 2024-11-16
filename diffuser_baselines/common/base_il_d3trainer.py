@@ -503,6 +503,10 @@ class BaseVLNCETrainer(BaseILTrainer):
             
             current_episodes = envs.current_episodes()
 
+            # print info for anylyze
+            print(current_episodes[i].instruction.instruction_text)
+
+
             actions = self.policy.act(batch,prev_actions,print_info=True)
             prev_actions.copy_(actions)
 
@@ -517,9 +521,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 device=self.device,
             )
             
-            # print info for anylyze
-            print(current_episodes[i].instruction.instruction_text)
-
+            
 
             # reset envs and observations if necessary
             for i in range(envs.num_envs):
