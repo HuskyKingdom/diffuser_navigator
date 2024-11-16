@@ -364,7 +364,7 @@ class RelativeCrossAttentionLayer(nn.Module):
         if vis:
                 choise = input("vis?")
                 if choise == "1":
-                    vis_attention(attn_weights,pad_mask)
+                    vis_attention(attn_weights,pad_mask,k=0)
                     assert 1==2
 
  
