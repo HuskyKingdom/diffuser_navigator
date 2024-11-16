@@ -362,12 +362,12 @@ class RelativeCrossAttentionLayer(nn.Module):
         )
 
         if vis:
-            vis_attention(attn_weights,pad_mask,ins_text=ins_text,self_atten=self_atten)
+            avg_weights = vis_attention(attn_weights,pad_mask,ins_text=ins_text,self_atten=self_atten)
 
  
         output = query + self.dropout(attn_output)
         output = self.norm(output)
-        return output, attn_weights
+        return output, attn_weights, avg_weights
 
 
 class SelfAttentionLayer(nn.Module):
@@ -420,16 +420,16 @@ class FFWRelativeCrossAttentionModule(nn.Module):
         output = []
         for i in range(self.num_layers):
             if i != 3:
-                query , _ = self.attn_layers[i](
+                query , _, avg_weights = self.attn_layers[i](
                     query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask
                 )
             else:
-                query , _ = self.attn_layers[i](
+                query , _, avg_weights = self.attn_layers[i](
                     query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask,vis=vis,ins_text=ins_text,self_atten=False
                 )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
-        return output
+        return output, avg_weights
 
 
 def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
@@ -486,12 +486,11 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
         plt.tight_layout()
         plt.show()
 
+        return None
+
     else:
         # 如果不是 Self-Attention，对所有头取平均
         avg_weights = weights_non_pad.mean(axis=0)  # (200, N) 或 (N, N)
-
-        print(avg_weights.shape)
-        assert 1==2
 
         # 可视化平均注意力
         plt.figure(figsize=(10, 8))
@@ -510,6 +509,8 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
 
         plt.tight_layout()
         plt.show()
+
+        return avg_weights
 
     
 
@@ -537,11 +538,11 @@ class FFWRelativeSelfAttentionModule(nn.Module):
         output = []
         for i in range(self.num_layers):
             if i != 3:
-                query, attn_output_weights = self.attn_layers[i](
+                query, attn_output_weights, avg_weights = self.attn_layers[i](
                 query, query, diff_ts, query_pos, query_pos,pad_mask,causal_mask
             )
             else:
-                query, attn_output_weights = self.attn_layers[i](
+                query, attn_output_weights, avg_weights = self.attn_layers[i](
                 query, query, diff_ts, query_pos, query_pos,pad_mask,causal_mask,vis=vis,ins_text=ins_text,self_atten=True
             )
             query = self.ffw_layers[i](query, diff_ts)
@@ -549,7 +550,7 @@ class FFWRelativeSelfAttentionModule(nn.Module):
 
             
 
-        return output
+        return output,avg_weights
 
 
 class FFWRelativeSelfCrossAttentionModule(nn.Module):

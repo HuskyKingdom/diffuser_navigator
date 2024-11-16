@@ -58,7 +58,7 @@ class InstructionEncoder(nn.Module):
         out = self.map_layer(self.embedding_layer(input))
         out = self.pe_layer(out)
 
-        out = self.language_self_atten(out.transpose(0,1), diff_ts=None,
+        out,_ = self.language_self_atten(out.transpose(0,1), diff_ts=None,
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask,vis=False,ins_text=ins_text)[-1].transpose(0,1)
         
         return out
