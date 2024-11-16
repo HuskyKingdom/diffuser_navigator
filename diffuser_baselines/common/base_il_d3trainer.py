@@ -324,6 +324,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                     rgb_frames[i].append(frame)
                     print("111")
                     print(self.policy.trajectory_decoder.avg_weights.shape)
+                    assert 1==2
 
                 if not dones[i]:
                     continue
