@@ -530,7 +530,8 @@ class BaseVLNCETrainer(BaseILTrainer):
                         frame, current_episodes[i].instruction.instruction_text
                     )
                     rgb_frames[i].append(frame)
-                    print(frame)
+                    import cv2
+                    cv2.imshow("Image Window", frame)
                     assert 1==2
 
                     
