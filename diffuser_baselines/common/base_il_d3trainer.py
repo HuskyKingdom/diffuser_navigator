@@ -596,8 +596,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                     avg_weights = self.policy.navigator.decoder.avg_weights
                     avg_weights = avg_weights.squeeze(0).tolist()
 
-                    print(avg_weights)
-
+ 
                     min_val = min(avg_weights) # norm
                     max_val = max(avg_weights)
                     if min_val == max_val:  # avoid /0
@@ -605,18 +604,17 @@ class BaseVLNCETrainer(BaseILTrainer):
                     else:
                         avg_weights = [(x - min_val) / (max_val - min_val) for x in avg_weights]
                     
-                    print(avg_weights)
                     frame = self.append_text_with_weights_to_image(frame,current_episodes[i].instruction.instruction_text,avg_weights)
 
-                    # show frame
-                    import cv2
-                    import matplotlib.pyplot as plt
-                    image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    # 显示图片
-                    plt.imshow(image_rgb)
-                    plt.axis('off')  # 关闭坐标轴
-                    plt.title("Image Display")  # 可选：添加标题
-                    plt.show()
+                    # # show frame
+                    # import cv2
+                    # import matplotlib.pyplot as plt
+                    # image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    # # 显示图片
+                    # plt.imshow(image_rgb)
+                    # plt.axis('off')  # 关闭坐标轴
+                    # plt.title("Image Display")  # 可选：添加标题
+                    # plt.show()
 
 
                     rgb_frames[i].append(frame)
