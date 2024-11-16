@@ -516,6 +516,10 @@ class BaseVLNCETrainer(BaseILTrainer):
                 dtype=torch.uint8,
                 device=self.device,
             )
+            
+            # print info for anylyze
+            print(current_episodes[i].instruction.instruction_text)
+
 
             # reset envs and observations if necessary
             for i in range(envs.num_envs):
