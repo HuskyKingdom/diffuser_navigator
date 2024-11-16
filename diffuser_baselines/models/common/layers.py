@@ -423,9 +423,14 @@ class FFWRelativeCrossAttentionModule(nn.Module):
                 query_pos=None, value_pos=None,pad_mask=None,causal_mask=None,vis=False):
         output = []
         for i in range(self.num_layers):
-            query , _ = self.attn_layers[i](
-                query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask,vis=vis
-            )
+            if i != 3:
+                query , _ = self.attn_layers[i](
+                    query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask
+                )
+            else:
+                query , _ = self.attn_layers[i](
+                    query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask,vis=vis
+                )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
         return output
@@ -502,7 +507,12 @@ class FFWRelativeSelfAttentionModule(nn.Module):
                 query_pos=None, context=None, context_pos=None,pad_mask=None,vis=False,causal_mask=None):
         output = []
         for i in range(self.num_layers):
-            query, attn_output_weights = self.attn_layers[i](
+            if i != 3:
+                query, attn_output_weights = self.attn_layers[i](
+                query, query, diff_ts, query_pos, query_pos,pad_mask,causal_mask
+            )
+            else:
+                query, attn_output_weights = self.attn_layers[i](
                 query, query, diff_ts, query_pos, query_pos,pad_mask,causal_mask,vis=vis
             )
             query = self.ffw_layers[i](query, diff_ts)
