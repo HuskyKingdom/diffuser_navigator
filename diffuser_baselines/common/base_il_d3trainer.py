@@ -401,10 +401,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         
         tokens = re.findall(r'\w+|[^\w\s]', text, re.UNICODE)
 
-        print(tokens,len(tokens))
-        print(weights,len(weights))
-        assert 1==2
-        
+
         assert len(tokens) == len(weights), "Tokens and weights must have the same length."
         assert all(0 <= w <= 1 for w in weights), "Weights must be between 0 and 1."
 
@@ -594,7 +591,7 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                     # vis cross attention weights
                     avg_weights = self.policy.navigator.decoder.avg_weights
-                    avg_weights.squeeze(0).tolist()
+                    avg_weights[0].tolist()
                     frame = self.append_text_with_weights_to_image(frame,current_episodes[i].instruction.instruction_text,avg_weights)
 
                     # show frame
