@@ -530,6 +530,10 @@ class BaseVLNCETrainer(BaseILTrainer):
                         frame, current_episodes[i].instruction.instruction_text
                     )
                     rgb_frames[i].append(frame)
+                    print(frame)
+                    assert 1==2
+
+                    
 
                 if not dones[i]:
                     continue
