@@ -49,7 +49,7 @@ class InstructionEncoder(nn.Module):
             embeddings = torch.tensor(json.load(f))
         return embeddings
 
-    def forward(self, observations,pad_mask,ins_text) -> Tensor:
+    def forward(self, observations,pad_mask,ins_text=None) -> Tensor:
 
 
         input = observations.long()
