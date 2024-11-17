@@ -438,13 +438,6 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
     import torch
     import re
 
-
-        import matplotlib.pyplot as plt
-    import seaborn as sns
-    import numpy as np
-    import torch
-    import re
-
     # 确保输入是CPU上的numpy数组
     weights = weights.squeeze(0).detach().cpu().numpy()  # (8, 200, 200)
     pad_mask = pad_mask.squeeze(0).detach().cpu().numpy()  # (200,)
