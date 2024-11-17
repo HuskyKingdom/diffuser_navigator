@@ -399,10 +399,10 @@ class BaseVLNCETrainer(BaseILTrainer):
         import re
        
         
-        tokens = re.findall(r'\w+|[^\w\s]', text, re.UNICODE)
+        tokens = re.findall(r'\w+|[^\w\s,]|,', text, re.UNICODE)
 
-        print(tokens,len(tokens))
-        print(weights,len(weights))
+        # print(tokens,len(tokens))
+        # print(weights,len(weights))
         # assert 1==2
         
         assert len(tokens) == len(weights), "Tokens and weights must have the same length."

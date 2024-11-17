@@ -475,7 +475,7 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
 
             # 如果有分词结果，标注在Key轴上
             if ins_text:
-                tokens = re.findall(r'\w+|[^\w\s]', ins_text, re.UNICODE)
+                tokens = re.findall(r'\w+|[^\w\s,]|,', ins_text, re.UNICODE)
                 if len(tokens) == weights_non_pad.shape[1]:
                     ax.set_xticks(np.arange(len(tokens)) + 0.5)
                     ax.set_xticklabels(tokens, rotation=90, fontsize=8)
@@ -504,7 +504,8 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
 
         # 如果有分词结果，标注在Key轴上
         if ins_text:
-            tokens = re.findall(r'\w+|[^\w\s]', ins_text, re.UNICODE)
+            tokens = re.findall(r'\w+|[^\w\s,]|,', ins_text, re.UNICODE)
+
             if len(tokens) == avg_weights.shape[1]:
                 plt.xticks(np.arange(len(tokens)) + 0.5, tokens, rotation=90, fontsize=8)
 
