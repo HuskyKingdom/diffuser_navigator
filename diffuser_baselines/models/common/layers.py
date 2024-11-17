@@ -538,18 +538,17 @@ class FFWRelativeSelfAttentionModule(nn.Module):
     def forward(self, query, diff_ts=None,
                 query_pos=None, context=None, context_pos=None,pad_mask=None,vis=False,causal_mask=None,ins_text=None):
         output = []
-        all_weights = []
+
         for i in range(self.num_layers):
-            query, attn_output_weights, avg_weights = self.attn_layers[i](
+            query, _, _ = self.attn_layers[i](
                 query, query, diff_ts, query_pos, query_pos,pad_mask,causal_mask,vis=vis,ins_text=ins_text,self_atten=True
             )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
-            all_weights.append(all_weights)
-
             
 
-        return output,avg_weights[-1]
+
+        return output,None
 
 
 class FFWRelativeSelfCrossAttentionModule(nn.Module):
