@@ -487,6 +487,8 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
         plt.tight_layout()
         plt.show()
 
+        plt.close()
+
         return None
 
     else:
