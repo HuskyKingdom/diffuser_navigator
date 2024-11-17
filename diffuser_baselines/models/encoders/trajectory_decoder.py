@@ -46,7 +46,7 @@ class TrajectoryDecoder(nn.Module):
             value=enc_out.transpose(0, 1),
             query_pos=None,
             value_pos=None,
-            diff_ts=None,pad_mask=enc_pad_mask,vis=False,ins_text=ins_text)
+            diff_ts=None,pad_mask=enc_pad_mask,vis=True,ins_text=ins_text)
         
         crossatten_out = crossatten_out[-1].transpose(0,1)
         
