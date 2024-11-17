@@ -508,8 +508,8 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
             if len(tokens) == avg_weights.shape[1]:
                 plt.xticks(np.arange(len(tokens)) + 0.5, tokens, rotation=90, fontsize=8)
 
-        plt.tight_layout()
-        plt.show()
+        # plt.tight_layout()
+        # plt.show()
 
         return avg_weights
 
