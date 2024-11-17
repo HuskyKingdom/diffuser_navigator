@@ -427,7 +427,7 @@ class FFWRelativeCrossAttentionModule(nn.Module):
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
             all_avg_weights.append(avg_weights)
-        return output, avg_weights[0]
+        return output, all_avg_weights[0]
 
 
 def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
