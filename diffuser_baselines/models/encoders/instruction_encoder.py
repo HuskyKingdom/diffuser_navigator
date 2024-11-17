@@ -59,7 +59,7 @@ class InstructionEncoder(nn.Module):
         out = self.pe_layer(out)
 
         out,_ = self.language_self_atten(out.transpose(0,1), diff_ts=None,
-                query_pos=None, context=None, context_pos=None,pad_mask=pad_mask,vis=True,ins_text=ins_text)
+                query_pos=None, context=None, context_pos=None,pad_mask=pad_mask,vis=False,ins_text=ins_text)
         out = out[-1].transpose(0,1)
         
         return out
