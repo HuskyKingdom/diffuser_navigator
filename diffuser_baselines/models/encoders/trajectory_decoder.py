@@ -7,7 +7,7 @@ from habitat import Config
 from torch import Tensor
 
 from transformers import BertTokenizer, BertModel
-from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule
+from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule, FFWRelativeDecoderModule
 from diffuser_baselines.models.common.position_encodings import PositionalEncoding
 
 class TrajectoryDecoder(nn.Module):
@@ -18,8 +18,9 @@ class TrajectoryDecoder(nn.Module):
         self.config = config
 
         self.pe_layer = PositionalEncoding(embedding_dim,0.2)
-        self.sa_decoder = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers,dropout=0.2)
-        self.ca_decoder = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers,dropout=0.2)
+        # self.sa_decoder = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers,dropout=0.2)
+        # self.ca_decoder = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers,dropout=0.2)
+        self.decoder = FFWRelativeDecoderModule(embedding_dim,num_attention_heads,num_layers,dropout=0.2)
 
         self.action_predictor = nn.Sequential(
             nn.Linear(embedding_dim, embedding_dim),
@@ -37,20 +38,31 @@ class TrajectoryDecoder(nn.Module):
         """
 
         dec_input = self.pe_layer(dec_input)
-        selfatten_out,_ = self.sa_decoder(dec_input.transpose(0,1), diff_ts=None,
-                query_pos=None, context=None, context_pos=None,pad_mask=dec_pad_mask,causal_mask=causal_mask)
+        # selfatten_out,_ = self.sa_decoder(dec_input.transpose(0,1), diff_ts=None,
+        #         query_pos=None, context=None, context_pos=None,pad_mask=dec_pad_mask,causal_mask=causal_mask)
         
-        selfatten_out = selfatten_out[-1].transpose(0,1)
+        # selfatten_out = selfatten_out[-1].transpose(0,1)
         
-        crossatten_out, avg_weights = self.ca_decoder(query=selfatten_out.transpose(0, 1),
-            value=enc_out.transpose(0, 1),
-            query_pos=None,
-            value_pos=None,
-            diff_ts=None,pad_mask=enc_pad_mask,vis=False,ins_text=ins_text)
+        # crossatten_out, avg_weights = self.ca_decoder(query=selfatten_out.transpose(0, 1),
+        #     value=enc_out.transpose(0, 1),
+        #     query_pos=None,
+        #     value_pos=None,
+        #     diff_ts=None,pad_mask=enc_pad_mask,vis=False,ins_text=ins_text)
         
-        crossatten_out = crossatten_out[-1].transpose(0,1)
+        # crossatten_out = crossatten_out[-1].transpose(0,1)
+
+        decoder_out, avg_weights = self.decoder(dec_input.transpose(0,1), enc_out,
+                diff_ts=None,
+                query_pos=None, 
+                q_pad_mask=dec_pad_mask,
+                k_pad_mask=enc_pad_mask,
+                causal_mask=causal_mask,
+                vis=False,
+                ins_text=ins_text)
         
-        pred_action_logits = self.action_predictor(crossatten_out)
+        decoder_out = decoder_out.transpose(0,1)
+        
+        pred_action_logits = self.action_predictor(decoder_out)
         
         self.avg_weights = avg_weights
 

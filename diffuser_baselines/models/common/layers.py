@@ -399,6 +399,48 @@ class SelfAttentionLayer(nn.Module):
         return output
 
 
+class FFWRelativeDecoderModule(nn.Module):
+
+    def __init__(self, embedding_dim, num_attn_heads, num_layers,
+                 use_adaln=True,reversing=False,dropout=0.0):
+        super().__init__()
+
+        self.num_layers = num_layers
+        self.selfattn_layers = nn.ModuleList()
+        self.encoderatten_layers = nn.ModuleList()
+        self.ffw_layers = nn.ModuleList()
+        for _ in range(num_layers):
+            self.selfattn_layers.append(RelativeCrossAttentionLayer(  # self attention
+                embedding_dim, num_attn_heads, use_adaln=use_adaln,reversing=reversing,dropout=dropout
+            ))
+            self.encoderatten_layers.append(RelativeCrossAttentionLayer(  # encoder attention
+                embedding_dim, num_attn_heads, use_adaln=use_adaln,reversing=reversing,dropout=dropout
+            ))
+            self.ffw_layers.append(FeedforwardLayer(
+                embedding_dim, embedding_dim, use_adaln=use_adaln,dropout=dropout
+            ))
+
+    def forward(self, query, enc_out, diff_ts=None,
+                query_pos=None, value_pos=None,q_pad_mask=None,k_pad_mask=None,causal_mask=None,vis=False,ins_text=None):
+        output = []
+        all_avg_weights = []
+        for i in range(self.num_layers):
+
+            query, _, _ = self.selfattn_layers[i](
+                query, query, diff_ts, query_pos, query_pos,q_pad_mask,causal_mask,vis=False,ins_text=ins_text,self_atten=True
+            )
+
+            query , _, avg_weights = self.encoderatten_layers[i](
+                    query, enc_out, diff_ts, query_pos, value_pos,k_pad_mask,causal_mask=None,vis=vis,ins_text=ins_text,self_atten=False
+                )
+            
+            query = self.ffw_layers[i](query, diff_ts)
+            output.append(query)
+            all_avg_weights.append(avg_weights)
+
+        return output, all_avg_weights[-1]
+
+
 class FFWRelativeCrossAttentionModule(nn.Module):
 
     def __init__(self, embedding_dim, num_attn_heads, num_layers,
