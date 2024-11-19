@@ -32,10 +32,10 @@ class InstructionEncoder(nn.Module):
         )
 
         
-        self.pe_layer = PositionalEncoding(embed_dim,0.2)
+        self.pe_layer = PositionalEncoding(embed_dim,0.1)
         self.map_layer = nn.Linear(50, embed_dim)
 
-        self.language_self_atten = FFWRelativeSelfAttentionModule(embed_dim,8,4,dropout=0.2)
+        self.language_self_atten = FFWRelativeSelfAttentionModule(embed_dim,4,2,dropout=0.1)
 
     def _load_embeddings(self) -> Tensor:
         """Loads word embeddings from a pretrained embeddings file.
@@ -58,10 +58,8 @@ class InstructionEncoder(nn.Module):
         out = self.map_layer(self.embedding_layer(input))
         out = self.pe_layer(out)
 
-        print(out.shape,pad_mask.shape)
-
         out,_ = self.language_self_atten(out.transpose(0,1), diff_ts=None,
-                query_pos=None, context=None, context_pos=None,pad_mask=pad_mask,vis=True,ins_text=ins_text)
+                query_pos=None, context=None, context_pos=None,pad_mask=pad_mask,vis=False,ins_text=ins_text)
         out = out[-1].transpose(0,1)
         
         return out
