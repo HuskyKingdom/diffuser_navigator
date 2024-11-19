@@ -535,22 +535,22 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
         avg_weights = weights_non_pad.mean(axis=0)  # (200, N) 或 (N, N)
 
         # 可视化平均注意力
-        # plt.figure(figsize=(10, 8))
-        # sns.heatmap(avg_weights, cmap="viridis", cbar=True, square=True)
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(avg_weights, cmap="viridis", cbar=True, square=True)
 
-        # # 设置标题和轴标签
-        # plt.title("Average Attention")
-        # plt.xlabel("Key")
-        # plt.ylabel("Query")
+        # 设置标题和轴标签
+        plt.title("Average Attention")
+        plt.xlabel("Key")
+        plt.ylabel("Query")
 
-        # # 如果有分词结果，标注在Key轴上
-        # if ins_text:
-        #     tokens = re.findall(r'\w+,?|\w+|[^\w\s]', ins_text, re.UNICODE)
-        #     if len(tokens) == avg_weights.shape[1]:
-        #         plt.xticks(np.arange(len(tokens)) + 0.5, tokens, rotation=90, fontsize=8)
+        # 如果有分词结果，标注在Key轴上
+        if ins_text:
+            tokens = re.findall(r'\w+,?|\w+|[^\w\s]', ins_text, re.UNICODE)
+            if len(tokens) == avg_weights.shape[1]:
+                plt.xticks(np.arange(len(tokens)) + 0.5, tokens, rotation=90, fontsize=8)
 
-        # plt.tight_layout()
-        # plt.show()
+        plt.tight_layout()
+        plt.show()
                 
         plt.close()
 
