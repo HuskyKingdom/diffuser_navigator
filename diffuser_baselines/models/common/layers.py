@@ -427,7 +427,7 @@ class FFWRelativeDecoderModule(nn.Module):
         for i in range(self.num_layers):
 
             query, _, _ = self.selfattn_layers[i](
-                query, query, diff_ts, query_pos, query_pos,q_pad_mask,causal_mask,vis=True,ins_text=ins_text,self_atten=True
+                query, query, diff_ts, query_pos, query_pos,q_pad_mask,causal_mask,vis=False,ins_text=ins_text,self_atten=True
             )
 
             query , _, avg_weights = self.encoderatten_layers[i](
