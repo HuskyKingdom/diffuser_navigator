@@ -472,13 +472,14 @@ class FFWRelativeCrossAttentionModule(nn.Module):
         return output, all_avg_weights[-1]
 
 
-def vis_attention(weights, pad_mask, k=None, ins_text=None, self_atten=None):
+def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=None):
   
     import matplotlib.pyplot as plt
     import seaborn as sns
     import numpy as np
     import torch
     import re
+
 
     # 确保输入是CPU上的numpy数组
     weights = weights.squeeze(0).detach().cpu().numpy()  # (8, 200, 200)
@@ -495,36 +496,65 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None, self_atten=None):
         # 非 Self-Attention：仅 Key 应用 pad_mask，Query 保持完整
         weights_non_pad = weights[:, :, non_pad_idx]  # (8, 200, N)
 
-    # 逐个头进行可视化
-    num_heads = weights_non_pad.shape[0]
-    n_cols = 4  # 每行显示的头数量
-    n_rows = (num_heads + n_cols - 1) // n_cols  # 计算总行数
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, n_rows * 5), squeeze=False)
+    if self_atten:
+        # 如果是 Self-Attention，逐个头进行可视化
+        num_heads = weights_non_pad.shape[0]
+        n_cols = 4  # 每行显示的头数量
+        n_rows = (num_heads + n_cols - 1) // n_cols  # 计算总行数
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, n_rows * 5), squeeze=False)
 
-    for i in range(num_heads):
-        ax = axes[i // n_cols, i % n_cols]  # 找到对应的子图位置
-        sns.heatmap(weights_non_pad[i], ax=ax, cmap="viridis", cbar=True, square=True)
+        for i in range(num_heads):
+            ax = axes[i // n_cols, i % n_cols]  # 找到对应的子图位置
+            sns.heatmap(weights_non_pad[i], ax=ax, cmap="viridis", cbar=True, square=True)
+
+            # 设置标题和轴标签
+            ax.set_title(f"Head {i}")
+            ax.set_xlabel("Key")
+            ax.set_ylabel("Query")
+
+            # 如果有分词结果，标注在Key轴上
+            if ins_text:
+                tokens = re.findall(r'\w+,?|\w+|[^\w\s]', ins_text, re.UNICODE)
+                if len(tokens) == weights_non_pad.shape[1]:
+                    ax.set_xticks(np.arange(len(tokens)) + 0.5)
+                    ax.set_xticklabels(tokens, rotation=90, fontsize=8)
+
+        # 清理未使用的子图
+        for j in range(num_heads, n_rows * n_cols):
+            fig.delaxes(axes[j // n_cols, j % n_cols])
+
+        plt.tight_layout()
+        plt.show()
+
+        plt.close()
+
+        return None
+
+    else:
+        # 如果不是 Self-Attention，对所有头取平均
+        avg_weights = weights_non_pad.mean(axis=0)  # (200, N) 或 (N, N)
+
+        # 可视化平均注意力
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(avg_weights, cmap="viridis", cbar=True, square=True)
 
         # 设置标题和轴标签
-        ax.set_title(f"Head {i}")
-        ax.set_xlabel("Key")
-        ax.set_ylabel("Query")
+        plt.title("Average Attention")
+        plt.xlabel("Key")
+        plt.ylabel("Query")
 
         # 如果有分词结果，标注在Key轴上
         if ins_text:
             tokens = re.findall(r'\w+,?|\w+|[^\w\s]', ins_text, re.UNICODE)
-            if len(tokens) == weights_non_pad.shape[2]:  # Key的长度
-                ax.set_xticks(np.arange(len(tokens)) + 0.5)
-                ax.set_xticklabels(tokens, rotation=90, fontsize=8)
+            if len(tokens) == avg_weights.shape[1]:
+                plt.xticks(np.arange(len(tokens)) + 0.5, tokens, rotation=90, fontsize=8)
 
-    # 清理未使用的子图
-    for j in range(num_heads, n_rows * n_cols):
-        fig.delaxes(axes[j // n_cols, j % n_cols])
+        plt.tight_layout()
+        plt.show()
+                
+        plt.close()
 
-    plt.tight_layout()
-    plt.show()
-    plt.close()
-
+        return avg_weights
 
     
 
