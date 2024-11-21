@@ -21,11 +21,9 @@ def extract_instruction_tokens(
             isinstance(observations[i][instruction_sensor_uuid], dict)
             and tokens_uuid in observations[i][instruction_sensor_uuid]
         ):
-            print(f"instruction {observations[i][instruction_sensor_uuid]}")
-            assert 1==2
             observations[i][instruction_sensor_uuid] = observations[i][
                 instruction_sensor_uuid
-            ]["tokens"]
+            ]["text"]
         else:
             break
     return observations
