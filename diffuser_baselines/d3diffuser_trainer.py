@@ -426,6 +426,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             np.array([step[1] for step in ep], dtype=np.int64),
                             np.array([step[2] for step in ep], dtype=np.int64),
                             np.array([step[3] for step in ep], dtype=np.float32),
+                            np.array([step[4] for step in ep]),
                         ]
                         #print(f"prev {np.array([step[1] for step in ep], dtype=np.int64)} | oracle {np.array([step[2] for step in ep], dtype=np.int64)}")
                         txn.put(
@@ -517,7 +518,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             observations[i],
                             prev_actions[i].item(),
                             batch[expert_uuid][i].item(),
-                            pos
+                            observations[i]["instruction"]["text"]
                         )
                     )
 

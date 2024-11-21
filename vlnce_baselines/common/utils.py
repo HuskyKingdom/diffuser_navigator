@@ -23,7 +23,7 @@ def extract_instruction_tokens(
         ):
             observations[i][instruction_sensor_uuid] = observations[i][
                 instruction_sensor_uuid
-            ]["text"]
+            ]["tokens"]
         else:
             break
     return observations
