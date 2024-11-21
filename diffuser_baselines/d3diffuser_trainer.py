@@ -420,13 +420,14 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             traj_obs[k] = v.numpy()
                             if self.config.IL.DAGGER.lmdb_fp16:
                                 traj_obs[k] = traj_obs[k].astype(np.float16)
-
+                        
+                        print(current_episodes[i].instruction.instruction_text)
+                        assert 1==2
                         transposed_ep = [
                             traj_obs,
                             np.array([step[1] for step in ep], dtype=np.int64),
                             np.array([step[2] for step in ep], dtype=np.int64),
                             np.array([step[3] for step in ep], dtype=np.float32),
-                            np.array([step[4] for step in ep]),
                         ]
                         #print(f"prev {np.array([step[1] for step in ep], dtype=np.int64)} | oracle {np.array([step[2] for step in ep], dtype=np.int64)}")
                         txn.put(
@@ -518,7 +519,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             observations[i],
                             prev_actions[i].item(),
                             batch[expert_uuid][i].item(),
-                            observations[i]["instruction"]["text"]
+                            pos
                         )
                     )
 
