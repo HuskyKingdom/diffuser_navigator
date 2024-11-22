@@ -67,22 +67,18 @@ class InstructionEncoder(nn.Module):
 
         
         outputs = self.bert_model(**observations).last_hidden_state
-        outputs = self.map_layer(outputs)
 
-        print(outputs.shape)
-    
-
-        assert 1==2
+        # assert 1==2
 
 
-        input = observations.long()
+        # input = observations.long()
 
 
-        out = self.map_layer(self.embedding_layer(input))
-        out = self.pe_layer(out)
+        # out = self.map_layer(self.embedding_layer(input))
+        # out = self.pe_layer(out)
 
-        out,_ = self.language_self_atten(out.transpose(0,1), diff_ts=None,
-                query_pos=None, context=None, context_pos=None,pad_mask=pad_mask,vis=False,ins_text=ins_text)
-        out = out[-1].transpose(0,1)
+        # out,_ = self.language_self_atten(out.transpose(0,1), diff_ts=None,
+        #         query_pos=None, context=None, context_pos=None,pad_mask=pad_mask,vis=False,ins_text=ins_text)
+        # out = out[-1].transpose(0,1)
         
-        return ou
+        return outputs
