@@ -77,7 +77,7 @@ class D3DiffusionPolicy(Policy):
         'padding_mask': None,
         'lengths': None,
         'weights': None,
-        'ins_text': observations['ins_text']
+        'ins_text': [ins_text]
         }
 
         
@@ -329,7 +329,6 @@ class D3DiffusionNavigator(nn.Module):
         B,T = dims
 
         # tokenlize text
-        
         batch_tokens = self.tokenizer(
             observations["ins_text"],
             padding="max_length",          
@@ -345,13 +344,13 @@ class D3DiffusionNavigator(nn.Module):
                     )
                 for k, v in batch_tokens.items()
             }
-        encoder_pad_mask = batch_tokens["attention_mask"] == 0
+        encoder_pad_mask = batch_tokens["attention_mask"] == 0 # to boolean mask
 
 
         if inference:
             # encoder
-            encoder_pad_mask = (observations['instruction'] == 0)
-            enc_out = self.instruction_encoder(observations["ins_text"],encoder_pad_mask,ins_text) # (bs,200,emd) | ins_text for visulization
+            # encoder_pad_mask = (observations['instruction'] == 0)
+            enc_out = self.instruction_encoder(batch_tokens) # (bs,200,emd) | ins_text for visulization
             enc_out = self.encoder_linear(enc_out)
 
             # decoder
@@ -387,9 +386,6 @@ class D3DiffusionNavigator(nn.Module):
 
         loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"],  observations["weights"]).sum()
         loss /= B
-
-        # print("pred", decoder_pred[0,:5])
-        # print("gt", observations["gt_actions"].long()[0,:5])
 
 
         return loss
