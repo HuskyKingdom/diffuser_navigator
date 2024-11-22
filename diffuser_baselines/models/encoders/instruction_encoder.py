@@ -73,7 +73,7 @@ class InstructionEncoder(nn.Module):
         )
 
         print(batch_tokens)
-        print(batch_tokens["attention_mask"].shape)
+        print(batch_tokens["input_ids"].shape)
 
         assert 1==2
 
