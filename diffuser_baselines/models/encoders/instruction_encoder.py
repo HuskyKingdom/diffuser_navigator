@@ -71,6 +71,7 @@ class InstructionEncoder(nn.Module):
             max_length=200,        
             return_tensors="pt"    
         )
+        
         print(batch_tokens)
         print(batch_tokens.shape)
 
