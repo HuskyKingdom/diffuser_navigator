@@ -31,8 +31,7 @@ class InstructionEncoder(nn.Module):
         self.config = config
 
         # bert pre-train
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        self.model = BertModel.from_pretrained('bert-base-uncased')
+        self.bert_model = BertModel.from_pretrained('bert-base-uncased')
 
 
 
@@ -61,19 +60,12 @@ class InstructionEncoder(nn.Module):
             embeddings = torch.tensor(json.load(f))
         return embeddings
 
-    def forward(self, observations,pad_mask,ins_text=None) -> Tensor:
+    def forward(self, observations) -> Tensor:
 
         
 
-        batch_tokens = self.tokenizer(
-            observations,
-            padding="max_length",          
-            truncation=True,       
-            max_length=200,        
-            return_tensors="pt"    
-        )
-
-        outputs = self.model(**batch_tokens)
+        
+        outputs = self.bert_model(**observations)
 
         print(outputs.shape)
     

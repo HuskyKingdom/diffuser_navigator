@@ -15,6 +15,8 @@ from diffuser_baselines.models.encoders import resnet_encoders
 from diffuser_baselines.models.encoders.his_encoder import HistoryGRU
 from diffuser_baselines.models.utils import MaskedSoftmaxCELoss
 
+from transformers import BertTokenizer      
+
 from gym import spaces
 import numpy as np
 
@@ -325,6 +327,26 @@ class D3DiffusionNavigator(nn.Module):
         
         B,T = dims
 
+        # tokenlize text
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        batch_tokens = self.tokenizer(
+            observations,
+            padding="max_length",          
+            truncation=True,       
+            max_length=200,        
+            return_tensors="pt"    
+        )
+        batch_tokens = {
+                k: v.to(
+                        device=self.device,
+                        dtype=torch.float32,
+                        non_blocking=True,
+                    )
+                for k, v in batch_tokens.items()
+            }
+        encoder_pad_mask = batch_tokens["attention_mask"]
+
+
         if inference:
             # encoder
             encoder_pad_mask = (observations['instruction'] == 0)
@@ -351,8 +373,7 @@ class D3DiffusionNavigator(nn.Module):
 
         
         # encoder
-        encoder_pad_mask = (observations['instruction'] == 0)
-        enc_out = self.instruction_encoder(observations["ins_text"],encoder_pad_mask) # (bs,200,emd)
+        enc_out = self.instruction_encoder(batch_tokens) # (bs,200,emd)
         enc_out = self.encoder_linear(enc_out)
 
 

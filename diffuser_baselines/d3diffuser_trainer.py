@@ -140,7 +140,7 @@ def collate_fn(batch):
             continue
         collected_data[key] = torch.stack(collected_data[key], dim=0)
 
-    
+
 
     return collected_data
 
@@ -668,6 +668,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             )
                             for k, v in batch.items()
                         }
+
 
                         loss = self._update_agent(
                             batch
