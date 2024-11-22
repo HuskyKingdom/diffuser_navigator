@@ -10,7 +10,7 @@ from transformers import BertTokenizer, BertModel
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule
 from diffuser_baselines.models.common.position_encodings import PositionalEncoding
 
-from transformers import BertTokenizer
+from transformers import BertTokenizer,BertModel
 
 
 
@@ -32,6 +32,7 @@ class InstructionEncoder(nn.Module):
 
         # bert pre-train
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        self.model = BertModel.from_pretrained('bert-base-uncased')
 
 
 
@@ -72,8 +73,10 @@ class InstructionEncoder(nn.Module):
             return_tensors="pt"    
         )
 
-        print(batch_tokens)
-        print(batch_tokens["input_ids"].shape)
+        outputs = self.model(**batch_tokens)
+
+        print(outputs.shape)
+    
 
         assert 1==2
 
