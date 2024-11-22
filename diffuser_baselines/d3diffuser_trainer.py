@@ -136,7 +136,7 @@ def collate_fn(batch):
 
     # Stack each list in collected_data into a tensor
     for key in collected_data:
-        if key == 'lengths':
+        if key == 'lengths' or key == "ins_text":
             continue
         collected_data[key] = torch.stack(collected_data[key], dim=0)
 
