@@ -658,10 +658,13 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
              
 
                         batch = {
-                            k: v.to(
-                                device=self.device,
-                                dtype=torch.float32,
-                                non_blocking=True,
+                            k: (
+                                v.to(
+                                    device=self.device,
+                                    dtype=torch.float32,
+                                    non_blocking=True,
+                                )
+                                if k != "ins_text" else v
                             )
                             for k, v in batch.items()
                         }
