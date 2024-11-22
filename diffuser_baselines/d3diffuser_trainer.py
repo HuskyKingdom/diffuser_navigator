@@ -95,6 +95,9 @@ def collate_fn(batch):
         trajectories = torch.tensor(sample[3])  # (len_seq, 4)
         prev_actions = torch.tensor(sample[1]) 
 
+        print(sample[4])
+        assert 1==2
+
         # compute weights
         inflection_weights = torch.tensor([1.0, 3.2])
         inflections = torch.cat(
