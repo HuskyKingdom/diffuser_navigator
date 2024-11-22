@@ -352,7 +352,7 @@ class D3DiffusionNavigator(nn.Module):
         
         # encoder
         encoder_pad_mask = (observations['instruction'] == 0)
-        enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask) # (bs,200,emd)
+        enc_out = self.instruction_encoder(observations["ins_text"],encoder_pad_mask) # (bs,200,emd)
         enc_out = self.encoder_linear(enc_out)
 
 
