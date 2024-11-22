@@ -33,19 +33,21 @@ class InstructionEncoder(nn.Module):
         # bert pre-train
         self.bert_model = BertModel.from_pretrained('bert-base-uncased')
 
+        for param in self.bert_model.parameters(): # frozon
+            param.requires_grad = False
 
 
-        self.embedding_layer = nn.Embedding.from_pretrained(
-                    embeddings=self._load_embeddings(),
-                    freeze=True,
-        )
-
-        
 
         
         
         self.map_layer = nn.Linear(768, embed_dim)
-        
+
+
+        # self.embedding_layer = nn.Embedding.from_pretrained(
+        #             embeddings=self._load_embeddings(),
+        #             freeze=True,
+        # )
+
         # self.pe_layer = PositionalEncoding(embed_dim,0.1)
         # self.language_self_atten = FFWRelativeSelfAttentionModule(embed_dim,4,2,dropout=0.1)
 
