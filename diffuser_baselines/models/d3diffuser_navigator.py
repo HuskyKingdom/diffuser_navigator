@@ -345,7 +345,7 @@ class D3DiffusionNavigator(nn.Module):
                     )
                 for k, v in batch_tokens.items()
             }
-        encoder_pad_mask = batch_tokens["attention_mask"]
+        encoder_pad_mask = batch_tokens["attention_mask"] == 0
 
 
         if inference:
