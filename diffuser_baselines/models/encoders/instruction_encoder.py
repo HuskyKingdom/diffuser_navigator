@@ -51,6 +51,10 @@ class InstructionEncoder(nn.Module):
 
     def forward(self, observations,pad_mask,ins_text=None) -> Tensor:
 
+        print(observations)
+
+        assert 1==2
+
 
         input = observations.long()
 

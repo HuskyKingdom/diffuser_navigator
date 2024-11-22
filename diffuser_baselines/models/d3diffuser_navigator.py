@@ -75,6 +75,7 @@ class D3DiffusionPolicy(Policy):
         'padding_mask': None,
         'lengths': None,
         'weights': None,
+        'ins_text': observations['ins_text']
         }
 
         
@@ -115,6 +116,7 @@ class D3DiffusionPolicy(Policy):
         'padding_mask': observations['padding_mask'].to(observations['instruction'].device).bool(),
         'lengths': observations['lengths'].to(observations['instruction'].device),
         'weights': observations['weights'].to(observations['instruction'].device),
+        'ins_text': observations['ins_text']
         }
 
         
@@ -326,7 +328,7 @@ class D3DiffusionNavigator(nn.Module):
         if inference:
             # encoder
             encoder_pad_mask = (observations['instruction'] == 0)
-            enc_out = self.instruction_encoder(observations["instruction"],encoder_pad_mask,ins_text) # (bs,200,emd) | ins_text for visulization
+            enc_out = self.instruction_encoder(observations["ins_text"],encoder_pad_mask,ins_text) # (bs,200,emd) | ins_text for visulization
             enc_out = self.encoder_linear(enc_out)
 
             # decoder
