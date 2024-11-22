@@ -38,9 +38,7 @@ class InstructionEncoder(nn.Module):
 
 
 
-        
-        
-        self.map_layer = nn.Linear(768, embed_dim)
+        # self.map_layer = nn.Linear(768, embed_dim)
 
 
         # self.embedding_layer = nn.Embedding.from_pretrained(
