@@ -221,7 +221,7 @@ class D3DiffusionNavigator(nn.Module):
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
         self.action_encoder = nn.Embedding(num_actions + 1, int(embedding_dim/2)) # additional action as start token
-        self.encoder_linear = nn.Linear(embedding_dim,decoder_dim)
+        self.encoder_linear = nn.Linear(768,decoder_dim)
         
         # Decoder
         self.decoder = TrajectoryDecoder(config,decoder_dim,num_attention_heads,num_layers,num_actions)
