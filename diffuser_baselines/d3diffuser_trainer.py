@@ -140,8 +140,11 @@ def collate_fn(batch):
             continue
         collected_data[key] = torch.stack(collected_data[key], dim=0)
 
+    from transformers import BertTokenizer
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    tokens = tokenizer.tokenize(collected_data["ins_text"])
 
-    print(collected_data)
+    print(tokens)
     assert 1==2
 
     return collected_data
