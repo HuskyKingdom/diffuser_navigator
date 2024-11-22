@@ -339,8 +339,8 @@ class D3DiffusionNavigator(nn.Module):
         )
         batch_tokens = {
                 k: v.to(
-                        device=self.device,
-                        dtype=torch.float32,
+                        device=observations["rgb_features"].device,
+                        dtype=torch.int64,
                         non_blocking=True,
                     )
                 for k, v in batch_tokens.items()
