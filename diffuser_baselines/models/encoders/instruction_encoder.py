@@ -66,7 +66,7 @@ class InstructionEncoder(nn.Module):
 
         batch_tokens = self.tokenizer(
             observations,
-            padding=True,          
+            padding="max_length",          
             truncation=True,       
             max_length=200,        
             return_tensors="pt"    
