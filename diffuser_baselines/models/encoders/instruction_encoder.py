@@ -10,6 +10,10 @@ from transformers import BertTokenizer, BertModel
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule
 from diffuser_baselines.models.common.position_encodings import PositionalEncoding
 
+from transformers import BertTokenizer
+
+
+
 class InstructionEncoder(nn.Module):
     def __init__(self, config: Config,embed_dim) -> None:
         """An encoder that uses RNN to encode an instruction. Returns
@@ -26,10 +30,17 @@ class InstructionEncoder(nn.Module):
 
         self.config = config
 
+        # bert pre-train
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+
+
         self.embedding_layer = nn.Embedding.from_pretrained(
                     embeddings=self._load_embeddings(),
                     freeze=True,
         )
+
+        
 
         
         self.pe_layer = PositionalEncoding(embed_dim,0.1)
@@ -51,7 +62,17 @@ class InstructionEncoder(nn.Module):
 
     def forward(self, observations,pad_mask,ins_text=None) -> Tensor:
 
-        print(observations)
+        
+
+        batch_tokens = self.tokenizer(
+            observations,
+            padding=True,          
+            truncation=True,       
+            max_length=200,        
+            return_tensors="pt"    
+        )
+        print(batch_tokens)
+        print(batch_tokens.shape)
 
         assert 1==2
 
@@ -66,4 +87,4 @@ class InstructionEncoder(nn.Module):
                 query_pos=None, context=None, context_pos=None,pad_mask=pad_mask,vis=False,ins_text=ins_text)
         out = out[-1].transpose(0,1)
         
-        return out
+        return ou
