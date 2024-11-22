@@ -74,6 +74,7 @@ def collate_fn(batch):
         'padding_mask': [],
         'lengths': [],
         'weights': [],
+        'ins_text': [],
     }
     
     # Transpose the batch to separate each component
@@ -95,10 +96,7 @@ def collate_fn(batch):
         trajectories = torch.tensor(sample[3])  # (len_seq, 4)
         prev_actions = torch.tensor(sample[1]) 
 
-        ins_text = sample[4]
-
-        print(ins_text)
-        assert 1==2
+        collected_data["ins_text"].append(sample[4][0]) # instruction text
 
         # compute weights
         inflection_weights = torch.tensor([1.0, 3.2])
@@ -141,6 +139,10 @@ def collate_fn(batch):
         if key == 'lengths':
             continue
         collected_data[key] = torch.stack(collected_data[key], dim=0)
+
+
+    print(collected_data)
+    assert 1==2
 
     return collected_data
 
