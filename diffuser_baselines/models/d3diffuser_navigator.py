@@ -218,6 +218,7 @@ class D3DiffusionNavigator(nn.Module):
 
         decoder_dim = int(embedding_dim*2 + embedding_dim/2)
         # Encoders
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.instruction_encoder = InstructionEncoder(config,embedding_dim)
         self.action_encoder = nn.Embedding(num_actions + 1, int(embedding_dim/2)) # additional action as start token
         self.encoder_linear = nn.Linear(embedding_dim,decoder_dim)
@@ -328,7 +329,7 @@ class D3DiffusionNavigator(nn.Module):
         B,T = dims
 
         # tokenlize text
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        
         batch_tokens = self.tokenizer(
             observations,
             padding="max_length",          
