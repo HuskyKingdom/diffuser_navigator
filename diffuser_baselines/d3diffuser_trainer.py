@@ -95,7 +95,7 @@ def collate_fn(batch):
         trajectories = torch.tensor(sample[3])  # (len_seq, 4)
         prev_actions = torch.tensor(sample[1]) 
 
-        ins_text = torch.tensor(sample[4])
+        ins_text = sample[4]
 
         print(ins_text)
         assert 1==2
