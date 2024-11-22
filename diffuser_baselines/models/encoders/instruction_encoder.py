@@ -65,7 +65,7 @@ class InstructionEncoder(nn.Module):
         
 
         
-        outputs = self.bert_model(**observations)
+        outputs = self.bert_model(**observations).last_hidden_state
 
         print(outputs.shape)
     
