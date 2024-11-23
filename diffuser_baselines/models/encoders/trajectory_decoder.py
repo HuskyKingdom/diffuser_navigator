@@ -63,7 +63,7 @@ class TrajectoryDecoder(nn.Module):
         
         # crossatten_out = crossatten_out[-1].transpose(0,1)
 
-        decoder_out, avg_weights = self.decoder(dec_input.transpose(0,1), enc_out,
+        decoder_out, avg_weights = self.decoder(dec_input.transpose(0,1), enc_out.transpose(0,1),
                 diff_ts=None,
                 query_pos=q_pos, 
                 value_pos=k_pos,

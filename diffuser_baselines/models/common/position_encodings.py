@@ -49,7 +49,6 @@ class RotaryPositionEncoding(nn.Module):
     @staticmethod
     def embed_rotary(x, cos, sin):
         x2 = torch.stack([-x[..., 1::2], x[..., ::2]], dim=-1).reshape_as(x).contiguous()
-        print(x.shape, cos.shape)
         x = x * cos + x2 * sin
         return x
 
