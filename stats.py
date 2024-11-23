@@ -1,115 +1,23 @@
-import gzip
-import json
-import os
-from typing import List, Optional
+import torch
+import math
+from torch import nn
+from diffuser_baselines.models.common.position_encodings import PositionalEncoding,RotaryPositionEncoding
 
-import attr
-from habitat.config import Config
-from habitat.core.dataset import Dataset
-from habitat.core.registry import registry
-from habitat.core.utils import not_none_validator
-from habitat.datasets.pointnav.pointnav_dataset import ALL_SCENES_MASK
-from habitat.datasets.utils import VocabDict
-from habitat.tasks.nav.nav import NavigationGoal
-from habitat.tasks.vln.vln import InstructionData, VLNEpisode
+# 假设特征维度为 128
+feature_dim = 128
 
-DEFAULT_SCENE_PATH_PREFIX = "data/scene_datasets/"
+# 创建位置编码模块
+rotary_pe = RotaryPositionEncoding(feature_dim)
 
-SLURM_JOBID = os.environ.get("SLURM_JOB_ID", None)
-SLURM_TMPDIR = os.environ.get("SLURM_TMPDIR", None)
+# 假设有一个批量大小为 2，序列长度为 10 的输入
+batch_size = 2
+seq_length = 10
 
-def is_slurm_job() -> bool:
-    return SLURM_JOBID is not None
+# 生成位置索引（通常是 [0, 1, 2, ..., seq_length-1]）
+position_indices = torch.arange(seq_length).unsqueeze(0).repeat(batch_size, 1)  # [batch_size, seq_length]
 
+# 传入位置编码模块
+position_encoding = rotary_pe(position_indices)
 
-@attr.s(auto_attribs=True, kw_only=True)
-class VLNExtendedEpisode(VLNEpisode):
-    r"""
-    instruction_index_string: optional identifier of instruction.
-    """
-    instruction_index_string: Optional[str] = attr.ib(default=None)
-    goals: Optional[List[NavigationGoal]] = attr.ib(default=None)
-    reference_path: Optional[List[List[float]]] = attr.ib(default=None)
-
-
-@registry.register_dataset(name="VLN-CE-v1")
-class VLNCEDatasetV1(Dataset):
-    r"""Class inherited from Dataset that loads a Vision and Language
-    Navigation dataset.
-    """
-
-    episodes: List[VLNEpisode]
-    instruction_vocab: VocabDict
-
-    @staticmethod
-    def check_config_paths_exist(config: Config) -> bool:
-        if is_slurm_job() and SLURM_TMPDIR is not None:
-            scenes_dir = os.path.join(SLURM_TMPDIR, config.SCENES_DIR)
-        else:
-            scenes_dir = config.SCENES_DIR
-        return os.path.exists(
-            config.DATA_PATH.format(split=config.SPLIT)
-        ) and os.path.exists(scenes_dir)
-
-    @staticmethod
-    def _scene_from_episode(episode: VLNExtendedEpisode) -> str:
-        r"""Helper method to get the scene name from an episode.  Assumes
-        the scene_id is formated /path/to/<scene_name>.<ext>
-        """
-        return os.path.splitext(os.path.basename(episode.scene_id))[0]
-
-    @classmethod
-    def get_scenes_to_load(cls, config: Config) -> List[str]:
-        r"""Return a sorted list of scenes
-        """
-        assert cls.check_config_paths_exist(config)
-        dataset = cls(config)
-        scenes = {cls._scene_from_episode(episode) for episode in dataset.episodes}
-
-        return sorted(list(scenes))
-
-    def __init__(self, config: Optional[Config] = None) -> None:
-        self.episodes = []
-
-        if config is None:
-            return
-
-        dataset_filename = config.DATA_PATH.format(split=config.SPLIT)
-        if is_slurm_job() and SLURM_TMPDIR is not None:
-            scenes_dir = os.path.join(SLURM_TMPDIR, config.SCENES_DIR)
-        else:
-            scenes_dir = config.SCENES_DIR
-        with gzip.open(dataset_filename, "rt") as f:
-            self.from_json(f.read(), scenes_dir=scenes_dir)
-
-        if ALL_SCENES_MASK not in config.CONTENT_SCENES:
-            scenes_to_load = set(config.CONTENT_SCENES)
-            self.episodes = [
-                episode
-                for episode in self.episodes
-                if self._scene_from_episode(episode) in scenes_to_load
-            ]
-
-    def from_json(self, json_str: str, scenes_dir: Optional[str] = None) -> None:
-
-        deserialized = json.loads(json_str)
-        self.instruction_vocab = VocabDict(
-            word_list=deserialized["instruction_vocab"]["word_list"]
-        )
-
-        for episode in deserialized["episodes"]:
-            episode = VLNExtendedEpisode(**episode)
-
-            if scenes_dir is not None:
-                if episode.scene_id.startswith(DEFAULT_SCENE_PATH_PREFIX):
-                    episode.scene_id = episode.scene_id[
-                        len(DEFAULT_SCENE_PATH_PREFIX) :
-                    ]
-
-                episode.scene_id = os.path.join(scenes_dir, episode.scene_id)
-
-            episode.instruction = InstructionData(**episode.instruction)
-            if episode.goals is not None:
-                for g_index, goal in enumerate(episode.goals):
-                    episode.goals[g_index] = NavigationGoal(**goal)
-            self.episodes.append(episode)
+# 输出形状
+print("Position encoding shape:", position_encoding.shape)

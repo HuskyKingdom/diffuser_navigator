@@ -17,7 +17,7 @@ class TrajectoryDecoder(nn.Module):
 
         self.config = config
 
-        self.pe_layer = RotaryPositionEncoding(72)
+        self.pe_layer = RotaryPositionEncoding(embedding_dim)
         # self.sa_decoder = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers,dropout=0.2)
         # self.ca_decoder = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers,dropout=0.2)
         self.decoder = FFWRelativeDecoderModule(embedding_dim,num_attention_heads,num_layers,dropout=0.1)
