@@ -404,7 +404,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         # print(tokens,len(tokens))
         # print(weights,len(weights))
         # assert 1==2
-        
+        print(len(tokens),len(weights))
         assert len(tokens) == len(weights), "Tokens and weights must have the same length."
         assert all(0 <= w <= 1 for w in weights), "Weights must be between 0 and 1."
 
