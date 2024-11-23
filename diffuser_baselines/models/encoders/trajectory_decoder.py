@@ -37,10 +37,14 @@ class TrajectoryDecoder(nn.Module):
             hidden_state: [batch_size x hidden_size]
         """
 
+        # rotary positional encoding
         batch_size, seq_length, embedding_dim = dec_input.shape
         position_indices = torch.arange(seq_length, device=dec_input.device).unsqueeze(0).repeat(batch_size, 1)
 
+        print(position_indices.shape)
+
         input_pos = self.pe_layer(position_indices)
+
         # selfatten_out,_ = self.sa_decoder(dec_input.transpose(0,1), diff_ts=None,
         #         query_pos=None, context=None, context_pos=None,pad_mask=dec_pad_mask,causal_mask=causal_mask)
         
