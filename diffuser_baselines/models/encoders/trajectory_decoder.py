@@ -8,7 +8,7 @@ from torch import Tensor
 
 from transformers import BertTokenizer, BertModel
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule, FFWRelativeDecoderModule
-from diffuser_baselines.models.common.position_encodings import PositionalEncoding
+from diffuser_baselines.models.common.position_encodings import PositionalEncoding,RotaryPositionEncoding
 
 class TrajectoryDecoder(nn.Module):
     def __init__(self, config: Config,embedding_dim,num_attention_heads,num_layers, action_dim) -> None:
@@ -17,7 +17,7 @@ class TrajectoryDecoder(nn.Module):
 
         self.config = config
 
-        self.pe_layer = PositionalEncoding(embedding_dim,0.1)
+        self.pe_layer = RotaryPositionEncoding(embedding_dim)
         # self.sa_decoder = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers,dropout=0.2)
         # self.ca_decoder = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers,dropout=0.2)
         self.decoder = FFWRelativeDecoderModule(embedding_dim,num_attention_heads,num_layers,dropout=0.1)
@@ -37,7 +37,7 @@ class TrajectoryDecoder(nn.Module):
             hidden_state: [batch_size x hidden_size]
         """
 
-        dec_input = self.pe_layer(dec_input)
+        input_pos = self.pe_layer(dec_input)
         # selfatten_out,_ = self.sa_decoder(dec_input.transpose(0,1), diff_ts=None,
         #         query_pos=None, context=None, context_pos=None,pad_mask=dec_pad_mask,causal_mask=causal_mask)
         
@@ -53,7 +53,7 @@ class TrajectoryDecoder(nn.Module):
 
         decoder_out, avg_weights = self.decoder(dec_input.transpose(0,1), enc_out,
                 diff_ts=None,
-                query_pos=None, 
+                query_pos=input_pos, 
                 q_pad_mask=dec_pad_mask,
                 k_pad_mask=enc_pad_mask,
                 causal_mask=causal_mask,
