@@ -398,7 +398,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         from matplotlib import cm
         import re
        
-        
+        weights = weights[1:-1]
         tokens = re.findall(r'\w+|[^\w\s]', text, re.UNICODE)
         print(tokens)
 
