@@ -28,7 +28,7 @@ from habitat_extensions.utils import generate_video, observations_to_image
 from vlnce_baselines.common.aux_losses import AuxLosses
 from vlnce_baselines.common.env_utils import construct_envs_auto_reset_false
 from vlnce_baselines.common.utils import extract_instruction_tokens
-
+from transformers import BertTokenizer
 
 class BaseVLNCETrainer(BaseILTrainer):
     """A base trainer for VLN-CE imitation learning."""
@@ -391,7 +391,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         return aggregated_stats["success"]
 
     
-    def append_text_with_weights_to_image(self, image, text, weights):
+    def append_text_with_weights_to_image(self, image, tokens, weights):
         import numpy as np
         import cv2
         import textwrap
@@ -399,11 +399,8 @@ class BaseVLNCETrainer(BaseILTrainer):
         import re
 
 
-        print(text)
         weights = weights[1:-1]
-        tokens = re.findall(r'\w+|[^\w\s]', text, re.UNICODE)
-        print(tokens)
-
+       
 
         # print(tokens,len(tokens))
         # print(weights,len(weights))
@@ -470,6 +467,9 @@ class BaseVLNCETrainer(BaseILTrainer):
             writer: tensorboard writer object
             checkpoint_index: index of the current checkpoint
         """
+
+        tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+        
         logger.info(f"checkpoint_path: {checkpoint_path}")
         
 
@@ -609,7 +609,9 @@ class BaseVLNCETrainer(BaseILTrainer):
                     else:
                         avg_weights = [(x - min_val) / (max_val - min_val) for x in avg_weights]
                     
-                    frame = self.append_text_with_weights_to_image(frame,current_episodes[i].instruction.instruction_text,avg_weights)
+                    
+                    tokens = tokenizer.tokenize(current_episodes[i].instruction.instruction_text)
+                    frame = self.append_text_with_weights_to_image(frame,tokens,avg_weights)
 
                     # # show frame
                     # import cv2
