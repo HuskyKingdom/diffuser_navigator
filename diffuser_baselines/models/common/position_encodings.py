@@ -60,6 +60,7 @@ class RotaryPositionEncoding(nn.Module):
         div_term = div_term.view(1, 1, -1) # [1, 1, d]
         
         x_position = x_position.unsqueeze(-1)
+        
         sinx = torch.sin(x_position * div_term)  # [B, N, d]
         cosx = torch.cos(x_position * div_term)
 
