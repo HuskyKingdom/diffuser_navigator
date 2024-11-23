@@ -39,12 +39,13 @@ class TrajectoryDecoder(nn.Module):
 
         # rotary positional encoding
         batch_size, seq_length, embedding_dim = dec_input.shape
-        position_indices = torch.arange(seq_length, device=dec_input.device).unsqueeze(0).repeat(batch_size, 1)
+        q_position_indices = torch.arange(seq_length, device=dec_input.device).unsqueeze(0).repeat(batch_size, 1)
+        batch_size, seq_length, embedding_dim = enc_out.shape
+        k_position_indices = torch.arange(seq_length, device=dec_input.device).unsqueeze(0).repeat(batch_size, 1)
 
+        q_pos = self.pe_layer(q_position_indices)
+        k_pos = self.pe_layer(v_position_indices)
 
-        input_pos = self.pe_layer(position_indices)
-
-        print(input_pos)
 
         # selfatten_out,_ = self.sa_decoder(dec_input.transpose(0,1), diff_ts=None,
         #         query_pos=None, context=None, context_pos=None,pad_mask=dec_pad_mask,causal_mask=causal_mask)
@@ -61,7 +62,8 @@ class TrajectoryDecoder(nn.Module):
 
         decoder_out, avg_weights = self.decoder(dec_input.transpose(0,1), enc_out,
                 diff_ts=None,
-                query_pos=input_pos, 
+                query_pos=q_pos, 
+                value_pos=k_pos,
                 q_pad_mask=dec_pad_mask,
                 k_pad_mask=enc_pad_mask,
                 causal_mask=causal_mask,
