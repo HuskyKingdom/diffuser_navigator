@@ -41,10 +41,6 @@ class TrajectoryDecoder(nn.Module):
         batch_size, seq_length, embedding_dim = dec_input.shape
         position_indices = torch.arange(seq_length, device=dec_input.device).unsqueeze(0).repeat(batch_size, 1)
 
-        # Ensure position_indices is treated as scalar indices
-        position_indices = position_indices.view(-1, seq_length)
-
-        print(position_indices.shape)
 
         input_pos = self.pe_layer(position_indices)
 
