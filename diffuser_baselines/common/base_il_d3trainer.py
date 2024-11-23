@@ -400,6 +400,7 @@ class BaseVLNCETrainer(BaseILTrainer):
        
         
         tokens = re.findall(r'\w+|[^\w\s]', text, re.UNICODE)
+        print(tokens)
 
 
         # print(tokens,len(tokens))
