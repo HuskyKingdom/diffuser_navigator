@@ -399,7 +399,7 @@ class BaseVLNCETrainer(BaseILTrainer):
         import re
        
         
-        tokens = re.findall(r'\w+,?|\w+|[^\w\s]', text, re.UNICODE)
+        tokens = re.findall(r'\w+,?|\w+|', text, re.UNICODE)
 
         # print(tokens,len(tokens))
         # print(weights,len(weights))
