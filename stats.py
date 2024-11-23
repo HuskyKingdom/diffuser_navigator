@@ -16,6 +16,8 @@ seq_length = 10
 # 生成位置索引（通常是 [0, 1, 2, ..., seq_length-1]）
 position_indices = torch.arange(seq_length).unsqueeze(0).repeat(batch_size, 1)  # [batch_size, seq_length]
 
+position_indices = position_indices.unsqueeze(-1)
+
 # 传入位置编码模块
 position_encoding = rotary_pe(position_indices)
 
