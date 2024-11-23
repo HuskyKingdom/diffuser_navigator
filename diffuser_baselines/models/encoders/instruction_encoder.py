@@ -33,7 +33,7 @@ class InstructionEncoder(nn.Module):
         # bert pre-train
         self.bert_model = BertModel.from_pretrained('bert-base-uncased')
 
-        for param in self.bert_model.parameters(): # frozon
+        for param in self.bert_model.encoder.parameters(): # frozon
             param.requires_grad = False
 
 

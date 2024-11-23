@@ -57,7 +57,7 @@ class TrajectoryDecoder(nn.Module):
                 q_pad_mask=dec_pad_mask,
                 k_pad_mask=enc_pad_mask,
                 causal_mask=causal_mask,
-                vis=True,
+                vis=False,
                 ins_text=ins_text)
         
         decoder_out = decoder_out[-1].transpose(0,1)
