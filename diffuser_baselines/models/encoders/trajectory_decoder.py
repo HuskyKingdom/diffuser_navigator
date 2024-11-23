@@ -44,7 +44,7 @@ class TrajectoryDecoder(nn.Module):
         k_position_indices = torch.arange(seq_length, device=dec_input.device).unsqueeze(0).repeat(batch_size, 1)
 
         q_pos = self.pe_layer(q_position_indices)
-        k_pos = self.pe_layer(v_position_indices)
+        k_pos = self.pe_layer(k_position_indices)
 
 
         # selfatten_out,_ = self.sa_decoder(dec_input.transpose(0,1), diff_ts=None,
