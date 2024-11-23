@@ -42,38 +42,38 @@ class PositionalEncoding(nn.Module):
 class RotaryPositionEncoding(nn.Module):
     def __init__(self, feature_dim, pe_type='Rotary1D'):
         super().__init__()
-
         self.feature_dim = feature_dim
         self.pe_type = pe_type
 
     @staticmethod
     def embed_rotary(x, cos, sin):
-        x2 = torch.stack([-x[..., 1::2], x[..., ::2]], dim=-1).reshape_as(x).contiguous()
-        x = x * cos + x2 * sin
-        return x
+        x1 = x[..., ::2]
+        x2 = x[..., 1::2]
+        x_rotated = torch.stack([-x2, x1], dim=-1).reshape_as(x)
+        return x * cos + x_rotated * sin
 
     def forward(self, x_position):
         bsize, npoint = x_position.shape
+        position = x_position.unsqueeze(-1)  # [B, N, 1]
+
+        # 正确计算 div_term
         div_term = torch.exp(
-            torch.arange(0, self.feature_dim, 2, dtype=torch.float, device=x_position.device)
-            * (-math.log(10000.0) / (self.feature_dim)))
-        div_term = div_term.view(1, 1, -1) # [1, 1, d]
-        
-        x_position = x_position.unsqueeze(-1)
-        
-        sinx = torch.sin(x_position * div_term)  # [B, N, d]
-        cosx = torch.cos(x_position * div_term)
+            torch.arange(0, self.feature_dim // 2, dtype=torch.float32, device=x_position.device)
+            * (-math.log(10000.0) / (self.feature_dim // 2))
+        )  # [d/2]
 
-        sin_pos, cos_pos = map(
-            lambda feat: torch.stack([feat, feat], dim=-1).view(bsize, npoint, -1),
-            [sinx, cosx]
-        )
-        position_code = torch.stack([cos_pos, sin_pos] , dim=-1)
+        # 计算角度
+        angle = position * div_term  # [B, N, d/2]
 
-        if position_code.requires_grad:
-            position_code = position_code.detach()
+        # 计算 sin 和 cos
+        sin_pos = torch.sin(angle)
+        cos_pos = torch.cos(angle)
 
-        return position_code
+        # 将 sin 和 cos 扩展到 feature_dim 的大小
+        sin_pos = torch.stack((sin_pos, sin_pos), dim=-1).reshape(bsize, npoint, self.feature_dim)
+        cos_pos = torch.stack((cos_pos, cos_pos), dim=-1).reshape(bsize, npoint, self.feature_dim)
+
+        return cos_pos, sin_pos
 
 
 class RotaryPositionEncoding3D(RotaryPositionEncoding):
