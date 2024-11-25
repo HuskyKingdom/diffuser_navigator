@@ -28,7 +28,7 @@ class D3DiffusionPolicy(Policy):
         num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
     ) -> None:
         
-        super(Policy, self).__init__()
+        super().__init__()
         self.config = config
         self.navigator = D3DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.rgb_his = []
