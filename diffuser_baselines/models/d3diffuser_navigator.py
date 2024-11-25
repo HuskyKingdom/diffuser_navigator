@@ -63,11 +63,8 @@ class D3DiffusionPolicy(Policy):
         B,T,C,H,W = depth_features.shape
         depth_features = depth_features.view(-1,C,H,W)
         
-        print(rgb_features)
-
-
+       
         # format batch data
-
         collected_data = {
         'instruction': observations['instruction'],
         'rgb_features': rgb_features.to(observations['instruction'].device),
@@ -383,6 +380,9 @@ class D3DiffusionNavigator(nn.Module):
         causal_mask = self.generate_causal_mask(T,device=context_feature.device)
 
         decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
+
+        print(decoder_pred,decoder_pred.shape)
+        assert 1==2
 
         loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"],  observations["weights"]).sum()
         loss /= B
