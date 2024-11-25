@@ -294,6 +294,7 @@ class D3DiffusionNavigator(nn.Module):
 
             # construct input as [<start>,...]
             # action_except = observations['gt_actions'][:, :-1] # remove last element <end>
+            print( observations['prev_actions'], observations['prev_actions'].shape)
             action_except = observations['prev_actions'][:, 1:] # remove first
             action_start_token = torch.full((observations['prev_actions'].shape[0], 1), 4).to(observations['prev_actions'].device) # add start token
             action_input = torch.cat([action_start_token, action_except], dim=1) # construct input
