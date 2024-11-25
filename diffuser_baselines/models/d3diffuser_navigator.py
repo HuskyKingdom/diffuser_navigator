@@ -63,7 +63,7 @@ class D3DiffusionPolicy(Policy):
         B,T,C,H,W = depth_features.shape
         depth_features = depth_features.view(-1,C,H,W)
         
-        
+        print(rgb_features)
 
 
         # format batch data
