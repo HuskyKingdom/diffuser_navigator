@@ -28,7 +28,7 @@ class D3DiffusionPolicy(Policy):
         num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
     ) -> None:
         
-        super().__init__()
+        super(Policy, self).__init__()
         self.config = config
         self.navigator = D3DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.rgb_his = []
@@ -72,7 +72,7 @@ class D3DiffusionPolicy(Policy):
         'instruction': observations['instruction'],
         'rgb_features': rgb_features.to(observations['instruction'].device),
         'depth_features': depth_features.to(observations['instruction'].device),
-        'prev_actions': torch.tensor([self.pre_actions]).to(observations['instruction'].device).long(),
+        'prev_actions': torch.tensor(self.pre_actions).unsqueeze(0).to(observations['instruction'].device).long(),
         'trajectories': None,
         'padding_mask': None,
         'lengths': None,
