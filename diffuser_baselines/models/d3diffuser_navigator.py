@@ -327,7 +327,6 @@ class D3DiffusionNavigator(nn.Module):
         
         B,T = dims
 
-        print(observations['ins_text'])
 
         # tokenlize text
         batch_tokens = self.tokenizer(
