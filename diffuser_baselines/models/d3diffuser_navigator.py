@@ -306,10 +306,6 @@ class D3DiffusionNavigator(nn.Module):
             action_start_token = torch.full((observations['prev_actions'].shape[0], 1), 4).to(observations['prev_actions'].device) # add start token
             
             action_input = torch.cat([action_start_token, observations['prev_actions']], dim=1) # construct input
-
-            print( '-----------------', action_input, action_input.shape)
-
-
             action_input = action_input.view(-1,) # # (B,T) -> (B+T,)
             action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
 
@@ -330,6 +326,8 @@ class D3DiffusionNavigator(nn.Module):
     def forward(self, observations, dims, inference=False, ins_text=None):
         
         B,T = dims
+
+        print(ins_text)
 
         # tokenlize text
         batch_tokens = self.tokenizer(
