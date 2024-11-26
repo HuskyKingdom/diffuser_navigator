@@ -343,6 +343,7 @@ class D3DiffusionNavigator(nn.Module):
 
         print(decoder_pred[0,:10,:])
         print(observations["gt_actions"].long()[1,:10])
+        print(observations["rgb_features"][0,0,:].shape,observations["rgb_features"][0,0,:])
         # print(context_feature[1,:,:].unsqueeze(0)[0,0,:])
         assert 1==2
 
