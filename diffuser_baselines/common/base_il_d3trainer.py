@@ -514,7 +514,7 @@ class BaseVLNCETrainer(BaseILTrainer):
 
         self._initialize_policy(
             config,
-            True,
+            False,
             4, 
         )
         self.policy.eval()
