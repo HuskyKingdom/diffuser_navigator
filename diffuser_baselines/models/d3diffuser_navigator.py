@@ -308,7 +308,7 @@ class D3DiffusionNavigator(nn.Module):
             causal_mask = self.generate_causal_mask(T,device=context_feature.device)
 
           
-            decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, causal_mask,ins_text) # (bs,seq_len,4)
+            decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, None,ins_text) # (bs,seq_len,4)
 
             if context_feature.shape[1] >= 5:
                 print(context_feature.shape,context_feature[0,4,:])
