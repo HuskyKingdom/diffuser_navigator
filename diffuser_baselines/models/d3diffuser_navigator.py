@@ -206,7 +206,8 @@ class D3DiffusionNavigator(nn.Module):
             spatial_output=True,
         )
 
-        
+        # self.depth_encoder.to(next(self.parameters()).device).train()
+        # self.rgb_encoder.to(next(self.parameters()).device).train()
 
         self.rgb_linear = nn.Sequential(
                 nn.Flatten(),
@@ -229,8 +230,9 @@ class D3DiffusionNavigator(nn.Module):
         
         # Decoder
         self.decoder = TrajectoryDecoder(config,decoder_dim,num_attention_heads,num_layers,num_actions)
-
         self.masked_CE = MaskedSoftmaxCELoss()
+
+        self.train()
 
     
 
@@ -343,14 +345,14 @@ class D3DiffusionNavigator(nn.Module):
 
 
 
-        decoder_pred = self.decoder(context_feature[1,:,:].unsqueeze(0),observations["padding_mask"][1,:].unsqueeze(0), enc_out[1,:].unsqueeze(0), encoder_pad_mask[1,:].unsqueeze(0), causal_mask)
+        # decoder_pred = self.decoder(context_feature[1,:,:].unsqueeze(0),observations["padding_mask"][1,:].unsqueeze(0), enc_out[1,:].unsqueeze(0), encoder_pad_mask[1,:].unsqueeze(0), causal_mask)
 
-        print(decoder_pred[0,:10,:])
-        print(observations["gt_actions"].long()[1,:10])
-        # print(context_feature[1,:,:].unsqueeze(0)[0,0,:])
-        assert 1==2
+        # print(decoder_pred[0,:10,:])
+        # print(observations["gt_actions"].long()[1,:10])
+        # # print(context_feature[1,:,:].unsqueeze(0)[0,0,:])
+        # assert 1==2
 
-        # decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
+        decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
         # print(decoder_pred[1,:10,:])
         # print(observations["gt_actions"].long()[1,:10])
         # assert 1==2
