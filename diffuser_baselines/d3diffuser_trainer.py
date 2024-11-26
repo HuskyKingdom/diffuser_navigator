@@ -609,7 +609,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             4, 
         )
 
-        # self.policy.eval()
+        self.policy.eval()
         
         with TensorboardWriter(
             self.config.TENSORBOARD_DIR,
