@@ -274,7 +274,8 @@ class D3DiffusionNavigator(nn.Module):
     def forward(self, observations, dims, inference=False, ins_text=None):
         
         B,T = dims
-
+        
+        print(observations["ins_text"])
 
         # tokenlize text
         batch_tokens = self.tokenizer(
@@ -308,7 +309,6 @@ class D3DiffusionNavigator(nn.Module):
 
             decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, causal_mask,ins_text) # (bs,seq_len,4)
 
-            print(decoder_pred)
             # action sampling
             last_step_logits = decoder_pred[:, -1, :] 
             action_inferenced = last_step_logits.argmax(dim=-1).unsqueeze(-1)
