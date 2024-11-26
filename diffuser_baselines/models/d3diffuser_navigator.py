@@ -310,9 +310,8 @@ class D3DiffusionNavigator(nn.Module):
           
             decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, causal_mask,ins_text) # (bs,seq_len,4)
 
-            print(context_feature.shape[1])
             if context_feature.shape[1] >= 5:
-                print(context_feature.shape,context_feature[0,5,:])
+                print(context_feature.shape,context_feature[0,4,:])
 
 
             # action sampling
@@ -343,7 +342,7 @@ class D3DiffusionNavigator(nn.Module):
 
         print(decoder_pred[0,:10,:])
         print(observations["gt_actions"].long()[1,:10])
-        print(context_feature[1,:,:].unsqueeze(0)[0,5,:])
+        print(context_feature[1,:,:].unsqueeze(0)[0,4,:])
         assert 1==2
 
         # decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
