@@ -110,7 +110,7 @@ class D3DiffusionPolicy(Policy):
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
         
         print(rgb_features.shape)
-        print(rgb_features.view(B,T,2112,H,W)[1,0,:],rgb_features.view(B,T,2112,H,W)[1,0,:].shape)
+        print(rgb_features.view(B,T,2112,H,W)[1,1,:],rgb_features.view(B,T,2112,H,W)[1,1,:].shape)
         assert 1==2
 
         # format batch data
