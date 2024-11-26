@@ -307,7 +307,7 @@ class D3DiffusionNavigator(nn.Module):
             context_feature = context_feature.view(B,T,-1)
             causal_mask = self.generate_causal_mask(T,device=context_feature.device)
 
-            mask = torch.zeros(context_feature.shape[0], context_feature.shape[1], dtype=torch.bool)
+            mask = torch.zeros(context_feature.shape[0], context_feature.shape[1], dtype=torch.bool).to(context_feature.device)
             decoder_pred = self.decoder(context_feature,mask, enc_out, encoder_pad_mask, causal_mask,ins_text) # (bs,seq_len,4)
 
             print(context_feature.shape,context_feature[0,:6,:])
