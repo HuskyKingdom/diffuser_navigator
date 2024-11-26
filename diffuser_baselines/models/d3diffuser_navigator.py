@@ -308,7 +308,7 @@ class D3DiffusionNavigator(nn.Module):
             causal_mask = self.generate_causal_mask(T,device=context_feature.device)
 
             decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, None,ins_text) # (bs,seq_len,4)
-            print(decoder_pred)
+            print(enc_out)
             # action sampling
             last_step_logits = decoder_pred[:, -1, :] 
             action_inferenced = last_step_logits.argmax(dim=-1).unsqueeze(-1)
