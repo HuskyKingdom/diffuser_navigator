@@ -335,7 +335,7 @@ class D3DiffusionNavigator(nn.Module):
 
         decoder_pred = self.decoder(context_feature[1,:,:].unsqueeze(0),observations["padding_mask"][1,:].unsqueeze(0), enc_out[1,:].unsqueeze(0), encoder_pad_mask[1,:].unsqueeze(0), causal_mask)
 
-        print(decoder_pred[1,:10,:])
+        print(decoder_pred[0,:10,:])
         print(observations["gt_actions"].long()[1,:10])
         assert 1==2
 
