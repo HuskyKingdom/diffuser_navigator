@@ -275,7 +275,6 @@ class D3DiffusionNavigator(nn.Module):
         
         B,T = dims
         
-        print(observations["ins_text"])
 
         # tokenlize text
         batch_tokens = self.tokenizer(
@@ -333,6 +332,9 @@ class D3DiffusionNavigator(nn.Module):
 
         decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
 
+        print(decoder_pred[0,1,:])
+        print(observations["gt_actions"].long()[0,1])
+        assert 1==2
 
         loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"],  observations["weights"]).sum()
         loss /= B
