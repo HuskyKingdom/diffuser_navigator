@@ -310,7 +310,8 @@ class D3DiffusionNavigator(nn.Module):
           
             decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, causal_mask,ins_text) # (bs,seq_len,4)
 
-            print(context_feature.shape,context_feature[0,5,:])
+            if context_feature.shape[1] >= 5:
+                print(context_feature.shape,context_feature[0,5,:])
 
 
             # action sampling
