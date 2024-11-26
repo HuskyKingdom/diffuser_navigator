@@ -331,6 +331,8 @@ class D3DiffusionNavigator(nn.Module):
         context_feature = context_feature.view(B,T,-1)
         causal_mask = self.generate_causal_mask(T,device=context_feature.device)
 
+
+        print(causal_mask.shape)
         
         decoder_pred = self.decoder(context_feature[1,:,:].unsqueeze(0),observations["padding_mask"][1,:].unsqueeze(0), enc_out[1,:].unsqueeze(0), encoder_pad_mask[1,:].unsqueeze(0), causal_mask)
 
