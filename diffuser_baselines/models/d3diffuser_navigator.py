@@ -296,6 +296,8 @@ class D3DiffusionNavigator(nn.Module):
 
 
         if inference:
+
+            print(observations["ins_text"])
             # encoder
             # encoder_pad_mask = (observations['instruction'] == 0)
             enc_out = self.instruction_encoder(batch_tokens) # (bs,200,emd) | ins_text for visulization
