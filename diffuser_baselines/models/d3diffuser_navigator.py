@@ -38,7 +38,7 @@ class D3DiffusionPolicy(Policy):
 
     def act(self,observations, prev_actions, encode_only=False,print_info = False,ins_text=None): 
 
-        self.navigator.train()
+
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
 
         
@@ -206,8 +206,7 @@ class D3DiffusionNavigator(nn.Module):
             spatial_output=True,
         )
 
-        self.depth_encoder.to(next(self.parameters()).device).train()
-        self.rgb_encoder.to(next(self.parameters()).device).train()
+        
 
         self.rgb_linear = nn.Sequential(
                 nn.Flatten(),
