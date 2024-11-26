@@ -225,58 +225,6 @@ class D3DiffusionNavigator(nn.Module):
 
         self.masked_CE = MaskedSoftmaxCELoss()
 
-
-        # self.time_emb = nn.Sequential(
-        #     SinusoidalPosEmb(embedding_dim),
-        #     nn.Linear(embedding_dim, embedding_dim),
-        #     nn.ReLU(),
-        #     nn.Linear(embedding_dim, embedding_dim)
-        # )
-
-        # self.his_encoder = HistoryGRU(32768,512,embedding_dim,2)
-
-        # # positional embeddings
-        # self.pe_layer = PositionalEncoding(embedding_dim,0.2)
-
-        # # Attention layers _____________________
-        # layer = ParallelAttention(
-        #     num_layers=num_layers,
-        #     d_model=embedding_dim, n_heads=num_attention_heads,
-        #     self_attention1=False, self_attention2=False,
-        #     cross_attention1=True, cross_attention2=False
-        # )
-        # self.vl_attention = nn.ModuleList([
-        #     layer
-        #     for _ in range(1)
-        #     for _ in range(1)
-        # ])
-        # self.traj_lang_attention = nn.ModuleList([
-        #     ParallelAttention(
-        #         num_layers=1,
-        #         d_model=embedding_dim, n_heads=num_attention_heads,
-        #         self_attention1=False, self_attention2=False,
-        #         cross_attention1=True, cross_attention2=False,
-        #         rotary_pe=False, apply_ffn=False
-        #     )
-        # ])
-
-        # self.history_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,2,1)
-        # self.action_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,2,1)
-        # self.language_self_atten = FFWRelativeSelfAttentionModule(embedding_dim,num_attention_heads,num_layers)
-
-        # self.language_his_cross_atten = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        # self.cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-        # self.context_cross_attention = FFWRelativeCrossAttentionModule(embedding_dim,num_attention_heads,num_layers)
-
-        # # predictors
-
-        # self.sample_predictor = nn.Sequential(
-        #     nn.Linear(embedding_dim, embedding_dim),
-        #     nn.ReLU(),
-        #     nn.Linear(embedding_dim, self.config.DIFFUSER.traj_space)
-        # )
-
-        # self.n_steps = diffusion_timesteps
     
 
 
@@ -393,15 +341,6 @@ class D3DiffusionNavigator(nn.Module):
 
 
 
-    def vision_language_attention(self, feats, instr_feats,seq1_pad=None,seq2_pad=None):
-        feats, _ = self.vl_attention[0](
-            seq1=feats, seq1_key_padding_mask=seq1_pad,
-            seq2=instr_feats, seq2_key_padding_mask=seq2_pad,
-            seq1_pos=None, seq2_pos=None,
-            seq1_sem_pos=None, seq2_sem_pos=None
-        )
-        return feats
-    
     
     def create_boolean_mask(self,mask):
        
@@ -412,66 +351,6 @@ class D3DiffusionNavigator(nn.Module):
 
         return ~boolean_mask 
 
-
-    def predict_logits(self, x, tokens, timesteps): # tokens in form [instr_tokens,rgb_tokens,depth_tokens,history_tokens,pad_mask, his_len]
-
-        time_embeddings = self.time_emb(timesteps.float())
-        pad_mask = tokens[4]
-        his_pad_mask = self.create_boolean_mask(tokens[5])
-
-        # encode actions
-        action_emb = self.action_encoder(x)
-
-  
-        
-        # positional embedding __________________
-        instruction_position = self.pe_layer(tokens[0])
-        action_position = self.pe_layer(action_emb)
-        history_position = self.pe_layer(tokens[3])
-
-        # self attentions __________________
-        # encode history
-        history_feature = self.history_self_atten(history_position.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None,pad_mask=his_pad_mask)[-1].transpose(0,1)
-        
-
-        # action features
-        action_features = self.action_self_atten(action_position.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None,pad_mask=None)[-1].transpose(0,1)
-
-        # languege features
-        lan_features = self.language_self_atten(instruction_position.transpose(0,1), diff_ts=time_embeddings,
-                query_pos=None, context=None, context_pos=None,pad_mask=pad_mask)[-1].transpose(0,1)
-        
-
-        # cross attentions __________________
-        lan_features = self.language_his_cross_atten(query=lan_features.transpose(0, 1),
-            value=history_feature.transpose(0, 1),
-            query_pos=None,
-            value_pos=None,
-            diff_ts=time_embeddings,pad_mask=his_pad_mask)[-1].transpose(0,1) # takes last layer and return to (B,L,D)
-
-        # observation features
-        obs_features = self.cross_attention(query=tokens[1].transpose(0, 1),
-            value=tokens[2].transpose(0, 1),
-            query_pos=None,
-            value_pos=None,
-            diff_ts=time_embeddings)[-1].transpose(0,1) # takes last layer and return to (B,L,D)
-        
-        # context features 
-        context_features = self.vision_language_attention(obs_features,lan_features,seq2_pad=pad_mask) # rgb attend instr.
-
-
-        # prediction head
-        final_feature = self.context_cross_attention(query=action_features.transpose(0, 1),
-            value=context_features.transpose(0, 1),
-            query_pos=None,
-            value_pos=None,
-            diff_ts=time_embeddings)[-1].transpose(0,1) 
-
-        logits_pred = self.sample_predictor(final_feature)
-
-        return logits_pred 
 
 
     def encode_visions(self,batch,config):
