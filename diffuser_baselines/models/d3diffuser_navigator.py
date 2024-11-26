@@ -41,6 +41,9 @@ class D3DiffusionPolicy(Policy):
         
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
 
+        print(rgb_features,rgb_features.shape)
+        assert 1==2
+
         # storing histories
         self.rgb_his.append(rgb_features)
         self.depth_his.append(depth_features)
@@ -310,9 +313,7 @@ class D3DiffusionNavigator(nn.Module):
 
             decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, causal_mask,ins_text) # (bs,seq_len,4)
 
-            if context_feature.shape[1] >= 3:
-                print(context_feature.shape,context_feature[0,0,:])
-
+           
 
             # action sampling
             last_step_logits = decoder_pred[:, -1, :] 
@@ -342,7 +343,7 @@ class D3DiffusionNavigator(nn.Module):
 
         print(decoder_pred[0,:10,:])
         print(observations["gt_actions"].long()[1,:10])
-        print(context_feature[1,:,:].unsqueeze(0)[0,0,:])
+        # print(context_feature[1,:,:].unsqueeze(0)[0,0,:])
         assert 1==2
 
         # decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
