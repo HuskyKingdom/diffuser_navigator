@@ -198,6 +198,9 @@ class TorchVisionResNet(nn.Module):
             rgb_observations = observations["rgb"].permute(0, 3, 1, 2)
             resnet_output = self.cnn(normalize(rgb_observations))
 
+            print(resnet_output,resnet_output.shape)
+            assert 1==2
+
         if self.spatial_output:
             b, c, h, w = resnet_output.size()
 
