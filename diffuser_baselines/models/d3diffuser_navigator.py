@@ -232,6 +232,8 @@ class D3DiffusionNavigator(nn.Module):
         self.masked_CE = MaskedSoftmaxCELoss()
 
         self.train()
+        self.rgb_encoder.eval()
+        self.depth_encoder.eval()
 
     
 

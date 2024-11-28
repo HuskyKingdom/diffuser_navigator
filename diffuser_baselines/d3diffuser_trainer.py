@@ -710,7 +710,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                                 f"traing_eval_{diffuser_it}", val_suc, (diffuser_it * self.config.IL.epochs + epoch + 1)
                             )
                         
-                    self.policy.train()
+                    # self.policy.train()
                     
                     
 
