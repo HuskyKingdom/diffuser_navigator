@@ -230,11 +230,11 @@ class D3DiffusionNavigator(nn.Module):
         # Decoder
         self.decoder = TrajectoryDecoder(config,decoder_dim,num_attention_heads,num_layers,num_actions)
         self.masked_CE = MaskedSoftmaxCELoss()
-        
+
 
         self.train()
-        self.rgb_encoder.eval()
-        self.depth_encoder.eval()
+        self.rgb_encoder.cnn.eval()
+        self.depth_encoder.visual_encoder.eval()
 
     
 
