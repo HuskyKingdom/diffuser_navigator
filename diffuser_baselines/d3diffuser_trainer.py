@@ -422,7 +422,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 current_episodes = None
                 envs_to_pause = None
                 
-                prev_instructions = ["None" for i in envs.num_envs]
+                prev_instructions = ["None" for i in range(envs.num_envs)]
 
                 if ensure_unique_episodes:
                     envs_to_pause = []
