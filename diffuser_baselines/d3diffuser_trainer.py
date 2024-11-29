@@ -455,7 +455,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             ),
                         )
 
-                        if collected_eps == 2:
+                        if collected_eps == 1:
                             print(str(start_id + collected_eps))
                             print(transposed_ep)
                             assert 1==2
