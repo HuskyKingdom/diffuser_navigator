@@ -68,8 +68,6 @@ def collate_fn(batch):
     # print(batch[1][0]["rgb_features"][0])
     # assert 1==2
 
-    assert 1==2
-
     collected_data = {
         'instruction': [],           
         'rgb_features': [],          
@@ -207,9 +205,11 @@ class TrajectoryDataset(torch.utils.data.Dataset):
                 
                 trajectory = msgpack_numpy.unpackb(data, raw=False)
 
-                print(f"index is {index}")
-                print(trajectory)
-                print("_____________________________________________")
+                if index == 1:
+                    print(f"index is {index}")
+                    print(trajectory)
+                    print("_____________________________________________")
+                    assert 1==2
     
                 return trajectory
 
