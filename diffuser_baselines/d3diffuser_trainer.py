@@ -189,8 +189,8 @@ class TrajectoryDataset(torch.utils.data.Dataset):
     
     def __getitem__(self, index):
 
-        print(f"index is {index}")
-        assert 1==2
+        
+
         with lmdb.open(
         self.lmdb_features_dir,
         map_size=self.map_size,
@@ -205,6 +205,10 @@ class TrajectoryDataset(torch.utils.data.Dataset):
 
                 
                 trajectory = msgpack_numpy.unpackb(data, raw=False)
+
+                print(f"index is {index}")
+                print(trajectory)
+                assert 1==2
     
                 return trajectory
 
