@@ -412,7 +412,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
         prev_instructions = ["None" for i in range(envs.num_envs)]
 
-        
+
         with tqdm.tqdm(
             total=self.config.IL.DAGGER.update_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
@@ -435,7 +435,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                     if not dones[i]: # store instruction if not done
                         prev_instructions[i] = envs.current_episodes()[i].instruction.instruction_text
-                        print(prev_instructions[i])
 
                     if dones[i] and not skips[i]:
                         ep = episodes[i]
@@ -466,7 +465,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             ),
                         )
 
-                        if collected_eps == 1:
+                        if collected_eps == 2:
                             print(str(start_id + collected_eps))
                             print(transposed_ep)
                             assert 1==2
