@@ -421,13 +421,15 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             while collected_eps < self.config.IL.DAGGER.update_size:
                 current_episodes = None
                 envs_to_pause = None
-                current_instruction = envs.current_episodes()[i].instruction.instruction_text
+
+                current_instruction = envs.current_episodes()[0].instruction.instruction_text # change if run in multi-env
 
                 if ensure_unique_episodes:
                     envs_to_pause = []
                     current_episodes = envs.current_episodes()
 
                 for i in range(envs.num_envs):
+
                     if dones[i] and not skips[i]:
                         ep = episodes[i]
                         traj_obs = batch_obs(
