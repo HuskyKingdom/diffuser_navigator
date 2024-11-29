@@ -68,6 +68,7 @@ def collate_fn(batch):
     # print(batch[1][0]["rgb_features"][0])
     # assert 1==2
 
+    assert 1==2
 
     collected_data = {
         'instruction': [],           
@@ -208,7 +209,7 @@ class TrajectoryDataset(torch.utils.data.Dataset):
 
                 print(f"index is {index}")
                 print(trajectory)
-                assert 1==2
+                print("_____________________________________________")
     
                 return trajectory
 
