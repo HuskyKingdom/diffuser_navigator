@@ -484,9 +484,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     if envs.num_envs == 0:
                         break
 
-                if collected_eps == 2:
-                    print(current_episodes[i].instruction.instruction_text)
-                    assert 1==2
+                
 
                 if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta):
                     actions = self.policy.act(
@@ -498,6 +496,11 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     batch,prev_actions,encode_only = False
                     )
 
+
+                if collected_eps == 2:
+                    print(current_episodes[i].instruction.instruction_text)
+                    print(observations[i]["rgb_features"])
+                    assert 1==2
  
                 # actions = self.policy.act(
                 #     batch,prev_actions,encode_only = False
