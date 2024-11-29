@@ -65,6 +65,7 @@ def collate_fn(batch):
         return torch.cat([t, pad], dim=0)
     
     print(batch[1][4])
+    print(batch[1][0]["rgb_features"][0])
     assert 1==2
 
 
