@@ -499,7 +499,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                 if collected_eps == 2:
                     print(current_episodes[i].instruction.instruction_text)
-                    print(observations[i]["rgb_features"])
+                    print(rgb_features)
                     assert 1==2
  
                 # actions = self.policy.act(
