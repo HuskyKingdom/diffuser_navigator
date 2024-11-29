@@ -451,7 +451,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             np.array([step[1] for step in ep], dtype=np.int64),
                             np.array([step[2] for step in ep], dtype=np.int64),
                             np.array([step[3] for step in ep], dtype=np.float32),
-                            np.array([current_instruction])
+                            np.array([prev_instructions[i]])
                         ]
                         
                         #print(f"prev {np.array([step[1] for step in ep], dtype=np.int64)} | oracle {np.array([step[2] for step in ep], dtype=np.int64)}")
