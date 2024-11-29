@@ -96,9 +96,9 @@ class D3DiffusionPolicy(Policy):
         
         
         
-        # print(observations['rgb_features'].shape)
-        # print(observations['rgb_features'][1,0,:],observations['rgb_features'][1,0,:].shape)
-        # assert 1==2
+        print(observations['rgb_features'].shape)
+        print(observations['rgb_features'][1,0,:],observations['rgb_features'][1,0,:].shape)
+        assert 1==2
 
 
         # (B,T,C,H,W) -> (B+T,C,H,W)
