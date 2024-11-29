@@ -455,6 +455,10 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             ),
                         )
 
+                        if collected_eps == 2:
+                            print(str(start_id + collected_eps))
+                            print(transposed_ep)
+
                         pbar.update()
                         collected_eps += 1
 
