@@ -422,10 +422,10 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 current_episodes = None
                 envs_to_pause = None
                 
-                prev_instructions = None
+                prev_instructions = ["None" for i in envs.num_envs]
 
                 if ensure_unique_episodes:
-                    envs_to_pause = ["" for i in range(envs.num_envs)]
+                    envs_to_pause = []
                     current_episodes = envs.current_episodes()
 
                 for i in range(envs.num_envs):
@@ -451,7 +451,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             np.array([step[1] for step in ep], dtype=np.int64),
                             np.array([step[2] for step in ep], dtype=np.int64),
                             np.array([step[3] for step in ep], dtype=np.float32),
-                            np.array([prev_instructions[i]])
+                            np.array([current_instruction])
                         ]
                         
                         #print(f"prev {np.array([step[1] for step in ep], dtype=np.int64)} | oracle {np.array([step[2] for step in ep], dtype=np.int64)}")
