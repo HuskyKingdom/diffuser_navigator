@@ -409,6 +409,10 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 ep.episode_id for ep in envs.current_episodes()
             }
 
+
+        prev_instructions = ["None" for i in range(envs.num_envs)]
+
+        
         with tqdm.tqdm(
             total=self.config.IL.DAGGER.update_size, dynamic_ncols=True
         ) as pbar, lmdb.open(
@@ -421,8 +425,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             while collected_eps < self.config.IL.DAGGER.update_size:
                 current_episodes = None
                 envs_to_pause = None
-                
-                prev_instructions = ["None" for i in range(envs.num_envs)]
+            
 
                 if ensure_unique_episodes:
                     envs_to_pause = []
