@@ -432,6 +432,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                     if not dones[i]: # store instruction if not done
                         prev_instructions[i] = envs.current_episodes()[i].instruction.instruction_text
+                        print(prev_instructions[i])
 
                     if dones[i] and not skips[i]:
                         ep = episodes[i]
