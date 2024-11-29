@@ -49,7 +49,8 @@ def collate_fn(batch):
         },
         prev_actions: (len_seq),
         gt_actions: (len_seq),
-        trajectories: (len_seq,4)
+        trajectories: (len_seq,4),
+        ins_text; str
     ]
     """
 
@@ -62,6 +63,9 @@ def collate_fn(batch):
             pad_amount, *t.size()[1:]
         )
         return torch.cat([t, pad], dim=0)
+    
+    print(batch[1][4])
+    assert 1==2
 
 
     collected_data = {
