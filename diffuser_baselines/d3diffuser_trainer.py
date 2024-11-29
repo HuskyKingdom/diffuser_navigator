@@ -428,7 +428,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         
                         if collected_eps == 2:
                             print(current_episodes[i].instruction.instruction_text)
-                            print(traj_obs)
+                            print(traj_obs["rgb_features"][0])
+                            assert 1==2
                  
                         transposed_ep = [
                             traj_obs,
