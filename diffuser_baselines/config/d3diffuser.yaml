@@ -35,9 +35,7 @@ IL:
     p: 1.0
     preload_lmdb_features: True
     lmdb_features_dir: data/trajectories_dirs/diffuser/trajectories.lmdb
-    
-
-    
+    lmdb_commit_frequency: 200
 
 DIFFUSER:
   embedding_dim: 256

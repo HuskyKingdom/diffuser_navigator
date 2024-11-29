@@ -483,7 +483,11 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     )
                     if envs.num_envs == 0:
                         break
-                
+
+                if collected_eps == 1:
+                    print(current_episodes[i].instruction.instruction_text)
+                    assert 1==2
+
                 if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta):
                     actions = self.policy.act(
                     batch,prev_actions,encode_only = True
