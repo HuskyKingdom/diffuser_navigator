@@ -484,7 +484,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     if envs.num_envs == 0:
                         break
 
-                if collected_eps == 1:
+                if collected_eps == 2:
                     print(current_episodes[i].instruction.instruction_text)
                     assert 1==2
 
