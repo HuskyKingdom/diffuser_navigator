@@ -234,8 +234,8 @@ class D3DiffusionNavigator(nn.Module):
 
 
         self.train()
-        self.rgb_encoder.cnn.eval()
-        self.depth_encoder.visual_encoder.eval()
+        # self.rgb_encoder.cnn.eval()
+        # self.depth_encoder.visual_encoder.eval()
 
     
 
