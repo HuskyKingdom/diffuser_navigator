@@ -426,6 +426,9 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             if self.config.IL.DAGGER.lmdb_fp16:
                                 traj_obs[k] = traj_obs[k].astype(np.float16)
                         
+                        if collected_eps == 2:
+                            print(current_episodes[i].instruction.instruction_text)
+                            print(traj_obs)
                  
                         transposed_ep = [
                             traj_obs,
