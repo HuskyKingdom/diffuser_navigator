@@ -205,11 +205,11 @@ class TrajectoryDataset(torch.utils.data.Dataset):
                 
                 trajectory = msgpack_numpy.unpackb(data, raw=False)
 
-                if index == 1:
-                    print(f"index is {index}")
-                    print(trajectory)
-                    print("_____________________________________________")
-                    assert 1==2
+                # if index == 1:
+                #     print(f"index is {index}")
+                #     print(trajectory)
+                #     print("_____________________________________________")
+                #     assert 1==2
     
                 return trajectory
 
