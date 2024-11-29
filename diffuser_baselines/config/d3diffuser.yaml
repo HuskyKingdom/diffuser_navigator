@@ -33,7 +33,7 @@ IL:
     iterations: 1
     update_size: 10819
     p: 1.0
-    preload_lmdb_features: True
+    preload_lmdb_features: False
     lmdb_features_dir: data/trajectories_dirs/diffuser/trajectories.lmdb
     lmdb_commit_frequency: 200
 
