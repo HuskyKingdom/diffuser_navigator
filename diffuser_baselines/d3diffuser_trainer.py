@@ -189,7 +189,7 @@ class TrajectoryDataset(torch.utils.data.Dataset):
     
     def __getitem__(self, index):
 
-        print(index)
+        print(f"index is {index}")
         assert 1==2
         with lmdb.open(
         self.lmdb_features_dir,
