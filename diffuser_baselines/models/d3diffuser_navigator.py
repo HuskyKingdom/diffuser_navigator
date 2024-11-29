@@ -38,8 +38,6 @@ class D3DiffusionPolicy(Policy):
 
     def act(self,observations, prev_actions, encode_only=False,print_info = False,ins_text=None): 
 
-        self.train()
-        # print(ins_text)
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
 
         
@@ -94,12 +92,7 @@ class D3DiffusionPolicy(Policy):
     
 
     def build_loss(self,observations):
-        
-        
-        print(observations["ins_text"][2])
-        print(observations['rgb_features'].shape)
-        print(observations['rgb_features'][2,0,:],observations['rgb_features'][2,0,:].shape)
-        assert 1==2
+
 
 
         # (B,T,C,H,W) -> (B+T,C,H,W)
@@ -234,8 +227,8 @@ class D3DiffusionNavigator(nn.Module):
 
 
         self.train()
-        # self.rgb_encoder.cnn.eval()
-        # self.depth_encoder.visual_encoder.eval()
+        self.rgb_encoder.cnn.eval()
+        self.depth_encoder.visual_encoder.eval()
 
     
 
