@@ -421,6 +421,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             while collected_eps < self.config.IL.DAGGER.update_size:
                 current_episodes = None
                 envs_to_pause = None
+                current_instruction = envs.current_episodes()[i].instruction.instruction_text
+
                 if ensure_unique_episodes:
                     envs_to_pause = []
                     current_episodes = envs.current_episodes()
@@ -444,7 +446,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             np.array([step[1] for step in ep], dtype=np.int64),
                             np.array([step[2] for step in ep], dtype=np.int64),
                             np.array([step[3] for step in ep], dtype=np.float32),
-                            np.array([current_episodes[i].instruction.instruction_text])
+                            np.array([current_instruction])
                         ]
                         
                         #print(f"prev {np.array([step[1] for step in ep], dtype=np.int64)} | oracle {np.array([step[2] for step in ep], dtype=np.int64)}")
