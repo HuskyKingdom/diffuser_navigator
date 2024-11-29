@@ -64,9 +64,9 @@ def collate_fn(batch):
         )
         return torch.cat([t, pad], dim=0)
     
-    print(batch[1][4])
-    print(batch[1][0]["rgb_features"][0])
-    assert 1==2
+    # print(batch[1][4])
+    # print(batch[1][0]["rgb_features"][0])
+    # assert 1==2
 
 
     collected_data = {
@@ -189,6 +189,8 @@ class TrajectoryDataset(torch.utils.data.Dataset):
     
     def __getitem__(self, index):
 
+        print(index)
+        assert 1==2
         with lmdb.open(
         self.lmdb_features_dir,
         map_size=self.map_size,
