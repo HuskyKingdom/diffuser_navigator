@@ -37,6 +37,7 @@ IL:
     lmdb_features_dir: data/trajectories_dirs/diffuser/trajectories.lmdb
     lmdb_commit_frequency: 200
 
+
 DIFFUSER:
   embedding_dim: 128
   num_attention_heads: 4
