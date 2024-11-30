@@ -13,7 +13,7 @@ dagger: False
 
 EVAL:
   USE_CKPT_CONFIG: False
-  SPLIT: val_unseen # for testing overfitting only
+  SPLIT: train # for testing overfitting only
   EPISODE_COUNT: -1
   ACTION_POP: True
 
@@ -33,7 +33,7 @@ IL:
     iterations: 1
     update_size: 10819
     p: 1.0
-    preload_lmdb_features: False
+    preload_lmdb_features: True
     lmdb_features_dir: data/trajectories_dirs/diffuser/trajectories.lmdb
     lmdb_commit_frequency: 200
 
