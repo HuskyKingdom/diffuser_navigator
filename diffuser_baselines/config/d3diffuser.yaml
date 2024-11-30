@@ -20,7 +20,7 @@ EVAL:
 IL:
   ckpt_to_load: data/checkpoints/d3diffuser/ckpt.5.pth
   load_from_ckpt: False # for testing overfitting only 
-  epochs: 35
+  epochs: 50
   batch_size: 20
   is_requeue: False # continuo training
   
@@ -38,7 +38,7 @@ IL:
     lmdb_commit_frequency: 200
 
 DIFFUSER:
-  embedding_dim: 256
+  embedding_dim: 128
   num_attention_heads: 4
   num_layers: 2
   diffusion_timesteps: 100
