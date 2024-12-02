@@ -7,7 +7,7 @@ TENSORBOARD_DIR: data/tensorboard_dirs/d3diffuser
 CHECKPOINT_FOLDER: data/checkpoints/d3diffuser
 EVAL_CKPT_PATH_DIR: data/checkpoints/d3diffuser
 RESULTS_DIR: data/checkpoints/d3diffuser/evals
-VIDEO_OPTION: ["disk"]
+VIDEO_OPTION: []
 lr_Schedule: True
 dagger: False
 
