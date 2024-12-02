@@ -7,7 +7,7 @@ TENSORBOARD_DIR: data/tensorboard_dirs/d3diffuser
 CHECKPOINT_FOLDER: data/checkpoints/d3diffuser
 EVAL_CKPT_PATH_DIR: data/checkpoints/d3diffuser
 RESULTS_DIR: data/checkpoints/d3diffuser/evals
-VIDEO_OPTION: ['disk']
+VIDEO_OPTION: []
 lr_Schedule: True
 dagger: False
 
@@ -39,7 +39,7 @@ IL:
 
 
 DIFFUSER:
-  embedding_dim: 128
+  embedding_dim: 64
   num_attention_heads: 4
   num_layers: 2
   diffusion_timesteps: 100
