@@ -30,6 +30,7 @@ class TrajectoryDecoder(nn.Module):
         )
 
 
+
     def forward(self, dec_input,dec_pad_mask, enc_out, enc_pad_mask, causal_mask, ins_text=None) -> Tensor:
         """
         Tensor sizes after computation:
