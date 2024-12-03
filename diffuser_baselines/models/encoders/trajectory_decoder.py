@@ -63,6 +63,7 @@ class TrajectoryDecoder(nn.Module):
                 ins_text=ins_text)
         
         
+        
         decoder_out = decoder_out[-1].transpose(0,1)
         
         pred_action_logits = self.action_predictor(decoder_out)
