@@ -18,8 +18,8 @@ class TrajectoryDecoder(nn.Module):
         self.config = config
 
 
-        # self.pe_layer = PositionalEncoding(embedding_dim,0.1)
-        self.pe_layer = RotaryPositionEncoding(embedding_dim)
+        self.pe_layer = PositionalEncoding(embedding_dim,0.1)
+        # self.pe_layer = RotaryPositionEncoding(embedding_dim)
 
         self.decoder = FFWRelativeDecoderModule(embedding_dim,num_attention_heads,num_layers,dropout=0.1)
 
@@ -39,25 +39,25 @@ class TrajectoryDecoder(nn.Module):
             hidden_state: [batch_size x hidden_size]
         """
 
-        # rotary positional encoding
-        batch_size, seq_length, embedding_dim = dec_input.shape
-        q_position_indices = torch.arange(seq_length, device=dec_input.device).unsqueeze(0).repeat(batch_size, 1)
-        batch_size, seq_length, embedding_dim = enc_out.shape
-        k_position_indices = torch.arange(seq_length, device=dec_input.device).unsqueeze(0).repeat(batch_size, 1)
+        # # rotary positional encoding
+        # batch_size, seq_length, embedding_dim = dec_input.shape
+        # q_position_indices = torch.arange(seq_length, device=dec_input.device).unsqueeze(0).repeat(batch_size, 1)
+        # batch_size, seq_length, embedding_dim = enc_out.shape
+        # k_position_indices = torch.arange(seq_length, device=dec_input.device).unsqueeze(0).repeat(batch_size, 1)
 
         
 
-        q_pos = self.pe_layer(q_position_indices)
-        k_pos = self.pe_layer(k_position_indices)
+        # q_pos = self.pe_layer(q_position_indices)
+        # k_pos = self.pe_layer(k_position_indices)
 
         # fixed pe
-        # dec_input = self.pe_layer(dec_input)
+        dec_input = self.pe_layer(dec_input)
 
 
         decoder_out, avg_weights = self.decoder(dec_input.transpose(0,1), enc_out.transpose(0,1),
                 diff_ts=None,
-                query_pos=q_pos, 
-                value_pos=k_pos,
+                query_pos=None, 
+                value_pos=None,
                 q_pad_mask=dec_pad_mask,
                 k_pad_mask=enc_pad_mask,
                 causal_mask=causal_mask,
