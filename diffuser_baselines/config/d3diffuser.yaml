@@ -38,7 +38,6 @@ IL:
     lmdb_commit_frequency: 200
 
 
-
 DIFFUSER:
   embedding_dim: 320
   num_attention_heads: 12
