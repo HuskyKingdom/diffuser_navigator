@@ -40,21 +40,16 @@ class D3DiffusionPolicy(Policy):
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
 
-        
-        if encode_only:
-            return None
 
-        # storing histories
+         # storing histories
         self.rgb_his.append(rgb_features)
         self.depth_his.append(depth_features)
         if prev_actions.item() != 0:
             self.pre_actions.append(prev_actions.item())
-
         
-        print(len(self.rgb_his))
-        print(len(self.pre_actions))
-
-        print(prev_actions)
+        if encode_only:
+            return None
+        
      
 
         # action inference
