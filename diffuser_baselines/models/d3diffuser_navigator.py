@@ -51,7 +51,9 @@ class D3DiffusionPolicy(Policy):
             self.pre_actions.append(prev_actions.item())
 
         
-
+        print(len(self.rgb_his))
+        print(len(self.pre_actions))
+     
 
         # action inference
 
@@ -263,9 +265,7 @@ class D3DiffusionNavigator(nn.Module):
             action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
 
 
-        print(rgb_features.shape)
-        print(action_features.shape)
-        print(observations['prev_actions'])
+        
 
         observation_context = torch.cat((rgb_features,depth_features,action_features),dim=-1) # (B+T, emb*2+emb/2)
         
