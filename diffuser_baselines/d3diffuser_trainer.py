@@ -505,7 +505,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     ) # inference for getting features only
                     actions = batch[expert_uuid].long()
                 else:
-                    ins_text = envs.current_episodes()[i].instruction.instruction_text
+                    ins_text = envs.current_episodes[0].instruction.instruction_text # change if multi-train
                     actions = self.policy.act(
                     batch,prev_actions,encode_only = False,ins_text=ins_text
                     )
