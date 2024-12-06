@@ -53,6 +53,8 @@ class D3DiffusionPolicy(Policy):
         
         print(len(self.rgb_his))
         print(len(self.pre_actions))
+
+        print(prev_actions)
      
 
         # action inference
