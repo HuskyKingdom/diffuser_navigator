@@ -8,7 +8,7 @@ CHECKPOINT_FOLDER: data/checkpoints/d3diffuser_da
 EVAL_CKPT_PATH_DIR: data/checkpoints/d3diffuser_da/ckpt.100.pth
 RESULTS_DIR: data/checkpoints/d3diffuser_da/evals
 VIDEO_OPTION: []
-lr_Schedule: False
+lr_Schedule: True
 dagger: True
 
 
@@ -34,7 +34,7 @@ IL:
     iterations: 10
     update_size: 5000
     p: 0.75
-    preload_lmdb_features: False
+    preload_lmdb_features: True
     lmdb_features_dir: data/trajectories_dirs/d3diffuser_da/trajectories.lmdb
     
     
@@ -45,8 +45,8 @@ DIFFUSER:
   num_layers: 4
   diffusion_timesteps: 100
   logging_file: data/loggings/train.log
-  saving_frequency: 50
-  LR: 2.5e-4
+  saving_frequency: 8
+  LR: 2.5e-5
   traj_length: 3
   beta: 0.1 
   action_space: 4

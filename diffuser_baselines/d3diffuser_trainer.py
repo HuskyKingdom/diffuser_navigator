@@ -511,22 +511,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     )
 
 
-                # if collected_eps == 2:
-                #     print(current_episodes[i].instruction.instruction_text)
-                #     print(rgb_features[i])
-                #     assert 1==2
- 
-                # actions = self.policy.act(
-                #     batch,prev_actions,encode_only = False
-                # ) # inference for getting features only
-
-                # #print(f"action {actions} | expert action {batch[expert_uuid].long()}")
-
-                # actions = torch.where(
-                #     torch.rand_like(actions, dtype=torch.float) < beta,
-                #     batch[expert_uuid].long(),
-                #     actions,
-                # )
 
                 for i in range(envs.num_envs):
                     if rgb_features is not None:
