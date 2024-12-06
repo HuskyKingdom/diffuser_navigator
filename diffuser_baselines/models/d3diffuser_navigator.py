@@ -79,8 +79,7 @@ class D3DiffusionPolicy(Policy):
         'ins_text': [ins_text]
         }
 
-        print(rgb_features.shape)
-        print(prev_actions.shape)
+        
         action = self.navigator(collected_data,(B,T), inference = True, ins_text=ins_text)
         
 
@@ -264,7 +263,8 @@ class D3DiffusionNavigator(nn.Module):
             action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
 
 
-
+        print(rgb_features.shape)
+        print(action_features.shape)
 
         observation_context = torch.cat((rgb_features,depth_features,action_features),dim=-1) # (B+T, emb*2+emb/2)
         
