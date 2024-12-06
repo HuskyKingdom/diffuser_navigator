@@ -79,7 +79,8 @@ class D3DiffusionPolicy(Policy):
         'ins_text': [ins_text]
         }
 
-        
+        print(rgb_features.shape)
+        print(prev_actions.shape)
         action = self.navigator(collected_data,(B,T), inference = True, ins_text=ins_text)
         
 
