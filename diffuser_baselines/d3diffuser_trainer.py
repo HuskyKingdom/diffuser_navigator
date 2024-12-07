@@ -808,7 +808,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             ckpt_path = config.IL.ckpt_to_load
             ckpt_dict = self.load_checkpoint(ckpt_path, map_location="cpu")
             self.policy.load_state_dict(ckpt_dict["state_dict"])
-            self.optimizer.load_state_dict(ckpt_dict["optim_state"])
             if config.IL.is_requeue:
                 self.optimizer.load_state_dict(ckpt_dict["optim_state"])
                 self.start_epoch = ckpt_dict["epoch"] + 1
