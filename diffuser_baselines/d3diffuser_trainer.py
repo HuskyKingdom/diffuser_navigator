@@ -768,7 +768,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             if self.config.lr_Schedule:
                 self.scheduler.step()
 
-        print(self.optimizer.param_groups[0]['lr'])
+        # print(self.optimizer.param_groups[0]['lr'])
 
 
         return loss.item()
