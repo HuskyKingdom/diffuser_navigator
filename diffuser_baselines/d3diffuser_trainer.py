@@ -797,8 +797,12 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         )
 
         if config.lr_Schedule: # train
-            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
+            if not config.dagger:
+                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
                                                 steps_per_epoch=540, epochs=self.config.IL.epochs)
+            else:
+                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
+                                                total_steps=self.config.DAGGER.update_size * self.config.DAGGER.iterations / self.config.IL.batch_size)
 
         if load_from_ckpt:
             ckpt_path = config.IL.ckpt_to_load
