@@ -8,7 +8,7 @@ CHECKPOINT_FOLDER: data/checkpoints/d3diffuser_da
 EVAL_CKPT_PATH_DIR: data/checkpoints/d3diffuser_da/ckpt.100.pth
 RESULTS_DIR: data/checkpoints/d3diffuser_da/evals
 VIDEO_OPTION: []
-lr_Schedule: True
+lr_Schedule: False
 dagger: True
 
 
@@ -46,7 +46,7 @@ DIFFUSER:
   diffusion_timesteps: 100
   logging_file: data/loggings/train.log
   saving_frequency: 8
-  LR: 2.5e-4
+  LR: 0.05e-5
   traj_length: 3
   beta: 0.1 
   action_space: 4
