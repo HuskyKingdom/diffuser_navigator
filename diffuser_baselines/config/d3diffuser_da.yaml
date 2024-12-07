@@ -8,7 +8,7 @@ CHECKPOINT_FOLDER: data/checkpoints/d3diffuser_da
 EVAL_CKPT_PATH_DIR: data/checkpoints/d3diffuser_da/ckpt.100.pth
 RESULTS_DIR: data/checkpoints/d3diffuser_da/evals
 VIDEO_OPTION: []
-lr_Schedule: False
+lr_Schedule: True
 dagger: True
 
 
