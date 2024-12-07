@@ -109,7 +109,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             observation_space, self.obs_transforms
         )
         return observation_space, action_space
-
+    
     def save_checkpoint(self, file_name: str) -> None:
         """Save checkpoint with specified name.
 
@@ -122,7 +122,22 @@ class BaseVLNCETrainer(BaseILTrainer):
             "config": self.config,
         }
         torch.save(
-            checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name)
+            checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name),_use_new_zipfile_serialization=False
+        )
+
+    def save_checkpoint_for_old(self, file_name: str) -> None:
+        """Save checkpoint with specified name.
+
+        Args:
+            file_name: file name for checkpoint
+        """
+        checkpoint = {
+            "state_dict": self.policy.state_dict(),
+            "optim_state": self.optimizer.state_dict(),
+            "config": self.config,
+        }
+        torch.save(
+            checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name),_use_new_zipfile_serialization=False
         )
 
     def load_checkpoint(self, checkpoint_path, *args, **kwargs) -> Dict:
