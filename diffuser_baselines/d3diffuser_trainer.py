@@ -497,7 +497,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     if envs.num_envs == 0:
                         break
                 
-                print(batch[1].shape)
 
                 if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta): # action from expert
                     actions = self.policy.act(
@@ -796,13 +795,13 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             self.policy.parameters(), lr=self.config.DIFFUSER.LR
         )
 
-        if config.lr_Schedule: # train
+        if config.lr_Schedule: # train 250 + 500 + 750  + 1000 + 1250 + 1500 + 1750 + 2000 + 2250 + 2500 
             if not config.dagger:
                 self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
                                                 steps_per_epoch=540, epochs=self.config.IL.epochs)
             else:
                 self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
-                                                total_steps=int(self.config.IL.DAGGER.update_size * self.config.IL.DAGGER.iterations / self.config.IL.batch_size))
+                                                total_steps=55000)
 
         if load_from_ckpt:
             ckpt_path = config.IL.ckpt_to_load
