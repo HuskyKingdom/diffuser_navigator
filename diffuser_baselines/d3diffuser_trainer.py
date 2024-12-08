@@ -496,8 +496,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     )
                     if envs.num_envs == 0:
                         break
-
                 
+                print(batch[1].shape)
 
                 if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta): # action from expert
                     actions = self.policy.act(
