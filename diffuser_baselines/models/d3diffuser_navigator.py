@@ -48,7 +48,8 @@ class D3DiffusionPolicy(Policy):
         # if prev_actions.item() != 0:
         #     self.pre_actions.append(prev_actions.item())
         self.pre_actions.append(prev_actions.item())
-
+        
+        print(len(self.rgb_his),len(self.pre_actions))
         print(self.pre_actions)
         if encode_only:
             return None
