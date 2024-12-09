@@ -44,8 +44,9 @@ class D3DiffusionPolicy(Policy):
         # storing histories
         self.rgb_his.append(rgb_features)
         self.depth_his.append(depth_features)
-        if prev_actions.item() != 0:
-            self.pre_actions.append(prev_actions.item())
+        # if prev_actions.item() != 0:
+        #     self.pre_actions.append(prev_actions.item())
+        self.pre_actions.append(prev_actions.item())
         
         if encode_only:
             return None
@@ -255,7 +256,7 @@ class D3DiffusionNavigator(nn.Module):
 
         else: # compute action featrues based on decoder outputs (prev actions)
             
-            
+            action_except = observations['prev_actions'][:, 1:] # remove first
             action_start_token = torch.full((observations['prev_actions'].shape[0], 1), 4).to(observations['prev_actions'].device).long() # add start token
             action_input = torch.cat([action_start_token, observations['prev_actions']], dim=1) # construct input
 
@@ -265,7 +266,7 @@ class D3DiffusionNavigator(nn.Module):
 
 
         
-
+        print(rgb_features.shape,depth_features.shape,action_features.shape)
         observation_context = torch.cat((rgb_features,depth_features,action_features),dim=-1) # (B+T, emb*2+emb/2)
         
         return observation_context
