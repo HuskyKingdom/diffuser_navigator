@@ -48,11 +48,12 @@ class D3DiffusionPolicy(Policy):
         # if prev_actions.item() != 0:
         #     self.pre_actions.append(prev_actions.item())
         self.pre_actions.append(prev_actions.item())
-        
+
+        print(self.pre_actions)
         if encode_only:
             return None
         
-        print(self.pre_actions)
+        
 
         # action inference
 
