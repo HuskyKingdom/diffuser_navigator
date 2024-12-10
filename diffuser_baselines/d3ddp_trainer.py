@@ -391,7 +391,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
         self.config.TASK_CONFIG.DATASET.split_rank = self.local_rank
         self.config.freeze()
 
-        envs = construct_envs(self.config, self._get_env_class(self.config.ENV_NAME))
+        envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
         expert_uuid = self.config.IL.DAGGER.expert_policy_sensor_uuid
 
         prev_actions = torch.zeros(
