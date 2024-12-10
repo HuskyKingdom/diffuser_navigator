@@ -378,7 +378,9 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
     def _update_dataset(self, data_it):
         """Collect dataset for training."""
-        self.empty_cuda_cache()
+        if torch.cuda.is_available():
+            with torch.cuda.device(self.device):
+                torch.cuda.empty_cache()
 
         # Initialize environments if not done
         if self.envs is None:
@@ -583,6 +585,10 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     self._update_dataset(
                         diffuser_it + (1 if self.config.IL.load_from_ckpt else 0)
                     )
+                torch.distributed.barrier()
+                if torch.cuda.is_available():
+                    with torch.cuda.device(self.device):
+                        torch.cuda.empty_cache()
                 # get dataset ---
                     
                 diffusion_dataset = TrajectoryDataset(self.lmdb_features_dir,self.config.IL.DAGGER.lmdb_map_size,self.config.IL.batch_size)

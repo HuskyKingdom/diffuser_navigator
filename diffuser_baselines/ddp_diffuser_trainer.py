@@ -593,8 +593,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
             os.makedirs(self.config.CHECKPOINT_FOLDER, exist_ok=True)
     
 
-
-
         """Main method for training DAgger."""
         if self.config.IL.DAGGER.preload_lmdb_features:
             try:
@@ -654,7 +652,6 @@ class DiffuserTrainer(BaseVLNCETrainer):
         ) if self.world_rank == 0
             else contextlib.suppress() ) as writer:
             for diffuser_it in range(self.config.IL.DAGGER.iterations):
-
                 # get dataset ---
                 step_id = 0
                 if not self.config.IL.DAGGER.preload_lmdb_features:
