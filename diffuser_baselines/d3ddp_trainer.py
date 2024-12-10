@@ -378,127 +378,233 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
 
     def _update_dataset(self, data_it):
-        """Collect dataset for training."""
+
         if torch.cuda.is_available():
             with torch.cuda.device(self.device):
                 torch.cuda.empty_cache()
 
-        # Initialize environments if not done
-        if self.envs is None:
-            allocated_cuda_memory = torch.cuda.memory_allocated(device=self.local_rank) / (1024 * 1024 * 1024)
-            if allocated_cuda_memory > 6:
-                self.config.defrost()
-                self.config.NUM_PROCESSES = int((12 - allocated_cuda_memory) // 2.5)
-                self.config.freeze()
-                logger.info("CUDA memory is low, reducing processes to: ", self.config.NUM_PROCESSES)
-            self.envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
-        else:
-            self.envs.resume_all()
+        # --------- 并行化逻辑开始（参考代码B）-----------
+        # 根据本进程的rank和world_size进行数据分片
+        self.config.defrost()
+        self.config.TASK_CONFIG.DATASET.split_num = self.world_size
+        self.config.TASK_CONFIG.DATASET.split_rank = self.local_rank
+        self.config.freeze()
+        
+        # 构造并行环境
+        envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
+        # --------- 并行化逻辑结束 -----------
 
-        # Initialize tensors and variables
-        prev_actions = torch.zeros(self.config.NUM_PROCESSES, 1, device=self.device, dtype=torch.long)
-        not_done_masks = torch.zeros(self.config.NUM_PROCESSES, 1, dtype=torch.uint8, device=self.device)
+        expert_uuid = self.config.IL.DAGGER.expert_policy_sensor_uuid
 
-        observations = self.envs.reset()
+        prev_actions = torch.zeros(
+            envs.num_envs,
+            1,
+            device=self.device,
+            dtype=torch.long,
+        )
+
+        not_done_masks = torch.zeros(
+            envs.num_envs, 1, dtype=torch.uint8, device=self.device
+        )
+
+        observations = envs.reset()
         observations = extract_instruction_tokens(
             observations, self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID
         )
         batch = batch_obs(observations, self.device)
+        batch = apply_obs_transforms_batch(batch, self.obs_transforms)
 
-        print(f"\n\n\n gpu {self.world_rank}, device {self.device}")
+        episodes = [[] for _ in range(envs.num_envs)]
+        skips = [False for _ in range(envs.num_envs)]
+        dones = [False for _ in range(envs.num_envs)]
 
-        episodes = [[] for _ in range(self.envs.num_envs)]
-        dones = [False for _ in range(self.envs.num_envs)]
-        collected_eps = 0
+        p = self.config.IL.DAGGER.p
+        beta = 0.0 if p == 0.0 else p ** data_it
+        ensure_unique_episodes = beta == 1.0
 
-        # DAgger parameter beta
-        beta = self.config.IL.DAGGER.p ** data_it if self.config.IL.DAGGER.p != 0.0 else 0.0
+        def hook_builder(tgt_tensor):
+            def hook(m, i, o):
+                tgt_tensor.set_(o.cpu())
+            return hook
 
-        # Initialize hooks and features
-        rgb_features, depth_features = None, None
-        rgb_hook, depth_hook = None, None
+        rgb_features = None
+        rgb_hook = None
         if not self.config.MODEL.RGB_ENCODER.trainable:
             rgb_features = torch.zeros((1,), device="cpu")
             rgb_hook = self.policy.module.navigator.rgb_encoder.cnn.register_forward_hook(
-                lambda m, i, o: rgb_features.set_(o.cpu())
+                hook_builder(rgb_features)
             )
+
+        depth_features = None
+        depth_hook = None
         if not self.config.MODEL.DEPTH_ENCODER.trainable:
             depth_features = torch.zeros((1,), device="cpu")
             depth_hook = self.policy.module.navigator.depth_encoder.visual_encoder.register_forward_hook(
-                lambda m, i, o: depth_features.set_(o.cpu())
+                hook_builder(depth_features)
             )
 
-        # Prepare for multi-process storage
-        def write_cache(cache):
-            with Pool(8) as workers:
-                compressed_cache = workers.map(compress_data, cache)
-            txn = lmdb_env.begin(write=True)
-            existing_size = lmdb_env.stat()["entries"]
-            for i, data in enumerate(compressed_cache):
-                txn.put(str(existing_size + i).encode(), data)
-            txn.commit()
+        collected_eps = 0
+        ep_ids_collected = None
+        if ensure_unique_episodes:
+            ep_ids_collected = {ep.episode_id for ep in envs.current_episodes()}
 
-        with lmdb.open(self.lmdb_features_dir, map_size=int(self.config.IL.DAGGER.lmdb_map_size)) as lmdb_env, tqdm.tqdm(
-            total=self.config.IL.DAGGER.update_size, desc=f"Collecting Data: Iter {data_it}"
-        ) as pbar, torch.no_grad():
+        prev_instructions = ["None" for i in range(envs.num_envs)]
+
+        with tqdm.tqdm(
+            total=self.config.IL.DAGGER.update_size, dynamic_ncols=True, disable=(self.local_rank != 0)
+        ) as pbar, lmdb.open(
+            self.lmdb_features_dir,
+            map_size=int(self.config.IL.DAGGER.lmdb_map_size),
+        ) as lmdb_env, torch.no_grad():
             start_id = lmdb_env.stat()["entries"]
-            cache = []
+            txn = lmdb_env.begin(write=True)
 
             while collected_eps < self.config.IL.DAGGER.update_size:
-                for i in range(self.envs.num_envs):
+                if ensure_unique_episodes:
+                    envs_to_pause = []
+                    current_episodes = envs.current_episodes()
+
+                for i in range(envs.num_envs):
+                    if not dones[i]:
+                        prev_instructions[i] = envs.current_episodes()[i].instruction.instruction_text
+
+                    if dones[i] and not skips[i]:
+                        ep = episodes[i]
+                        traj_obs = batch_obs(
+                            [step[0] for step in ep],
+                            device=torch.device("cpu"),
+                        )
+                        del traj_obs[expert_uuid]
+                        for k, v in traj_obs.items():
+                            traj_obs[k] = v.numpy()
+                            if self.config.IL.DAGGER.lmdb_fp16:
+                                traj_obs[k] = traj_obs[k].astype(np.float16)
+                        
+                        transposed_ep = [
+                            traj_obs,
+                            np.array([step[1] for step in ep], dtype=np.int64),
+                            np.array([step[2] for step in ep], dtype=np.int64),
+                            np.array([step[3] for step in ep], dtype=np.float32),
+                            np.array([prev_instructions[i]])
+                        ]
+                        
+                        txn.put(
+                            str(start_id + collected_eps).encode(),
+                            msgpack_numpy.packb(
+                                transposed_ep, use_bin_type=True
+                            ),
+                        )
+
+                        if self.local_rank == 0:
+                            pbar.update()
+                        collected_eps += 1
+
+                        if (
+                            collected_eps
+                            % self.config.IL.DAGGER.lmdb_commit_frequency
+                        ) == 0:
+                            txn.commit()
+                            txn = lmdb_env.begin(write=True)
+
+                        if ensure_unique_episodes:
+                            if current_episodes[i].episode_id in ep_ids_collected:
+                                envs_to_pause.append(i)
+                            else:
+                                ep_ids_collected.add(
+                                    current_episodes[i].episode_id
+                                )
+
                     if dones[i]:
-                        episode = episodes[i]
-                        if len(episode) >= 25:
-                            traj_obs = batch_obs([step[0] for step in episode], device="cpu")
-                            del traj_obs[self.config.IL.DAGGER.expert_policy_sensor_uuid]
-                            for k, v in traj_obs.items():
-                                traj_obs[k] = v.numpy()
-                            transposed_ep = [
-                                traj_obs,
-                                np.array([step[1] for step in episode]),
-                                np.array([step[2] for step in episode]),
-                            ]
-                            cache.append(transposed_ep)
-                            collected_eps += 1
-                            pbar.update(1)
+                        episodes[i] = []
+                        self.policy.module.clear_his()
 
-                            if len(cache) >= self.config.IL.DAGGER.lmdb_commit_frequency:
-                                write_cache(cache)
-                                cache.clear()
+                if ensure_unique_episodes:
+                    (
+                        envs,
+                        not_done_masks,
+                        batch,
+                        _,
+                    ) = self._pause_envs(
+                        envs_to_pause,
+                        envs,
+                        not_done_masks,
+                        batch,
+                    )
+                    if envs.num_envs == 0:
+                        break
 
-                        episodes[i] = []  # Clear episode data
+                if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta):
+                    # action from expert
+                    actions = self.policy.module.act(
+                        batch,prev_actions,encode_only = True
+                    )
+                    actions = batch[expert_uuid].long()
+                else:
+                    ins_text = envs.current_episodes()[0].instruction.instruction_text
+                    # action from model
+                    actions = self.policy.module.act(
+                        batch,prev_actions,encode_only = False,ins_text=ins_text
+                    )
 
-                actions = self.policy.module.act(batch, prev_actions, encode_only=False)
-                outputs = self.envs.step(actions)
-                observations, _, dones, _ = [list(x) for x in zip(*outputs)]
-
-                # Update observations and batch
-                observations = extract_instruction_tokens(
-                    observations, self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID
-                )
-                batch = batch_obs(observations, self.device)
-                not_done_masks = torch.tensor(
-                    [[0] if done else [1] for done in dones], dtype=torch.uint8, device=self.device
-                )
-
-                # Update episode data
-                for i in range(self.envs.num_envs):
+                for i in range(envs.num_envs):
                     if rgb_features is not None:
                         observations[i]["rgb_features"] = rgb_features[i]
+                        del observations[i]["rgb"]
+
                     if depth_features is not None:
                         observations[i]["depth_features"] = depth_features[i]
-                    episodes[i].append((observations[i], prev_actions[i].item(), actions[i].item()))
+                        del observations[i]["depth"]
 
-            if cache:
-                write_cache(cache)
+                    pos = envs.call_at(i, "get_state", {"observations": {}})
 
-        # Cleanup
-        self.envs.close()
-        self.envs = None
+                    episodes[i].append(
+                        (
+                            observations[i],
+                            prev_actions[i].item(),
+                            batch[expert_uuid][i].item(),
+                            pos
+                        )
+                    )
+
+                skips = batch[expert_uuid].long() == -1
+                actions = torch.where(skips, torch.zeros_like(actions), actions)
+                skips = skips.squeeze(-1).to(device="cpu", non_blocking=True)
+                prev_actions.copy_(actions)
+
+                outputs = envs.step([a[0].item() for a in actions])
+                observations, _, dones, _ = [list(x) for x in zip(*outputs)]
+
+                observations = extract_instruction_tokens(
+                    observations,
+                    self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID,
+                )
+
+                batch = batch_obs(observations, self.device)
+                batch = apply_obs_transforms_batch(batch, self.obs_transforms)
+
+                not_done_masks = torch.tensor(
+                    [[0] if done else [1] for done in dones],
+                    dtype=torch.uint8,
+                    device=self.device,
+                )
+
+            txn.commit()
+
+        envs.close()
+        envs = None
+
         if rgb_hook is not None:
             rgb_hook.remove()
         if depth_hook is not None:
             depth_hook.remove()
+
+        self.policy.module.clear_his()
+
+        # --------- 并行化逻辑：结束时Barrier同步，确保所有进程都完成数据更新 -----------
+        import torch.distributed as dist
+        if dist.is_initialized():
+            dist.barrier()
+        # --------- 并行化逻辑结束 -----------
 
         logger.info("Dataset collection complete.")
 
