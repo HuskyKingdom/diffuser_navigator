@@ -449,30 +449,33 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
         prev_instructions = ["None" for i in range(envs.num_envs)]
 
-        # 使用LMDB存储
-        with tqdm.tqdm(
-            total=self.config.IL.DAGGER.update_size, dynamic_ncols=True
-        ) as pbar, lmdb.open(
+        data_cache = []
+
+        def writeCache(cache):
+            if len(cache) == 0:
+                return
+            # 并行压缩数据
+            with Pool(8) as workers:
+                cache = workers.map(compress_data, cache)
+            txn = lmdb_env.begin(write=True)
+            existed_size = lmdb_env.stat()["entries"]
+            for i, v in enumerate(cache):
+                txn.put(str(existed_size + i).encode(), v)
+            txn.commit()
+
+        with lmdb.open(
             self.lmdb_features_dir,
             map_size=int(self.config.IL.DAGGER.lmdb_map_size),
         ) as lmdb_env, torch.no_grad():
+
             start_id = lmdb_env.stat()["entries"]
 
-            # 用于缓存数据，后续并行压缩写入
-            data_cache = []
-            def writeCache(cache):
-                if len(cache) == 0:
-                    return
-                # 并行压缩数据
-                with Pool(8) as workers:
-                    cache = workers.map(compress_data, cache)
-                txn = lmdb_env.begin(write=True)
-                existed_size = lmdb_env.stat()["entries"]
-                for i, v in enumerate(cache):
-                    txn.put(str(existed_size + i).encode(), v)
-                txn.commit()
-
-            txn = lmdb_env.begin(write=True)
+            # 仅主进程显示进度条
+            if self.local_rank == 0:
+                pbar = tqdm.tqdm(
+                    total=self.config.IL.DAGGER.update_size,
+                    dynamic_ncols=True
+                )
 
             while collected_eps < self.config.IL.DAGGER.update_size:
                 current_episodes = None
@@ -493,7 +496,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
                             [step[0] for step in ep],
                             device=torch.device("cpu"),
                         )
-                        del traj_obs[expert_uuid]
+                        expert_pol = expert_uuid
+                        del traj_obs[expert_pol]
                         for k, v in traj_obs.items():
                             traj_obs[k] = v.numpy()
                             if self.config.IL.DAGGER.lmdb_fp16:
@@ -507,12 +511,12 @@ class DiffuserTrainer(BaseVLNCETrainer):
                             np.array([prev_instructions[i]])
                         ]
 
-                        # 缓存数据
                         data_cache.append(transposed_ep)
                         collected_eps += 1
-                        pbar.update()
+                        # 仅主进程更新进度条
+                        if self.local_rank == 0:
+                            pbar.update()
 
-                        # 定期写入LMDB并清空缓存，防止内存过大
                         if (collected_eps % self.config.IL.DAGGER.lmdb_commit_frequency) == 0:
                             writeCache(data_cache)
                             data_cache.clear()
@@ -552,13 +556,14 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         break
 
                 if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta):
-                    # 来自专家的action
+                    # action from expert
+                    # 注意调用policy需要加上.module
                     actions = self.policy.module.act(
                         batch, prev_actions, encode_only=True
                     )
                     actions = batch[expert_uuid].long()
                 else:
-                    # 来自模型
+                    # action from model
                     ins_text = envs.current_episodes()[0].instruction.instruction_text
                     actions = self.policy.module.act(
                         batch, prev_actions, encode_only=False, ins_text=ins_text
@@ -608,11 +613,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     device=self.device,
                 )
 
-            # 写入剩余缓存数据
             writeCache(data_cache)
             data_cache.clear()
-
-            txn.commit()
 
         envs.close()
         envs = None
