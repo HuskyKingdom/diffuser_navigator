@@ -245,6 +245,7 @@ class DaggerTrainer(CommonTrainer):
         self.lmdb_features_dir = self.config.DAGGER.LMDB_FEATURES_DIR.format(
             split=config.TASK_CONFIG.DATASET.SPLIT
         )
+        
 
     def _update_dataset(self, data_it):
         self.empty_cuda_cache()

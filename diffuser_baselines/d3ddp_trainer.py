@@ -368,6 +368,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
             split=config.TASK_CONFIG.DATASET.SPLIT
         )
         super().__init__(config)
+        self.envs = None
 
     def _make_dirs(self) -> None:
         self._make_ckpt_dir()
