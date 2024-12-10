@@ -379,18 +379,16 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
 
     def _update_dataset(self, data_it):
-        
-        import torch.distributed as dist
+        import zlib
+        import msgpack_numpy
+        from multiprocessing import Pool
+
+        def compress_data(data):
+            return zlib.compress(msgpack_numpy.packb(data, use_bin_type=True))
 
         if torch.cuda.is_available():
             with torch.cuda.device(self.device):
                 torch.cuda.empty_cache()
-
-        # parallel logic
-        self.config.defrost()
-        self.config.TASK_CONFIG.DATASET.split_num = self.world_size
-        self.config.TASK_CONFIG.DATASET.split_rank = self.local_rank
-        self.config.freeze()
 
         envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
         expert_uuid = self.config.IL.DAGGER.expert_policy_sensor_uuid
@@ -445,35 +443,47 @@ class DiffuserTrainer(BaseVLNCETrainer):
         collected_eps = 0
         ep_ids_collected = None
         if ensure_unique_episodes:
-            ep_ids_collected = {ep.episode_id for ep in envs.current_episodes()}
+            ep_ids_collected = {
+                ep.episode_id for ep in envs.current_episodes()
+            }
 
         prev_instructions = ["None" for i in range(envs.num_envs)]
 
-        def writeCache(cache, lmdb_env):
-            with Pool(8) as workers:
-                ccache = workers.map(compress_data, cache)
-            txn = lmdb_env.begin(write=True)
-            existed_size = lmdb_env.stat()["entries"]
-            for i, v in enumerate(ccache):
-                txn.put(str(existed_size + i).encode(), v)
-            txn.commit()
-
-        cache = []
-        commit_freq = self.config.IL.DAGGER.lmdb_commit_frequency
-
-        with lmdb.open(
+        # 使用LMDB存储
+        with tqdm.tqdm(
+            total=self.config.IL.DAGGER.update_size, dynamic_ncols=True
+        ) as pbar, lmdb.open(
             self.lmdb_features_dir,
             map_size=int(self.config.IL.DAGGER.lmdb_map_size),
         ) as lmdb_env, torch.no_grad():
             start_id = lmdb_env.stat()["entries"]
-            if self.local_rank == 0:
-                pbar = tqdm.tqdm(total=self.config.IL.DAGGER.update_size, dynamic_ncols=True)
+
+            # 用于缓存数据，后续并行压缩写入
+            data_cache = []
+            def writeCache(cache):
+                if len(cache) == 0:
+                    return
+                # 并行压缩数据
+                with Pool(8) as workers:
+                    cache = workers.map(compress_data, cache)
+                txn = lmdb_env.begin(write=True)
+                existed_size = lmdb_env.stat()["entries"]
+                for i, v in enumerate(cache):
+                    txn.put(str(existed_size + i).encode(), v)
+                txn.commit()
+
+            txn = lmdb_env.begin(write=True)
+
             while collected_eps < self.config.IL.DAGGER.update_size:
+                current_episodes = None
+                envs_to_pause = None
+
                 if ensure_unique_episodes:
                     envs_to_pause = []
                     current_episodes = envs.current_episodes()
 
                 for i in range(envs.num_envs):
+
                     if not dones[i]:
                         prev_instructions[i] = envs.current_episodes()[i].instruction.instruction_text
 
@@ -497,24 +507,33 @@ class DiffuserTrainer(BaseVLNCETrainer):
                             np.array([prev_instructions[i]])
                         ]
 
-                        cache.append(transposed_ep)
+                        # 缓存数据
+                        data_cache.append(transposed_ep)
                         collected_eps += 1
-                        if self.local_rank == 0:
-                            pbar.update()
+                        pbar.update()
 
-                        ava_mem = float(psutil.virtual_memory().available) / 1024 / 1024 / 1024
-                        if (len(cache) % commit_freq == 0 or ava_mem < 10) and len(cache) != 0:
-                            writeCache(cache, lmdb_env)
-                            cache = []
+                        # 定期写入LMDB并清空缓存，防止内存过大
+                        if (collected_eps % self.config.IL.DAGGER.lmdb_commit_frequency) == 0:
+                            writeCache(data_cache)
+                            data_cache.clear()
+                            if torch.cuda.is_available():
+                                with torch.cuda.device(self.device):
+                                    torch.cuda.empty_cache()
 
                         if ensure_unique_episodes:
-                            if current_episodes[i].episode_id in ep_ids_collected:
+                            if (
+                                current_episodes[i].episode_id
+                                in ep_ids_collected
+                            ):
                                 envs_to_pause.append(i)
                             else:
-                                ep_ids_collected.add(current_episodes[i].episode_id)
+                                ep_ids_collected.add(
+                                    current_episodes[i].episode_id
+                                )
 
                     if dones[i]:
                         episodes[i] = []
+                        # reset
                         self.policy.module.clear_his()
 
                 if ensure_unique_episodes:
@@ -533,11 +552,13 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         break
 
                 if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta):
+                    # 来自专家的action
                     actions = self.policy.module.act(
                         batch, prev_actions, encode_only=True
                     )
                     actions = batch[expert_uuid].long()
                 else:
+                    # 来自模型
                     ins_text = envs.current_episodes()[0].instruction.instruction_text
                     actions = self.policy.module.act(
                         batch, prev_actions, encode_only=False, ins_text=ins_text
@@ -564,7 +585,9 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     )
 
                 skips = batch[expert_uuid].long() == -1
-                actions = torch.where(skips, torch.zeros_like(actions), actions)
+                actions = torch.where(
+                    skips, torch.zeros_like(actions), actions
+                )
                 skips = skips.squeeze(-1).to(device="cpu", non_blocking=True)
                 prev_actions.copy_(actions)
 
@@ -585,8 +608,11 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     device=self.device,
                 )
 
-            if len(cache) > 0:
-                writeCache(cache, lmdb_env)
+            # 写入剩余缓存数据
+            writeCache(data_cache)
+            data_cache.clear()
+
+            txn.commit()
 
         envs.close()
         envs = None
@@ -596,10 +622,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
         if depth_hook is not None:
             depth_hook.remove()
 
+        # reset
         self.policy.module.clear_his()
-
-        if dist.is_initialized():
-            dist.barrier()
 
 
 
