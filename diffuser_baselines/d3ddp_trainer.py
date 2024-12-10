@@ -378,22 +378,20 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
 
     def _update_dataset(self, data_it):
+        
+        import torch.distributed as dist
 
         if torch.cuda.is_available():
             with torch.cuda.device(self.device):
                 torch.cuda.empty_cache()
 
-        # --------- 并行化逻辑开始（参考代码B）-----------
-        # 根据本进程的rank和world_size进行数据分片
+        # parallel logic
         self.config.defrost()
         self.config.TASK_CONFIG.DATASET.split_num = self.world_size
         self.config.TASK_CONFIG.DATASET.split_rank = self.local_rank
         self.config.freeze()
-        
-        # 构造并行环境
-        envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
-        # --------- 并行化逻辑结束 -----------
 
+        envs = construct_envs(self.config, self._get_env_class(self.config.ENV_NAME))
         expert_uuid = self.config.IL.DAGGER.expert_policy_sensor_uuid
 
         prev_actions = torch.zeros(
@@ -450,15 +448,25 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
         prev_instructions = ["None" for i in range(envs.num_envs)]
 
-        with tqdm.tqdm(
-            total=self.config.IL.DAGGER.update_size, dynamic_ncols=True, disable=(self.local_rank != 0)
-        ) as pbar, lmdb.open(
+        def writeCache(cache, lmdb_env):
+            with Pool(8) as workers:
+                ccache = workers.map(compress_data, cache)
+            txn = lmdb_env.begin(write=True)
+            existed_size = lmdb_env.stat()["entries"]
+            for i, v in enumerate(ccache):
+                txn.put(str(existed_size + i).encode(), v)
+            txn.commit()
+
+        cache = []
+        commit_freq = self.config.IL.DAGGER.lmdb_commit_frequency
+
+        with lmdb.open(
             self.lmdb_features_dir,
             map_size=int(self.config.IL.DAGGER.lmdb_map_size),
         ) as lmdb_env, torch.no_grad():
             start_id = lmdb_env.stat()["entries"]
-            txn = lmdb_env.begin(write=True)
-
+            if self.local_rank == 0:
+                pbar = tqdm.tqdm(total=self.config.IL.DAGGER.update_size, dynamic_ncols=True)
             while collected_eps < self.config.IL.DAGGER.update_size:
                 if ensure_unique_episodes:
                     envs_to_pause = []
@@ -479,7 +487,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
                             traj_obs[k] = v.numpy()
                             if self.config.IL.DAGGER.lmdb_fp16:
                                 traj_obs[k] = traj_obs[k].astype(np.float16)
-                        
+
                         transposed_ep = [
                             traj_obs,
                             np.array([step[1] for step in ep], dtype=np.int64),
@@ -487,32 +495,22 @@ class DiffuserTrainer(BaseVLNCETrainer):
                             np.array([step[3] for step in ep], dtype=np.float32),
                             np.array([prev_instructions[i]])
                         ]
-                        
-                        txn.put(
-                            str(start_id + collected_eps).encode(),
-                            msgpack_numpy.packb(
-                                transposed_ep, use_bin_type=True
-                            ),
-                        )
 
+                        cache.append(transposed_ep)
+                        collected_eps += 1
                         if self.local_rank == 0:
                             pbar.update()
-                        collected_eps += 1
 
-                        if (
-                            collected_eps
-                            % self.config.IL.DAGGER.lmdb_commit_frequency
-                        ) == 0:
-                            txn.commit()
-                            txn = lmdb_env.begin(write=True)
+                        ava_mem = float(psutil.virtual_memory().available) / 1024 / 1024 / 1024
+                        if (len(cache) % commit_freq == 0 or ava_mem < 10) and len(cache) != 0:
+                            writeCache(cache, lmdb_env)
+                            cache = []
 
                         if ensure_unique_episodes:
                             if current_episodes[i].episode_id in ep_ids_collected:
                                 envs_to_pause.append(i)
                             else:
-                                ep_ids_collected.add(
-                                    current_episodes[i].episode_id
-                                )
+                                ep_ids_collected.add(current_episodes[i].episode_id)
 
                     if dones[i]:
                         episodes[i] = []
@@ -534,16 +532,14 @@ class DiffuserTrainer(BaseVLNCETrainer):
                         break
 
                 if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta):
-                    # action from expert
                     actions = self.policy.module.act(
-                        batch,prev_actions,encode_only = True
+                        batch, prev_actions, encode_only=True
                     )
                     actions = batch[expert_uuid].long()
                 else:
                     ins_text = envs.current_episodes()[0].instruction.instruction_text
-                    # action from model
                     actions = self.policy.module.act(
-                        batch,prev_actions,encode_only = False,ins_text=ins_text
+                        batch, prev_actions, encode_only=False, ins_text=ins_text
                     )
 
                 for i in range(envs.num_envs):
@@ -588,7 +584,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
                     device=self.device,
                 )
 
-            txn.commit()
+            if len(cache) > 0:
+                writeCache(cache, lmdb_env)
 
         envs.close()
         envs = None
@@ -600,13 +597,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
         self.policy.module.clear_his()
 
-        # --------- 并行化逻辑：结束时Barrier同步，确保所有进程都完成数据更新 -----------
-        import torch.distributed as dist
         if dist.is_initialized():
             dist.barrier()
-        # --------- 并行化逻辑结束 -----------
-
-        logger.info("Dataset collection complete.")
 
 
 
