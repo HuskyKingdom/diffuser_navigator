@@ -405,6 +405,8 @@ class DiffuserTrainer(BaseVLNCETrainer):
         )
         batch = batch_obs(observations, self.device)
 
+        print(f"\n\n\n gpu {self.world_rank}, device {self.device}")
+
         episodes = [[] for _ in range(self.envs.num_envs)]
         dones = [False for _ in range(self.envs.num_envs)]
         collected_eps = 0
