@@ -466,7 +466,7 @@ class DiffuserTrainer(BaseVLNCETrainer):
 
                         episodes[i] = []  # Clear episode data
 
-                actions = self.policy.act(batch, prev_actions, encode_only=False)
+                actions = self.policy.module.act(batch, prev_actions, encode_only=False)
                 outputs = self.envs.step(actions)
                 observations, _, dones, _ = [list(x) for x in zip(*outputs)]
 
