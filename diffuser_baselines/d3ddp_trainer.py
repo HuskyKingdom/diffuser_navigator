@@ -417,12 +417,12 @@ class DiffuserTrainer(BaseVLNCETrainer):
         rgb_hook, depth_hook = None, None
         if not self.config.MODEL.RGB_ENCODER.trainable:
             rgb_features = torch.zeros((1,), device="cpu")
-            rgb_hook = self.policy.navigator.rgb_encoder.cnn.register_forward_hook(
+            rgb_hook = self.policy.module.navigator.rgb_encoder.cnn.register_forward_hook(
                 lambda m, i, o: rgb_features.set_(o.cpu())
             )
         if not self.config.MODEL.DEPTH_ENCODER.trainable:
             depth_features = torch.zeros((1,), device="cpu")
-            depth_hook = self.policy.navigator.depth_encoder.visual_encoder.register_forward_hook(
+            depth_hook = self.policy.module.navigator.depth_encoder.visual_encoder.register_forward_hook(
                 lambda m, i, o: depth_features.set_(o.cpu())
             )
 
