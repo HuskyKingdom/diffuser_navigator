@@ -48,6 +48,7 @@ class D3DiffusionPolicy(Policy):
         self.pre_actions.append(prev_actions)
         self.pre_actions.append(prev_actions)
 
+        print(prev_actions.shape)
         print(torch.stack(self.pre_actions, dim=1).shape)
         assert 1==2
         
