@@ -46,6 +46,7 @@ class D3DiffusionPolicy(Policy):
         self.rgb_his.append(rgb_features)
         self.depth_his.append(depth_features)
         self.pre_actions.append(prev_actions)
+        self.pre_actions.append(prev_actions)
 
         print(torch.stack(self.pre_actions, dim=1).shape)
         assert 1==2
