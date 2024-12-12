@@ -511,8 +511,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 mask = random_values < beta
                 actions = torch.where(mask, batch[expert_uuid].long(), actions)
 
-                print(actions.shape)
-                assert 1==2
 
                 # if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta): # action from expert
                 #     actions = self.policy.act(
