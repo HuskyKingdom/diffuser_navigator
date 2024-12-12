@@ -55,7 +55,7 @@ class D3DiffusionPolicy(Policy):
         else:
             self.pre_actions = torch.cat((self.pre_actions,prev_actions),dim=1)
 
-        print(prev_actions.shape)
+        print(self.pre_actions.shape)
         assert 1==2
         
        
