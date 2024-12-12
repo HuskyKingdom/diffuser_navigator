@@ -50,6 +50,11 @@ class D3DiffusionPolicy(Policy):
         else:
             self.pre_actions = torch.cat((self.pre_actions,prev_actions),dim=1)
 
+        if self.pre_actions == None:
+            self.pre_actions = prev_actions
+        else:
+            self.pre_actions = torch.cat((self.pre_actions,prev_actions),dim=1)
+
         print(prev_actions.shape)
         assert 1==2
         
