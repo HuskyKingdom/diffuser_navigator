@@ -1,5 +1,5 @@
 BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
-TRAINER_NAME: ddp_d3diffuser 
+TRAINER_NAME: d3diffuser_ddp 
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 1
@@ -36,8 +36,8 @@ IL:
     iterations: 10
     update_size: 5000
     p: 0.75
-    preload_lmdb_features: False
-    lmdb_features_dir: data/trajectories_dirs/d3ddp_da/trajectories.lmdb
+    preload_lmdb_features: True
+    lmdb_features_dir: data/trajectories_dirs/diffuser/trajectories.lmdb
     
     
 
