@@ -33,7 +33,7 @@ class D3DiffusionPolicy(Policy):
         self.navigator = D3DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.rgb_his = []
         self.depth_his = []
-        self.pre_actions = []
+        self.pre_actions = None
         
 
     def act(self,observations, prev_actions, encode_only=False,print_info = False,ins_text=None): 
@@ -45,11 +45,12 @@ class D3DiffusionPolicy(Policy):
         # storing histories
         self.rgb_his.append(rgb_features)
         self.depth_his.append(depth_features)
-        self.pre_actions.append(prev_actions)
-        self.pre_actions.append(prev_actions)
+        if self.pre_actions == None:
+            self.pre_actions = prev_actions
+        else:
+            self.pre_actions = torch.cat((self.pre_actions,prev_actions),dim=1)
 
         print(prev_actions.shape)
-        print(torch.stack(self.pre_actions, dim=1).shape)
         assert 1==2
         
        
