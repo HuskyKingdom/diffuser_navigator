@@ -497,17 +497,29 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     if envs.num_envs == 0:
                         break
                 
-                print(prev_actions.shape)
-                if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta): # action from expert
-                    actions = self.policy.act(
-                    batch,prev_actions,encode_only = True
-                    ) # inference for getting features only
-                    actions = batch[expert_uuid].long()
-                else:
+                
+
+                for i in range(envs.num_envs):
+
                     ins_text = envs.current_episodes()[0].instruction.instruction_text # change if multi-train # action from model
                     actions = self.policy.act(
-                    batch,prev_actions,encode_only = False,ins_text=ins_text
-                    )
+                        batch,prev_actions,encode_only = False,ins_text=ins_text
+                        )
+                    
+
+                    print(actions.shape)
+                    assert 1==2
+
+                    if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta): # action from expert
+                        actions = self.policy.act(
+                        batch,prev_actions,encode_only = True
+                        ) # inference for getting features only
+                        actions = batch[expert_uuid].long()
+                    else:
+                        ins_text = envs.current_episodes()[0].instruction.instruction_text # change if multi-train # action from model
+                        actions = self.policy.act(
+                        batch,prev_actions,encode_only = False,ins_text=ins_text
+                        )
 
 
 
