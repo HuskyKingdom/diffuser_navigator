@@ -8,7 +8,7 @@ CHECKPOINT_FOLDER: data/checkpoints/d3diffuser_da
 EVAL_CKPT_PATH_DIR: data/checkpoints/d3diffuser_da/ckpt.100.pth
 RESULTS_DIR: data/checkpoints/d3diffuser_da/evals
 VIDEO_OPTION: []
-lr_Schedule: True
+lr_Schedule: False
 dagger: True
 
 
@@ -35,7 +35,7 @@ IL:
     update_size: 5000
     p: 0.75
     preload_lmdb_features: False
-    lmdb_features_dir: data/trajectories_dirs/d3diffuser_da/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/d3diffuser_da_fix/trajectories.lmdb
     
     
 
