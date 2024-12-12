@@ -50,14 +50,7 @@ class D3DiffusionPolicy(Policy):
         else:
             self.pre_actions = torch.cat((self.pre_actions,prev_actions),dim=1)
 
-        if self.pre_actions == None:
-            self.pre_actions = prev_actions
-        else:
-            self.pre_actions = torch.cat((self.pre_actions,prev_actions),dim=1)
-
-        print(self.pre_actions.shape)
-        assert 1==2
-        
+    
        
         if encode_only:
             return None
@@ -82,7 +75,7 @@ class D3DiffusionPolicy(Policy):
         'instruction': observations['instruction'],
         'rgb_features': rgb_features.to(observations['instruction'].device),
         'depth_features': depth_features.to(observations['instruction'].device),
-        'prev_actions': torch.tensor(self.pre_actions).unsqueeze(0).to(observations['instruction'].device).long(),
+        'prev_actions': self.pre_actions.to(observations['instruction'].device).long(),
         'trajectories': None,
         'padding_mask': None,
         'lengths': None,
@@ -161,7 +154,7 @@ class D3DiffusionPolicy(Policy):
 
         self.rgb_his = []
         self.depth_his = []
-        self.pre_actions = []
+        self.pre_actions = None
 
 
 
