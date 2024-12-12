@@ -33,7 +33,7 @@ class D3DiffusionPolicy(Policy):
         self.navigator = D3DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.rgb_his = []
         self.depth_his = []
-        self.pre_actions = None
+        self.pre_actions = []
         
 
     def act(self,observations, prev_actions, encode_only=False,print_info = False,ins_text=None): 
@@ -45,12 +45,10 @@ class D3DiffusionPolicy(Policy):
         # storing histories
         self.rgb_his.append(rgb_features)
         self.depth_his.append(depth_features)
-        if self.pre_actions == None:
-            self.pre_actions = prev_actions
-        else:
-            self.pre_actions = torch.cat((self.pre_actions,prev_actions),dim=1)
-
-    
+        # if prev_actions.item() != 0:
+        #     self.pre_actions.append(prev_actions.item())
+        self.pre_actions.append(prev_actions.item())
+        
        
         if encode_only:
             return None
@@ -75,12 +73,12 @@ class D3DiffusionPolicy(Policy):
         'instruction': observations['instruction'],
         'rgb_features': rgb_features.to(observations['instruction'].device),
         'depth_features': depth_features.to(observations['instruction'].device),
-        'prev_actions': self.pre_actions.to(observations['instruction'].device).long(),
+        'prev_actions': torch.tensor(self.pre_actions).unsqueeze(0).to(observations['instruction'].device).long(),
         'trajectories': None,
         'padding_mask': None,
         'lengths': None,
         'weights': None,
-        'ins_text': ins_text
+        'ins_text': [ins_text]
         }
 
         
@@ -154,7 +152,7 @@ class D3DiffusionPolicy(Policy):
 
         self.rgb_his = []
         self.depth_his = []
-        self.pre_actions = None
+        self.pre_actions = []
 
 
 
@@ -317,6 +315,7 @@ class D3DiffusionNavigator(nn.Module):
             context_feature = context_feature.view(B,T,-1)
             causal_mask = self.generate_causal_mask(T,device=context_feature.device)
 
+
             decoder_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, causal_mask,ins_text) # (bs,seq_len,4)
 
            
@@ -342,6 +341,8 @@ class D3DiffusionNavigator(nn.Module):
         context_feature = self.get_context_feature(observations)
         context_feature = context_feature.view(B,T,-1)
         causal_mask = self.generate_causal_mask(T,device=context_feature.device)
+
+
 
         # decoder_pred = self.decoder(context_feature[1,:,:].unsqueeze(0),observations["padding_mask"][1,:].unsqueeze(0), enc_out[1,:].unsqueeze(0), encoder_pad_mask[1,:].unsqueeze(0), causal_mask)
 
