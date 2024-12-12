@@ -11,7 +11,7 @@ RESULTS_DIR: data/checkpoints/d3ddp/evals
 VIDEO_OPTION: []
 JobName: d3ddp_da
 lr_Schedule: True
-dagger: True
+dagger: False
 
 
 EVAL:
