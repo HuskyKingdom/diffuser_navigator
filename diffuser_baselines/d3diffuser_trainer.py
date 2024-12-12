@@ -497,11 +497,12 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     if envs.num_envs == 0:
                         break
                 
-                
+                ins_text = []
+                for i in range(envs.num_envs):
+                    ins_text.append(envs.current_episodes()[i].instruction.instruction_text)   
 
                 for i in range(envs.num_envs):
 
-                    ins_text = envs.current_episodes()[0].instruction.instruction_text # change if multi-train # action from model
                     actions = self.policy.act(
                         batch,prev_actions,encode_only = False,ins_text=ins_text
                         )

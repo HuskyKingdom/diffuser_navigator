@@ -80,7 +80,7 @@ class D3DiffusionPolicy(Policy):
         'padding_mask': None,
         'lengths': None,
         'weights': None,
-        'ins_text': [ins_text]
+        'ins_text': ins_text
         }
 
         
@@ -316,6 +316,7 @@ class D3DiffusionNavigator(nn.Module):
             context_feature = self.get_context_feature(observations,inference=inference)
             context_feature = context_feature.view(B,T,-1)
             causal_mask = self.generate_causal_mask(T,device=context_feature.device)
+
 
             print(context_feature.shape,enc_out.shape,encoder_pad_mask.shape,causal_mask.shape)
 
