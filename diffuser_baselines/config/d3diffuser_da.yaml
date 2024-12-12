@@ -2,7 +2,7 @@ BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
 TRAINER_NAME: d3diffuser 
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
-NUM_ENVIRONMENTS: 4
+NUM_ENVIRONMENTS: 3
 TENSORBOARD_DIR: data/tensorboard_dirs/d3diffuser_da
 CHECKPOINT_FOLDER: data/checkpoints/d3diffuser_da
 EVAL_CKPT_PATH_DIR: data/checkpoints/d3diffuser_da/ckpt.100.pth
