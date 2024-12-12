@@ -481,6 +481,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         episodes[i] = []
                         # reset
                         self.policy.clear_his()
+    
 
                 if ensure_unique_episodes:
                     (
@@ -575,6 +576,11 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     dtype=torch.uint8,
                     device=self.device,
                 )
+
+                if torch.cuda.is_available():
+                    with torch.cuda.device(self.device):
+                            torch.cuda.empty_cache()
+                gc.collect()
 
             txn.commit()
 
