@@ -3,8 +3,8 @@ TRAINER_NAME: d3diffuser
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 1
-TENSORBOARD_DIR: data/tensorboard_dirs/d3diffuser_da
-CHECKPOINT_FOLDER: data/checkpoints/d3diffuser_da
+TENSORBOARD_DIR: data/tensorboard_dirs/d3diffuser_da_fix
+CHECKPOINT_FOLDER: data/checkpoints/d3diffuser_da_fix
 EVAL_CKPT_PATH_DIR: data/checkpoints/d3diffuser_da/ckpt.100.pth
 RESULTS_DIR: data/checkpoints/d3diffuser_da/evals
 VIDEO_OPTION: []
