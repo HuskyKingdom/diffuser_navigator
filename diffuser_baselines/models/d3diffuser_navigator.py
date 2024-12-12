@@ -270,7 +270,7 @@ class D3DiffusionNavigator(nn.Module):
 
 
         
-        print(rgb_features.shape,depth_features.shape,action_features.shape)
+        # print(rgb_features.shape,depth_features.shape,action_features.shape)
         observation_context = torch.cat((rgb_features,depth_features,action_features),dim=-1) # (B+T, emb*2+emb/2)
         
         return observation_context
