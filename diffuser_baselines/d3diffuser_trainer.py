@@ -501,29 +501,29 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 for i in range(envs.num_envs):
                     ins_text.append(envs.current_episodes()[i].instruction.instruction_text)   
 
-                for i in range(envs.num_envs):
+          
+                actions = self.policy.act(
+                    batch,prev_actions,encode_only = False,ins_text=ins_text
+                    )
+                
 
-                    actions = self.policy.act(
-                        batch,prev_actions,encode_only = False,ins_text=ins_text
-                        )
-                    
+                random_values = torch.rand_like(actions, dtype=torch.float)
+                mask = random_values < beta
+                actions = torch.where(mask, batch[expert_uuid].long(), actions)
 
-                    random_values = torch.rand_like(actions, dtype=torch.float)
-                    mask = random_values < beta
+                print(actions.shape)
+                assert 1==2
 
-                    print(batch[expert_uuid].long().shape)
-                    assert 1==2
-
-                    if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta): # action from expert
-                        actions = self.policy.act(
-                        batch,prev_actions,encode_only = True
-                        ) # inference for getting features only
-                        actions = batch[expert_uuid].long()
-                    else:
-                        ins_text = envs.current_episodes()[0].instruction.instruction_text # change if multi-train # action from model
-                        actions = self.policy.act(
-                        batch,prev_actions,encode_only = False,ins_text=ins_text
-                        )
+                # if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta): # action from expert
+                #     actions = self.policy.act(
+                #     batch,prev_actions,encode_only = True
+                #     ) # inference for getting features only
+                #     actions = batch[expert_uuid].long()
+                # else:
+                #     ins_text = envs.current_episodes()[0].instruction.instruction_text # change if multi-train # action from model
+                #     actions = self.policy.act(
+                #     batch,prev_actions,encode_only = False,ins_text=ins_text
+                #     )
 
 
 
