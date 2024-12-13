@@ -598,24 +598,24 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                 if ensure_unique_episodes:
                     (
-                        envs,
+                        self.envs,
                         not_done_masks,
                         batch,
                         _,
                     ) = self._pause_envs(
                         envs_to_pause,
-                        envs,
+                        self.envs,
                         not_done_masks,
                         batch,
                     )
-                    if envs.num_envs == 0:
+                    if self.envs.num_envs == 0:
                         break
                 
                 # act ----------------
                     
                 ins_text = []
-                for i in range(envs.num_envs):
-                    ins_text.append(envs.current_episodes()[i].instruction.instruction_text)   
+                for i in range(self.envs.num_envs):
+                    ins_text.append(self.envs.current_episodes()[i].instruction.instruction_text)   
 
           
                 actions = self.policy.module.act(
@@ -629,7 +629,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                 # collect inference features ----------------
 
-                for i in range(envs.num_envs):
+                for i in range(self.envs.num_envs):
                     if rgb_features is not None:
                         observations[i]["rgb_features"] = rgb_features[i]
                         del observations[i]["rgb"]
@@ -639,7 +639,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         del observations[i]["depth"]
 
 
-                    pos = envs.call_at(i, "get_state", {"observations": {}})
+                    pos = self.envs.call_at(i, "get_state", {"observations": {}})
 
                     
                     episodes[i].append(
@@ -660,7 +660,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                 # step action ----------------
 
-                outputs = envs.step([a[0].item() for a in actions])
+                outputs = self.envs.step([a[0].item() for a in actions])
                 observations, _, dones, _ = [list(x) for x in zip(*outputs)]
 
                 
