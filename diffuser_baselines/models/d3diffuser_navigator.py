@@ -89,7 +89,7 @@ class D3DiffusionPolicy(Policy):
         
 
         if print_info:
-            print(f"Action inferenced : {action.item()}, with history length {len(self.pre_actions)}")
+            print(f"Action inferenced : {action.item()}, with history length {len(self.rgb_his)}")
 
 
         return action
