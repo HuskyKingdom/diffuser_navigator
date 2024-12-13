@@ -568,7 +568,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         print(f"cache len {len(cache)}")
                         ava_mem = float(psutil.virtual_memory().available) / 1024 / 1024 / 1024
                         if (len(cache) % self.config.IL.DAGGER.lmdb_commit_frequency == 0 or ava_mem < 10) and len(cache) != 0:
-                            print(f"write to lmdb.. with entries {lmdb_env.stat()["entries"]}")
+                            print(f'write to lmdb.. with entries {lmdb_env.stat()["entries"]}')
                             writeCache(cache)
                             del cache
                             cache = []
