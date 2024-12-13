@@ -161,7 +161,7 @@ def construct_envs_process(
 
     envs = habitat.VectorEnv(
         make_env_fn=make_env_fn,
-        env_fn_args=tuple(tuple(zip(configs, env_classes, range(num_processes)))),
+        env_fn_args=tuple(zip(configs, env_classes)),
         auto_reset_done=auto_reset_done,
     )
 
