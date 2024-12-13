@@ -41,7 +41,7 @@ class D3DiffusionPolicy(Policy):
         
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
 
-
+        print(rgb_features.shape)
         # storing histories
         self.rgb_his.append(rgb_features)
         self.depth_his.append(depth_features)
