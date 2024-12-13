@@ -26,7 +26,7 @@ IL:
   
 
   RECOLLECT_TRAINER:
-    gt_file:
+    gt_file:s
       data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}_gt.json.gz
     
   DAGGER:
