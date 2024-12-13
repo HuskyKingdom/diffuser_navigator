@@ -400,7 +400,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             self.config.TASK_CONFIG.DATASET.split_num = self.world_size
             self.config.TASK_CONFIG.DATASET.split_rank = self.local_rank
             self.config.freeze()
-            self.envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
+            self.envs = construct_envs_process(self.config, get_env_class(self.config.ENV_NAME))
         else:
             self.envs.resume_all()
 
@@ -565,10 +565,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         collected_eps += 1
 
                         # commit ----------------
-                        print(f"cache len {len(cache)}")
                         ava_mem = float(psutil.virtual_memory().available) / 1024 / 1024 / 1024
                         if (len(cache) % self.config.IL.DAGGER.lmdb_commit_frequency == 0 or ava_mem < 10) and len(cache) != 0:
-                            print(f'write to lmdb.. with entries {lmdb_env.stat()["entries"]}')
                             writeCache(cache)
                             del cache
                             cache = []
@@ -844,7 +842,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                                 num_epoch_batch += 1
 
                             if self.world_rank == 0: #ddp
-                                if (diffuser_it * self.config.IL.epochs + epoch) % 200 == 0:
+                                if (diffuser_it * self.config.IL.epochs + epoch) % self.config.DIFFUSER.saving_frequency == 0:
                                     self.save_checkpoint(
                                         f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
                                     )

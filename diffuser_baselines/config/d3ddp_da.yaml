@@ -47,6 +47,7 @@ DIFFUSER:
   num_attention_heads: 8
   num_layers: 4
   diffusion_timesteps: 100
+  saving_frequency: 8
   logging_file: data/loggings/train.log
   LR: 2.5e-4
   traj_length: 3
