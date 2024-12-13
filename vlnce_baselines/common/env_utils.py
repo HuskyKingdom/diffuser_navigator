@@ -165,8 +165,6 @@ def construct_envs_process(
         auto_reset_done=auto_reset_done,
     )
 
-    action_space = gym.spaces.Box(low=0.0, high=0.99, shape=(2,), dtype=np.float32)
-    envs.action_spaces = [action_space for _ in range(num_processes)]
 
     return envs
 
