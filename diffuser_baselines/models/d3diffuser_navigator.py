@@ -41,7 +41,6 @@ class D3DiffusionPolicy(Policy):
         
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
 
-        print(rgb_features.shape)
         # storing histories
         self.rgb_his.append(rgb_features)
         self.depth_his.append(depth_features)
@@ -270,7 +269,6 @@ class D3DiffusionNavigator(nn.Module):
 
 
         
-        print(rgb_features.shape,depth_features.shape,action_features.shape)
         observation_context = torch.cat((rgb_features,depth_features,action_features),dim=-1) # (B+T, emb*2+emb/2)
         
         return observation_context
