@@ -400,7 +400,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             self.config.TASK_CONFIG.DATASET.split_num = self.world_size
             self.config.TASK_CONFIG.DATASET.split_rank = self.local_rank
             self.config.freeze()
-            self.envs = construct_envs_process(self.config, get_env_class(self.config.ENV_NAME))
+            self.envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
         else:
             self.envs.resume_all()
 
