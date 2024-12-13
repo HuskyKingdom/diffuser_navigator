@@ -768,7 +768,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 step_id = 0
                 if not self.config.IL.DAGGER.preload_lmdb_features:
                     self._update_dataset(
-                        diffuser_it + (1 if self.config.IL.load_from_ckpt else 0)
+                        diffuser_it
                     )
                 dist.barrier()
                 if torch.cuda.is_available():
