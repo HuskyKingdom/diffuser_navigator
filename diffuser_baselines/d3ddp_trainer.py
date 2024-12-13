@@ -505,7 +505,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 
             # txn = lmdb_env.begin(write=True)
 
-            while collected_eps < remain_update_size and not (lmdb_env.stat()["entries"] > required_size):
+            while collected_eps < remain_update_size and not (lmdb_env.stat()["entries"] >= required_size):
                 
                 current_episodes = None
                 envs_to_pause = None
