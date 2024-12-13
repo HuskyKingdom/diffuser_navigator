@@ -1,8 +1,12 @@
 import gc
 import os
 import random
+import psutil
 import warnings
+import zlib
 from collections import defaultdict
+import time
+from multiprocessing import Pool
 from gym import Space
 from habitat import Config
 import lmdb
@@ -21,7 +25,7 @@ from habitat_baselines.utils.common import batch_obs
 import contextlib
 from vlnce_baselines.common.aux_losses import AuxLosses
 from diffuser_baselines.common.base_il_d3trainer import BaseVLNCETrainer
-from vlnce_baselines.common.env_utils import construct_envs
+from vlnce_baselines.common.env_utils import construct_envs,construct_envs_process
 from vlnce_baselines.common.utils import extract_instruction_tokens
 
 import torch.nn.functional as Fuc
@@ -67,6 +71,10 @@ def maybe_tqdm_iterable(iterable, *args, **kwargs):
         yield tqdm.tqdm(iterable, *args, **kwargs)
     else:
         yield iterable
+
+
+def compress_data(data):
+    return zlib.compress(msgpack_numpy.packb(data, use_bin_type=True))
 
 
 class ObservationsDict(dict):
@@ -363,6 +371,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         self.lmdb_features_dir = config.IL.DAGGER.lmdb_features_dir.format(
             split=config.TASK_CONFIG.DATASET.SPLIT
         )
+        self.envs = None
         super().__init__(config)
 
     def _make_dirs(self) -> None:
@@ -372,35 +381,55 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             self._make_results_dir()
 
     def _update_dataset(self, data_it):
+
+        # init ----------------
         if torch.cuda.is_available():
             with torch.cuda.device(self.device):
                 torch.cuda.empty_cache()
+        gc.collect()
 
-        envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
+
+        if self.envs is None:
+            allocated_cuda_memory = torch.cuda.memory_allocated(device=self.local_rank) / (1024 * 1024 * 1024)
+            if allocated_cuda_memory > 6:
+                self.config.defrost()
+                self.config.NUM_PROCESSES = int((12 - allocated_cuda_memory) // 2.5)
+                self.config.freeze()
+                logger.info("cuda memory is not enough, processes reduce to ", int((12 - allocated_cuda_memory) // 2.5))
+            self.config.defrost()
+            self.config.TASK_CONFIG.DATASET.split_num = self.world_size
+            self.config.TASK_CONFIG.DATASET.split_rank = self.local_rank
+            self.config.freeze()
+            self.envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
+        else:
+            self.envs.resume_all()
+
+        # envs = construct_envs(self.config, get_env_class(self.config.ENV_NAME))
         expert_uuid = self.config.IL.DAGGER.expert_policy_sensor_uuid
 
         prev_actions = torch.zeros(
-            envs.num_envs,
+            self.config.NUM_PROCESSES,
             1,
             device=self.device,
             dtype=torch.long,
         )
 
         not_done_masks = torch.zeros(
-            envs.num_envs, 1, dtype=torch.uint8, device=self.device
+            self.config.NUM_PROCESSES, 1, dtype=torch.uint8, device=self.device
         )
 
-        observations = envs.reset()
+        # env reset ----------------
+        observations = self.envs.reset()
         observations = extract_instruction_tokens(
             observations, self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID
         )
         batch = batch_obs(observations, self.device)
         batch = apply_obs_transforms_batch(batch, self.obs_transforms)
 
-        episodes = [[] for _ in range(envs.num_envs)]
-        skips = [False for _ in range(envs.num_envs)]
+        episodes = [[] for _ in range(self.envs.num_envs)]
+        skips = [False for _ in range(self.envs.num_envs)]
         # Populate dones with False initially
-        dones = [False for _ in range(envs.num_envs)]
+        dones = [False for _ in range(self.envs.num_envs)]
 
         # https://arxiv.org/pdf/1011.0686.pdf
         # Theoretically, any beta function is fine so long as it converges to
@@ -412,6 +441,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
         ensure_unique_episodes = beta == 1.0
 
+        # building hooks ----------------
+
         def hook_builder(tgt_tensor):
             def hook(m, i, o):
                 tgt_tensor.set_(o.cpu())
@@ -422,7 +453,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         rgb_hook = None
         if not self.config.MODEL.RGB_ENCODER.trainable:
             rgb_features = torch.zeros((1,), device="cpu")
-            rgb_hook = self.policy.navigator.rgb_encoder.cnn.register_forward_hook(
+            rgb_hook = self.policy.module.navigator.rgb_encoder.cnn.register_forward_hook(
                 hook_builder(rgb_features)
             )
 
@@ -430,7 +461,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         depth_hook = None
         if not self.config.MODEL.DEPTH_ENCODER.trainable:
             depth_features = torch.zeros((1,), device="cpu")
-            depth_hook = self.policy.navigator.depth_encoder.visual_encoder.register_forward_hook(
+            depth_hook = self.policy.module.navigator.depth_encoder.visual_encoder.register_forward_hook(
                 hook_builder(depth_features)
             )
 
@@ -438,37 +469,64 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         ep_ids_collected = None
         if ensure_unique_episodes:
             ep_ids_collected = {
-                ep.episode_id for ep in envs.current_episodes()
+                ep.episode_id for ep in self.envs.current_episodes()
             }
 
 
-        prev_instructions = ["None" for i in range(envs.num_envs)]
-
-
-        with tqdm.tqdm(
-            total=self.config.IL.DAGGER.update_size, dynamic_ncols=True
-        ) as pbar, lmdb.open(
-            self.lmdb_features_dir,
-            map_size=int(self.config.IL.DAGGER.lmdb_map_size),
-        ) as lmdb_env, torch.no_grad():
-            start_id = lmdb_env.stat()["entries"]
+        def writeCache(cache):
+            with Pool(8) as workers:
+                cache = workers.map(compress_data, cache)
             txn = lmdb_env.begin(write=True)
+            existed_size = lmdb_env.stat()["entries"]
+            for i, v in enumerate(cache):
+                txn.put(str(existed_size + i).encode(), v)
+            txn.commit()
 
-            while collected_eps < self.config.IL.DAGGER.update_size:
+        dist.barrier()
+        time.sleep(1*self.local_rank)
+        cache = []
+
+        prev_instructions = ["None" for i in range(self.envs.num_envs)]
+
+
+        # start iteration ----------------
+
+        with lmdb.open(self.lmdb_features_dir,map_size=int(self.config.IL.DAGGER.lmdb_map_size),) as lmdb_env, torch.no_grad():
+            
+            required_size = (data_it+1) * self.config.DAGGER.UPDATE_SIZE
+            remain_update_size = required_size - lmdb_env.stat()["entries"]
+            start_id = lmdb_env.stat()["entries"]
+
+            if self.local_rank == 0:
+                pbar = tqdm.tqdm(total=remain_update_size, smoothing=0.01, desc=f"Collecting Data, DAgger iter {data_it}")
+
+
+            # start iterations ----------------
+                
+            # txn = lmdb_env.begin(write=True)
+
+            while collected_eps < remain_update_size and not (lmdb_env.stat()["entries"] > required_size):
+                
                 current_episodes = None
                 envs_to_pause = None
-            
-
                 if ensure_unique_episodes:
                     envs_to_pause = []
-                    current_episodes = envs.current_episodes()
+                    current_episodes = self.envs.current_episodes()
 
-                for i in range(envs.num_envs):
+
+                # collect logic ----------------
+
+                for i in range(self.envs.num_envs):
 
                     if not dones[i]: # store instruction if not done
-                        prev_instructions[i] = envs.current_episodes()[i].instruction.instruction_text
+                        prev_instructions[i] = self.envs.current_episodes()[i].instruction.instruction_text
 
                     if dones[i] and not skips[i]:
+
+                        if len(episodes[i]) > 200:
+                            episodes[i] = []
+                            continue
+
                         ep = episodes[i]
                         traj_obs = batch_obs(
                             [step[0] for step in ep],
@@ -488,24 +546,38 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             np.array([step[3] for step in ep], dtype=np.float32),
                             np.array([prev_instructions[i]])
                         ]
+
+                        # put ----------------
                         
                         #print(f"prev {np.array([step[1] for step in ep], dtype=np.int64)} | oracle {np.array([step[2] for step in ep], dtype=np.int64)}")
-                        txn.put(
-                            str(start_id + collected_eps).encode(),
-                            msgpack_numpy.packb(
-                                transposed_ep, use_bin_type=True
-                            ),
-                        )
+                        # txn.put(
+                        #     str(start_id + collected_eps).encode(),
+                        #     msgpack_numpy.packb(
+                        #         transposed_ep, use_bin_type=True
+                        #     ),
+                        # )
+                        # pbar.update()
+                        # collected_eps += 1
 
-                        pbar.update()
+                        cache.append(transposed_ep)
+                        if self.local_rank == 0:
+                            pbar.update(lmdb_env.stat()["entries"] - start_id - pbar.n)
                         collected_eps += 1
 
-                        if (
-                            collected_eps
-                            % self.config.IL.DAGGER.lmdb_commit_frequency
-                        ) == 0:
-                            txn.commit()
-                            txn = lmdb_env.begin(write=True)
+                        # commit ----------------
+
+                        ava_mem = float(psutil.virtual_memory().available) / 1024 / 1024 / 1024
+                        if (len(cache) % self.config.DAGGER.LMDB_COMMIT_FREQUENCY == 0 or ava_mem < 10) and len(cache) != 0:
+                            writeCache(cache)
+                            del cache
+                            cache = []
+
+                        # if (
+                        #     collected_eps
+                        #     % self.config.IL.DAGGER.lmdb_commit_frequency
+                        # ) == 0:
+                        #     txn.commit()
+                        #     txn = lmdb_env.begin(write=True)
 
                         if ensure_unique_episodes:
                             if (
@@ -521,7 +593,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     if dones[i]:
                         episodes[i] = []
                         # reset
-                        self.policy.clear_his()
+                        self.policy.module.clear_his()
     
 
                 if ensure_unique_episodes:
@@ -539,12 +611,14 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     if envs.num_envs == 0:
                         break
                 
+                # act ----------------
+                    
                 ins_text = []
                 for i in range(envs.num_envs):
                     ins_text.append(envs.current_episodes()[i].instruction.instruction_text)   
 
           
-                actions = self.policy.act(
+                actions = self.policy.module.act(
                     batch,prev_actions,encode_only = False,ins_text=ins_text
                     )
                 
@@ -553,19 +627,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 mask = random_values < beta
                 actions = torch.where(mask, batch[expert_uuid].long(), actions)
 
-
-                # if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta): # action from expert
-                #     actions = self.policy.act(
-                #     batch,prev_actions,encode_only = True
-                #     ) # inference for getting features only
-                #     actions = batch[expert_uuid].long()
-                # else:
-                #     ins_text = envs.current_episodes()[0].instruction.instruction_text # change if multi-train # action from model
-                #     actions = self.policy.act(
-                #     batch,prev_actions,encode_only = False,ins_text=ins_text
-                #     )
-
-
+                # collect inference features ----------------
 
                 for i in range(envs.num_envs):
                     if rgb_features is not None:
@@ -596,6 +658,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 skips = skips.squeeze(-1).to(device="cpu", non_blocking=True)
                 prev_actions.copy_(actions)
 
+                # step action ----------------
+
                 outputs = envs.step([a[0].item() for a in actions])
                 observations, _, dones, _ = [list(x) for x in zip(*outputs)]
 
@@ -605,8 +669,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     observations,
                     self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID,
                 )
-                
-                
                 
                     
                 batch = batch_obs(observations, self.device)
@@ -618,16 +680,10 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     device=self.device,
                 )
                 
-                if collected_eps % 100 == 0:
-                    if torch.cuda.is_available():
-                        with torch.cuda.device(self.device):
-                                torch.cuda.empty_cache()
-                    gc.collect()
+            writeCache(cache)
 
-            txn.commit()
-
-        envs.close()
-        envs = None
+        self.envs.close()
+        self.envs = None
 
         if rgb_hook is not None:
             rgb_hook.remove()
@@ -635,7 +691,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             depth_hook.remove()
         
         # reset
-        self.policy.clear_his()
+        self.policy.module.clear_his()
 
     def train(self) -> None:
 
@@ -715,7 +771,12 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     self._update_dataset(
                         diffuser_it + (1 if self.config.IL.load_from_ckpt else 0)
                     )
-                    assert 1==2
+                dist.barrier()
+                if torch.cuda.is_available():
+                    with torch.cuda.device(self.device):
+                        torch.cuda.empty_cache()
+                gc.collect()
+
                 # get dataset ---
                     
                 diffusion_dataset = TrajectoryDataset(self.lmdb_features_dir,self.config.IL.DAGGER.lmdb_map_size,self.config.IL.batch_size)
@@ -786,6 +847,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                                     self.save_checkpoint(
                                         f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
                                     )
+                                    torch.distributed.barrier()
                                 else:
                                     print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
 
@@ -845,7 +907,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             if self.config.lr_Schedule:
                 self.scheduler.step()
 
-        print(self.optimizer.param_groups[0]['lr'])
+        # print(self.optimizer.param_groups[0]['lr'])
 
 
         return loss_tensor.item()

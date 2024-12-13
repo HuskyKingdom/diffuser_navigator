@@ -122,7 +122,7 @@ class BaseVLNCETrainer(BaseILTrainer):
             "config": self.config,
         }
         torch.save(
-            checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name),_use_new_zipfile_serialization=False
+            checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name)
         )
 
     def save_checkpoint_for_old(self, file_name: str) -> None:
