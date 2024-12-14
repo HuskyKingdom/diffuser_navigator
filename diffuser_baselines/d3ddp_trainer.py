@@ -680,6 +680,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     device=self.device,
                 )
                 
+            print(f"rank {self.local_rank} finished collecting, with imdb size {lmdb_env.stat()['entries']}")
         
         self.envs.close()
         self.envs = None
