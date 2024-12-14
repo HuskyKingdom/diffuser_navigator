@@ -570,6 +570,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             writeCache(cache)
                             del cache
                             cache = []
+                        print(f"Local rank {self.local_rank} traj collected {len(cache)}")
+
 
                         # if (
                         #     collected_eps
@@ -680,7 +682,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 )
                 
             writeCache(cache)
-
+        
         self.envs.close()
         self.envs = None
 
@@ -691,6 +693,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         
         # reset
         self.policy.module.clear_his()
+        print(f"Local rank {self.local_rank} finished collecting.. _________________")
 
     def train(self) -> None:
 
