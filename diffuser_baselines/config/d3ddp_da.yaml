@@ -38,7 +38,7 @@ IL:
     p: 0.75
     preload_lmdb_features: False
     lmdb_features_dir: data/trajectories_dirs/d3ddp_da/trajectories.lmdb
-    lmdb_commit_frequency: 20
+    lmdb_commit_frequency: 50
     
     
 
