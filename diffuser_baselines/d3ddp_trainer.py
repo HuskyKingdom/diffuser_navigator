@@ -846,7 +846,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                                     self.save_checkpoint(
                                         f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
                                     )
-                                    torch.distributed.barrier()
                                 else:
                                     print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
 
