@@ -34,6 +34,7 @@ class PositionalEncoding(nn.Module):
         self.P[:, :, 1::2] = torch.cos(X)
 
     def forward(self, X):
+        print(x.shape)
         X = X + self.P[:, :X.shape[1], :].to(X.device)
         return self.dropout(X)
     
