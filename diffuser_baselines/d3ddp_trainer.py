@@ -566,7 +566,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                         # commit ----------------
                         ava_mem = float(psutil.virtual_memory().available) / 1024 / 1024 / 1024
-                        if (len(cache) % self.config.IL.DAGGER.lmdb_commit_frequency == 0 or ava_mem < 10) and len(cache) != 0:
+                        if (len(cache) % self.config.IL.DAGGER.lmdb_commit_frequency == 0 or ava_mem < 10) and len(cache) != 0 and not lmdb_env.stat()["entries"] >= required_size:
                             writeCache(cache)
                             del cache
                             cache = []
