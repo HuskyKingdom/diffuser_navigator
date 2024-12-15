@@ -229,6 +229,7 @@ class D3DiffusionNavigator(nn.Module):
         # Decoder
         self.decoder = TrajectoryDecoder(config,decoder_dim,num_attention_heads,num_layers,num_actions)
         self.masked_CE = MaskedSoftmaxCELoss()
+        self.pg_loss = nn.MSELoss()
 
         
 
@@ -352,14 +353,16 @@ class D3DiffusionNavigator(nn.Module):
         # # print(context_feature[1,:,:].unsqueeze(0)[0,0,:])
         # assert 1==2
 
-        decoder_pred = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
-
-        # print(decoder_pred[19,:10,:])
-        # print(observations["gt_actions"].long()[19,:10])
+        decoder_pred, pred_progress = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
         
 
-        loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"],  observations["weights"]).sum()
-        loss /= B
+        action_loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"],  observations["weights"]).sum()
+        action_loss /= B
+
+        progress_loss = self.pg_loss(pred_progress,observations["progress"])
+
+        print(progress_loss)
+        assert 1==2
 
 
         return loss

@@ -73,10 +73,7 @@ class TrajectoryDecoder(nn.Module):
         
         pred_action_logits = self.action_predictor(decoder_out)
         pred_progress = self.progress_monitor(decoder_out)
-
-        print(pred_action_logits.shape, pred_progress.shape)
-        assert 1==2
         
         self.avg_weights = avg_weights
 
-        return pred_action_logits
+        return pred_action_logits, pred_progress
