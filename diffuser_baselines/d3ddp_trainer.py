@@ -125,6 +125,7 @@ def collate_fn(batch):
         'lengths': [],
         'weights': [],
         'ins_text': [],
+        'progress': [],
     }
     
     # Transpose the batch to separate each component
@@ -136,7 +137,6 @@ def collate_fn(batch):
     max_len = max(lengths)
 
     for sample in batch:
-
         # Extract data from the sample
         sample_dict = sample[0]
         instr = torch.tensor(sample_dict['instruction'][0])  # (len_seq, 200) only take one instruction
@@ -145,6 +145,7 @@ def collate_fn(batch):
         gt_actions = torch.tensor(sample[2])  # (len_seq)
         trajectories = torch.tensor(sample[3])  # (len_seq, 4)
         prev_actions = torch.tensor(sample[1]) 
+        progress = torch.tensor(sample_dict['progress'])
 
         collected_data["ins_text"].append(sample[4][0]) # instruction text
 
@@ -167,6 +168,7 @@ def collate_fn(batch):
         pad_prev_actions = _pad_helper(prev_actions, max_len)
         pad_trajectories = _pad_helper(trajectories, max_len)
         pad_weights = _pad_helper(weights, max_len)
+        pad_progress = _pad_helper(progress,max_len)
 
 
 
@@ -182,15 +184,14 @@ def collate_fn(batch):
         collected_data["prev_actions"].append(pad_prev_actions)
         collected_data['trajectories'].append(pad_trajectories)
         collected_data['padding_mask'].append(mask) # padding mask for dec_input
-        collected_data["weights"].append(pad_weights)
+        collected_data["weights"].append(pad_weights),
+        collected_data["progress"].append(pad_progress)
 
     # Stack each list in collected_data into a tensor
     for key in collected_data:
         if key == 'lengths' or key == "ins_text":
             continue
         collected_data[key] = torch.stack(collected_data[key], dim=0)
-
-
 
     return collected_data
 
@@ -900,7 +901,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         #         print(f"Layer: {name} | No gradient (possibly frozen)")
         # self.grad_clipping(self.policy, 1)
 
-        
+
         if step_grad:
             self.optimizer.step()
             self.optimizer.zero_grad()

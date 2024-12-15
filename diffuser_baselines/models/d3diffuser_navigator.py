@@ -362,9 +362,7 @@ class D3DiffusionNavigator(nn.Module):
 
         progress_loss = self.pg_loss(pred_progress,observations["progress"])
 
-        print(progress_loss)
-        assert 1==2
-
+        loss = action_loss + progress_loss
 
         return loss
 
