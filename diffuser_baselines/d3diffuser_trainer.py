@@ -87,7 +87,8 @@ def collate_fn(batch):
     max_len = max(lengths)
 
     for sample in batch:
-
+        print(sample_dict['progress'])
+        assert 1==2
         # Extract data from the sample
         sample_dict = sample[0]
         instr = torch.tensor(sample_dict['instruction'][0])  # (len_seq, 200) only take one instruction
@@ -577,12 +578,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     device=self.device,
                 )
                 
-                if collected_eps % 100 == 0:
-                    if torch.cuda.is_available():
-                        with torch.cuda.device(self.device):
-                                torch.cuda.empty_cache()
-                    gc.collect()
-
             txn.commit()
 
         envs.close()

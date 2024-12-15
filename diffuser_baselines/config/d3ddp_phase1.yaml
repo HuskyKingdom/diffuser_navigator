@@ -1,0 +1,67 @@
+BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task_aug.yaml
+TRAINER_NAME: d3diffuser_ddp 
+SIMULATOR_GPU_IDS: [0]
+TORCH_GPU_ID: 0
+NUM_ENVIRONMENTS: 1
+NUM_PROCESSES: 1
+TENSORBOARD_DIR: data/tensorboard_dirs/d3ddp_phase1
+CHECKPOINT_FOLDER: data/checkpoints/d3ddp_phase1
+EVAL_CKPT_PATH_DIR: data/checkpoints/d3ddp_phase1
+RESULTS_DIR: data/checkpoints/d3ddp_phase1
+VIDEO_OPTION: []
+JobName: d3ddp_phase1
+lr_Schedule: True
+dagger: True
+
+
+EVAL:
+  USE_CKPT_CONFIG: False
+  SPLIT: val_seen # for testing overfitting only
+  EPISODE_COUNT: -1
+  ACTION_POP: True
+
+IL:
+  load_from_ckpt: False 
+  epochs: 50
+  batch_size: 20
+  is_requeue: False # continuo training
+  
+
+  RECOLLECT_TRAINER:
+    gt_file:
+      data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}_gt.json.gz
+    
+  DAGGER:
+    iterations: 1
+    update_size: 157232
+    p: 1.0
+    preload_lmdb_features: False
+    lmdb_features_dir: data/trajectories_dirs/d3ddp_phase1/trajectories.lmdb
+    lmdb_commit_frequency: 50
+    
+    
+
+DIFFUSER:
+  embedding_dim: 256
+  num_attention_heads: 8
+  num_layers: 4
+  diffusion_timesteps: 100
+  saving_frequency: 8
+  logging_file: data/loggings/train.log
+  LR: 2.5e-4
+  traj_length: 3
+  beta: 0.1
+  action_space: 4
+  traj_space: 4
+
+MODEL:
+
+  policy_name: D3DiffusionPolicy
+
+  INSTRUCTION_ENCODER:
+    bidirectional: True
+
+  PROGRESS_MONITOR:
+    use: True
+
+

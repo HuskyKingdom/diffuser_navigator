@@ -898,9 +898,9 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         #         print(f"Layer: {name} | Gradient Norm: {param.grad.norm()}")
         #     else:
         #         print(f"Layer: {name} | No gradient (possibly frozen)")
-
-
         # self.grad_clipping(self.policy, 1)
+
+        
         if step_grad:
             self.optimizer.step()
             self.optimizer.zero_grad()
