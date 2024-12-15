@@ -29,6 +29,9 @@ class TrajectoryDecoder(nn.Module):
             nn.Linear(embedding_dim, action_dim)
         )
 
+        # pg monitor
+        self.progress_monitor = nn.Linear(embedding_dim, 1)
+
 
 
     def forward(self, dec_input,dec_pad_mask, enc_out, enc_pad_mask, causal_mask, ins_text=None) -> Tensor:
@@ -69,6 +72,10 @@ class TrajectoryDecoder(nn.Module):
         decoder_out = decoder_out[-1].transpose(0,1)
         
         pred_action_logits = self.action_predictor(decoder_out)
+        pred_progress = self.progress_monitor(decoder_out)
+
+        print(pred_action_logits.shape, pred_progress.shape)
+        assert 1==2
         
         self.avg_weights = avg_weights
 

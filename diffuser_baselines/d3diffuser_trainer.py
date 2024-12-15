@@ -144,11 +144,6 @@ def collate_fn(batch):
             continue
         collected_data[key] = torch.stack(collected_data[key], dim=0)
 
-    print(collected_data["progress"].shape)
-    print(collected_data["gt_actions"].shape)
-    print(collected_data["prev_actions"].shape)
-    assert 1==2
-
     return collected_data
 
 
