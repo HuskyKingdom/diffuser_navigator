@@ -122,7 +122,8 @@ class D3DiffusionPolicy(Policy):
         'padding_mask': observations['padding_mask'].to(observations['instruction'].device).bool(),
         'lengths': observations['lengths'].to(observations['instruction'].device),
         'weights': observations['weights'].to(observations['instruction'].device),
-        'ins_text': observations['ins_text']
+        'ins_text': observations['ins_text'],
+        'progress': observations['progress'].to(observations['instruction'].device),
         }
 
         
