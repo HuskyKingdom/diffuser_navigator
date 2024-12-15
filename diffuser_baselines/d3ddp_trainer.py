@@ -844,7 +844,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                                 num_epoch_batch += 1
 
                             if self.world_rank == 0: #ddp
-                                if (diffuser_it * self.config.IL.epochs + epoch) % self.config.DIFFUSER.saving_frequency == 0:
+                                if (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0:
                                     self.save_checkpoint(
                                         f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
                                     )
@@ -981,5 +981,5 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             "config": self.config,
         }
         torch.save(
-            checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name),_use_new_zipfile_serialization=False
+            checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name)
         )
