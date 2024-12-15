@@ -87,7 +87,7 @@ def collate_fn(batch):
     max_len = max(lengths)
 
     for sample in batch:
-        print(sample_dict['progress'])
+        print(sample[0]['progress'])
         assert 1==2
         # Extract data from the sample
         sample_dict = sample[0]
