@@ -524,10 +524,10 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                     if dones[i] and not skips[i]:
 
-                        # if len(episodes[i]) > 250:
-                        #     episodes[i] = []
-                        #     self.policy.module.clear_his()
-                        #     continue
+                        if len(episodes[i]) > 300:
+                            episodes[i] = []
+                            self.policy.module.clear_his()
+                            continue
 
                         ep = episodes[i]
                         traj_obs = batch_obs(
