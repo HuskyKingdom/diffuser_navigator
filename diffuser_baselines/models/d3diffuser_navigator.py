@@ -38,7 +38,7 @@ class D3DiffusionPolicy(Policy):
 
     def act(self,observations, prev_actions, encode_only=False,print_info = False,ins_text=None): 
 
-        
+        self.train()
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
 
         # storing histories
@@ -83,8 +83,6 @@ class D3DiffusionPolicy(Policy):
         }
 
         print(ins_text)
-        print(rgb_features)
-        print(observations['instruction'])
         assert 1==2
         
 
