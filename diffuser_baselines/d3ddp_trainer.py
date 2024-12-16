@@ -540,7 +540,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             if self.config.IL.DAGGER.lmdb_fp16:
                                 traj_obs[k] = traj_obs[k].astype(np.float16)
                         
-                
+
                         transposed_ep = [
                             traj_obs,
                             np.array([step[1] for step in ep], dtype=np.int64),
@@ -652,6 +652,9 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             pos
                         )
                     )
+
+                    print(f"local rank {self.local_rank} ; ins {prev_instructions[i]} ; rgb {observations[i][rgb_features]}")
+                    assert 1==2
 
                 skips = batch[expert_uuid].long() == -1
                 actions = torch.where(
