@@ -107,6 +107,9 @@ class D3DiffusionPolicy(Policy):
         B,T,C,H,W = observations['depth_features'].shape
         observations['depth_features'] = observations['depth_features'].view(-1,C,H,W)
         
+        print(observations['rgb_features'][0].shape)
+        print(observations['ins_text'][0])
+        assert 1==2
 
 
         rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
@@ -128,9 +131,7 @@ class D3DiffusionPolicy(Policy):
         'progress': observations['progress'].to(observations['instruction'].device),
         }
 
-        print(observations['ins_text'])
-        assert 1==2
-
+        
         
         loss = self.navigator(collected_data,(B,T), inference = False)
 
