@@ -83,7 +83,7 @@ class D3DiffusionPolicy(Policy):
         }
 
         print(ins_text)
-        print(rgb_features[0][0],rgb_features.shape)
+        print(rgb_features)
         assert 1==2
         
 
