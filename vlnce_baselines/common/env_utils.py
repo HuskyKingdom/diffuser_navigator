@@ -172,4 +172,5 @@ def construct_envs_process(
 def construct_envs_auto_reset_false(
     config: Config, env_class: Type[Union[Env, RLEnv]]
 ) -> VectorEnv:
-    return construct_envs(config, env_class, auto_reset_done=False,episodes_allowed=["3871"]) # 3871
+    print("fku ! +++++++++++++++++++++")
+    return construct_envs(config, env_class, auto_reset_done=False,episodes_allowed=["*"]) # 3871
