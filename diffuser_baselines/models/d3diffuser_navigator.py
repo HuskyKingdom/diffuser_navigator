@@ -84,6 +84,7 @@ class D3DiffusionPolicy(Policy):
 
         print(ins_text)
         print(rgb_features)
+        print(observations['instruction'])
         assert 1==2
         
 
