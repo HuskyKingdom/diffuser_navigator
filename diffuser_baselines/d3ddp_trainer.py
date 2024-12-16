@@ -524,7 +524,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                     if dones[i] and not skips[i]:
 
-                        if len(episodes[i]) > 300:
+                        if len(episodes[i]) > 250:
                             episodes[i] = []
                             self.policy.module.clear_his()
                             continue
