@@ -30,7 +30,8 @@ class TrajectoryDecoder(nn.Module):
         )
 
         # pg monitor
-        self.progress_monitor = nn.Linear(embedding_dim, 1)
+        if self.config.MODEL.PROGRESS_MONITOR.use:
+            self.progress_monitor = nn.Linear(embedding_dim, 1)
 
 
 
@@ -54,6 +55,8 @@ class TrajectoryDecoder(nn.Module):
         # k_pos = self.pe_layer(k_position_indices)
 
         # fixed pe
+        pred_progress = None
+        
         dec_input = self.pe_layer(dec_input)
 
 
@@ -72,7 +75,9 @@ class TrajectoryDecoder(nn.Module):
         decoder_out = decoder_out[-1].transpose(0,1)
         
         pred_action_logits = self.action_predictor(decoder_out)
-        pred_progress = self.progress_monitor(decoder_out)
+
+        if self.config.MODEL.PROGRESS_MONITOR.use:
+            pred_progress = self.progress_monitor(decoder_out)
         
         self.avg_weights = avg_weights
 

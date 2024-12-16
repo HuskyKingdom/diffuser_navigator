@@ -56,4 +56,7 @@ MODEL:
   INSTRUCTION_ENCODER:
     bidirectional: True
 
+  PROGRESS_MONITOR:
+    use: False
+
 
