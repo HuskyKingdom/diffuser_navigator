@@ -199,7 +199,7 @@ class TorchVisionResNet(nn.Module):
             resnet_output = self.cnn(normalize(rgb_observations))
 
             print(resnet_output,resnet_output.shape)
-            assert 1==2
+            
 
         if self.spatial_output:
             b, c, h, w = resnet_output.size()
@@ -216,7 +216,8 @@ class TorchVisionResNet(nn.Module):
                 .view(1, -1, h, w)
                 .expand(b, self.spatial_embeddings.embedding_dim, h, w)
             )
-
+            print(torch.cat([resnet_output, spatial_features], dim=1),torch.cat([resnet_output, spatial_features], dim=1).shape)
+            assert 1==2
             return torch.cat([resnet_output, spatial_features], dim=1)
         else:
             return self.fc(resnet_output)  # returns [BATCH x OUTPUT_DIM]
