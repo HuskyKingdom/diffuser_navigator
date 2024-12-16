@@ -361,11 +361,12 @@ class D3DiffusionNavigator(nn.Module):
         action_loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"],  observations["weights"]).sum()
         action_loss /= B
 
-        progress_loss = self.pg_loss(pred_progress,observations["progress"])
-
-        loss = action_loss + progress_loss
-
-        return loss
+        if self.config.MODEL.PROGRESS_MONITOR.use:
+            progress_loss = self.pg_loss(pred_progress,observations["progress"])
+            loss = action_loss + progress_loss
+            return loss
+        else:
+            return action_loss
 
 
 
