@@ -521,6 +521,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 logger.info("skipping -- evaluation exists.")
                 return
 
+        print("fk you !!! +++++++++++++++++++++++++++")
         envs = construct_envs_auto_reset_false(
             config, get_env_class(config.ENV_NAME)
         )
