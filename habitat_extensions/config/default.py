@@ -134,7 +134,7 @@ _C.DATASET.ROLES = ["guide"]  # options: "guide", "follower"
 # language options: "te-IN", "hi-IN", "en-US", "en-IN"
 _C.DATASET.LANGUAGES = ["*"]
 # a list of episode IDs to allow in dataset creation.
-_C.DATASET.EPISODES_ALLOWED = ["3871"]
+_C.DATASET.EPISODES_ALLOWED = ["5391"]
 
 
 def get_extended_config(
