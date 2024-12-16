@@ -197,8 +197,8 @@ class TorchVisionResNet(nn.Module):
             # permute tensor to dimension [BATCH x CHANNEL x HEIGHT x WIDTH]
             rgb_observations = observations["rgb"].permute(0, 3, 1, 2)
             resnet_output = self.cnn(normalize(rgb_observations))
-            print(observations["rgb"])
-            print(resnet_output,resnet_output.shape)
+            # print(observations["rgb"])
+            # print(resnet_output,resnet_output.shape)
             
 
         if self.spatial_output:

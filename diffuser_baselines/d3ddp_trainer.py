@@ -653,9 +653,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         )
                     )
 
-                    print(f"local rank {self.local_rank} ; ins {prev_instructions[i]} ; rgb {observations[i][rgb_features]}")
-                    assert 1==2
-
                 skips = batch[expert_uuid].long() == -1
                 actions = torch.where(
                     skips, torch.zeros_like(actions), actions
