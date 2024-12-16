@@ -128,6 +128,9 @@ class D3DiffusionPolicy(Policy):
         'progress': observations['progress'].to(observations['instruction'].device),
         }
 
+        print(observations['ins_text'])
+        assert 1==2
+
         
         loss = self.navigator(collected_data,(B,T), inference = False)
 
