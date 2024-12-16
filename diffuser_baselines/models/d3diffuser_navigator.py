@@ -82,6 +82,9 @@ class D3DiffusionPolicy(Policy):
         'ins_text': ins_text
         }
 
+        print(ins_text)
+        print(rgb_features[0][0])
+        assert 1==2
         
 
         action = self.navigator(collected_data,(B,T), inference = True, ins_text=ins_text)
