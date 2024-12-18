@@ -3,17 +3,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from habitat_baselines.common.baseline_registry import baseline_registry
-
-from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule, FFWRelativeSelfAttentionModule,ParallelAttention
 from habitat_baselines.rl.ppo.policy import Policy
 from diffuser_baselines.models.encoders.instruction_encoder import InstructionEncoder
 from diffuser_baselines.models.encoders.trajectory_decoder import TrajectoryDecoder
 
-from diffuser_baselines.models.common.position_encodings import RotaryPositionEncoding,SinusoidalPosEmb, PositionalEncoding
-
 from diffuser_baselines.models.encoders import resnet_encoders
-from diffuser_baselines.models.encoders.his_encoder import HistoryGRU
-from diffuser_baselines.models.utils import MaskedSoftmaxCELoss
+from diffuser_baselines.models.utils import UnMaskedSoftmaxCELoss,MaskedWeightedLoss
 
 from transformers import BertTokenizer      
 
@@ -229,8 +224,8 @@ class D3DiffusionNavigator(nn.Module):
         
         # Decoder
         self.decoder = TrajectoryDecoder(config,decoder_dim,num_attention_heads,num_layers,num_actions)
-        self.masked_CE = MaskedSoftmaxCELoss()
-        self.pg_loss = nn.MSELoss()
+        self.softmax_CE = UnMaskedSoftmaxCELoss()
+        self.masked_weighted_loss = MaskedWeightedLoss()
 
         
 
@@ -356,8 +351,10 @@ class D3DiffusionNavigator(nn.Module):
         decoder_pred, pred_progress = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
         
 
-        action_loss = self.masked_CE(decoder_pred,observations["gt_actions"].long(), observations["lengths"],  observations["weights"]).sum()
-        action_loss /= B
+        observations["lengths"],  observations["weights"]
+
+        action_loss = self.softmax_CE(decoder_pred,observations["gt_actions"].long())
+        
 
         if self.config.MODEL.PROGRESS_MONITOR.use:
 
@@ -367,14 +364,16 @@ class D3DiffusionNavigator(nn.Module):
                 reduction="none",
             )
 
-            print(progress_loss.shape)
-            assert 1==2
+            overall_loss = action_loss + progress_loss
+            masked_weighted_loss = self.masked_weighted_loss(overall_loss).sum()
 
-            progress_loss = self.pg_loss(pred_progress,observations["progress"])
-            loss = action_loss + progress_loss
-            return loss
         else:
-            return action_loss
+            masked_weighted_loss = self.masked_weighted_loss(action_loss).sum()
+
+            
+        masked_weighted_loss /= B
+            
+        return masked_weighted_loss
 
 
 

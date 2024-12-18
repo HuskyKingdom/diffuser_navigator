@@ -325,19 +325,26 @@ def sequence_mask(X, valid_len, value=0):
     return X
 
 
-class MaskedSoftmaxCELoss(nn.CrossEntropyLoss):
-    def forward(self, pred, label, valid_len, inflection_weights):
-        weights = torch.ones_like(label)
-        weights = sequence_mask(weights, valid_len)
-        overall_weights = inflection_weights * weights # inflection weights * masking weights
-        self.reduction='none'
-        unweighted_loss = super(MaskedSoftmaxCELoss, self).forward(
+class UnMaskedSoftmaxCELoss(nn.CrossEntropyLoss):
+    def forward(self, pred, label):
+        
+        unweighted_loss = super(UnMaskedSoftmaxCELoss, self).forward(
             pred.permute(0, 2, 1), label)
         
+        return unweighted_loss
+    
 
-        weighted_weights = (unweighted_loss * overall_weights).sum(dim=1)
-     
-        weighted_loss = torch.where(
-            valid_len != 0, weighted_weights / valid_len, torch.tensor(0.0, device=pred.device)
+
+def MaskedWeightedLoss(loss_seq, valid_len, inflection_weights):
+    weights = torch.ones_like(loss_seq)
+    weights = sequence_mask(weights, valid_len)
+    overall_weights = inflection_weights * weights
+
+    weighted_weights = (loss_seq * overall_weights).sum(dim=1)
+    weighted_loss = torch.where(
+            valid_len != 0, weighted_weights / valid_len, torch.tensor(0.0, device=loss_seq.device)
         )
-        return weighted_loss
+    
+    return weighted_loss
+
+
