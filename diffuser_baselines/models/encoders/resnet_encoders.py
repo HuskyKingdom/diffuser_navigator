@@ -202,8 +202,8 @@ class TorchVisionResNet(nn.Module):
             # # show frame
             import cv2
             import matplotlib.pyplot as plt
-            print(rgb_observations.squeeze(0).cpu().numpy().shape)
-            image_rgb = cv2.cvtColor(rgb_observations.squeeze(0).cpu().numpy(), cv2.COLOR_BGR2RGB)
+            print(observations["rgb"].squeeze(0).cpu().numpy().shape)
+            image_rgb = cv2.cvtColor(observations["rgb"].squeeze(0).cpu().numpy(), cv2.COLOR_BGR2RGB)
             # 显示图片
             plt.imshow(image_rgb)
             plt.axis('off')  # 关闭坐标轴
