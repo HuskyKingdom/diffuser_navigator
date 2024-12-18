@@ -328,6 +328,7 @@ def sequence_mask(X, valid_len, value=0):
 class UnMaskedSoftmaxCELoss(nn.CrossEntropyLoss):
     def forward(self, pred, label):
         
+        self.reduction='none'
         unweighted_loss = super(UnMaskedSoftmaxCELoss, self).forward(
             pred.permute(0, 2, 1), label)
         
