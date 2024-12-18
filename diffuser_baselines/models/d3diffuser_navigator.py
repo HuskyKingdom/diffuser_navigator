@@ -354,7 +354,7 @@ class D3DiffusionNavigator(nn.Module):
 
         action_loss = self.softmax_CE(decoder_pred,observations["gt_actions"].long())
         
-        print(f"action loss {action_loss.shape}; {decoder_pred}; {observations["gt_actions"].long()}")
+        print(f"action loss {action_loss.shape}; {decoder_pred}; {observations['gt_actions'].long()}")
 
         if self.config.MODEL.PROGRESS_MONITOR.use:
 
@@ -368,7 +368,7 @@ class D3DiffusionNavigator(nn.Module):
 
             overall_loss = action_loss + progress_loss
             masked_weighted_loss = MaskedWeightedLoss(overall_loss,observations["lengths"],  observations["weights"]).sum()
-            
+
         else:
             masked_weighted_loss = MaskedWeightedLoss(action_loss,observations["lengths"],  observations["weights"]).sum()
 
