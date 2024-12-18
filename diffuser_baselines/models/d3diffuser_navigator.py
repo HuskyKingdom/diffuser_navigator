@@ -354,7 +354,7 @@ class D3DiffusionNavigator(nn.Module):
 
         action_loss = self.softmax_CE(decoder_pred,observations["gt_actions"].long())
         
-
+        print(action_loss.shape)
         if self.config.MODEL.PROGRESS_MONITOR.use:
 
             progress_loss = F.mse_loss(
