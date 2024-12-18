@@ -268,8 +268,6 @@ class D3DiffusionNavigator(nn.Module):
             action_except = observations['prev_actions'][:, 1:] # remove first
             action_start_token = torch.full((observations['prev_actions'].shape[0], 1), 4).to(observations['prev_actions'].device).long() # add start token
             action_input = torch.cat([action_start_token, action_except.long()], dim=1) # construct input
-
-            
             action_input = action_input.view(-1,) # # (B,T) -> (B+T,)
             action_features = self.action_encoder(action_input.long()) # (B+T,) -> (B+T, emb)
 
@@ -362,6 +360,16 @@ class D3DiffusionNavigator(nn.Module):
         action_loss /= B
 
         if self.config.MODEL.PROGRESS_MONITOR.use:
+
+            progress_loss = F.mse_loss(
+                pred_progress,
+                observations["progress"],
+                reduction="none",
+            )
+
+            print(progress_loss.shape)
+            assert 1==2
+
             progress_loss = self.pg_loss(pred_progress,observations["progress"])
             loss = action_loss + progress_loss
             return loss

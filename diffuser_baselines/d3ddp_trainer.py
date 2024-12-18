@@ -712,8 +712,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             os.makedirs(self.config.CHECKPOINT_FOLDER, exist_ok=True)
     
 
-
-
         """Main method for training DAgger."""
         if self.config.IL.DAGGER.preload_lmdb_features:
             try:

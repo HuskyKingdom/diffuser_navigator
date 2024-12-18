@@ -77,7 +77,7 @@ class TrajectoryDecoder(nn.Module):
         pred_action_logits = self.action_predictor(decoder_out)
 
         if self.config.MODEL.PROGRESS_MONITOR.use:
-            pred_progress = self.progress_monitor(decoder_out)
+            pred_progress = torch.tanh(self.progress_monitor(decoder_out))
         
         self.avg_weights = avg_weights
 
