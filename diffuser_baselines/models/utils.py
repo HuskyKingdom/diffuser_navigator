@@ -336,8 +336,10 @@ class UnMaskedSoftmaxCELoss(nn.CrossEntropyLoss):
 
 
 def MaskedWeightedLoss(loss_seq, valid_len, inflection_weights):
+    
     weights = torch.ones_like(loss_seq)
     weights = sequence_mask(weights, valid_len)
+    print(loss_seq.shape,weights.shape)
     overall_weights = inflection_weights * weights
 
     weighted_weights = (loss_seq * overall_weights).sum(dim=1)
