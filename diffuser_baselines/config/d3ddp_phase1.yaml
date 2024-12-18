@@ -11,7 +11,7 @@ RESULTS_DIR: data/checkpoints/d3ddp_phase1
 VIDEO_OPTION: []
 JobName: d3ddp_phase1
 lr_Schedule: True
-dagger: True
+dagger: False
 
 
 EVAL:
@@ -35,7 +35,7 @@ IL:
     iterations: 1
     update_size: 157232
     p: 1.0
-    preload_lmdb_features: False
+    preload_lmdb_features: True
     lmdb_features_dir: data/trajectories_dirs/d3ddp_phase1/trajectories.lmdb
     lmdb_commit_frequency: 50
     

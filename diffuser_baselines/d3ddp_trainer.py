@@ -507,7 +507,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             # txn = lmdb_env.begin(write=True)
 
             while collected_eps < remain_update_size and not (lmdb_env.stat()["entries"] >= required_size):
-                
+                print(f"rank {self.local_rank} ; collected eps {collected_eps} ; stats {lmdb_env.stat()['entries']}; required {required_size}")
                 current_episodes = None
                 envs_to_pause = None
                 if ensure_unique_episodes:
@@ -572,6 +572,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             writeCache(cache)
                             del cache
                             cache = []
+                            print(f"rank {self.local_rank} ; WRITE! ; stats {lmdb_env.stat()['entries']}")
 
 
                         # if (
