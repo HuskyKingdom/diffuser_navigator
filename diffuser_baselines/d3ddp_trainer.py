@@ -628,7 +628,11 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                 random_values = torch.rand_like(actions, dtype=torch.float)
                 mask = random_values < beta
+                print(f"local rank {self.local_rank};  beta {beta} ;oracle {batch[expert_uuid].long()}; agent {actions}")
                 actions = torch.where(mask, batch[expert_uuid].long(), actions)
+                print(f"local rank {self.local_rank};  final {actions}")
+
+                
 
                 # collect inference features ----------------
 
@@ -773,7 +777,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 step_id = 0
                 if not self.config.IL.DAGGER.preload_lmdb_features:
                     self._update_dataset(
-                        diffuser_it
+                        diffuser_it + 1
                     )
                 dist.barrier()
                 if torch.cuda.is_available():
@@ -849,7 +853,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                             if self.world_rank == 0: #ddp
                                 if (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0:
                                     self.save_checkpoint(
-                                        f"ckpt.{diffuser_it * self.config.IL.epochs + epoch}.pth"
+                                        f"ckpt.{diffuser_it * self.config.IL.epochs + epoch + 1}.pth"
                                     )
                                 else:
                                     print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
