@@ -343,7 +343,7 @@ def MaskedWeightedLoss(loss_seq, valid_len, inflection_weights):
     overall_weights = inflection_weights * weights
 
     print(loss_seq.shape,overall_weights.shape)
-    weighted_weights = (loss_seq * overall_weights).sum(dim=1)
+    weighted_weights = (loss_seq.squeeze(-1) * overall_weights).sum(dim=1)
     weighted_loss = torch.where(
             valid_len != 0, weighted_weights / valid_len, torch.tensor(0.0, device=loss_seq.device)
         )
