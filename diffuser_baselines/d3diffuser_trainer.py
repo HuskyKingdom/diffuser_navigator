@@ -10,6 +10,7 @@ import msgpack_numpy
 import numpy as np
 import torch
 import tqdm
+import zlib
 from habitat import logger
 from habitat_baselines.common.baseline_registry import baseline_registry
 from habitat_baselines.common.environments import get_env_class
@@ -201,7 +202,7 @@ class TrajectoryDataset(torch.utils.data.Dataset):
                     raise IndexError(f"Index {index} out of range in database")
 
                 
-                trajectory = msgpack_numpy.unpackb(data, raw=False)
+                trajectory = msgpack_numpy.unpackb(zlib.decompress(data), raw=False)
     
                 return trajectory
 
