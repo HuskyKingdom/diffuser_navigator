@@ -207,8 +207,8 @@ class TorchVisionResNet(nn.Module):
             # 显示图片
             plt.imshow(image_rgb)
             plt.axis('off')  # 关闭坐标轴
-            plt.title("Image Display")  # 可选：添加标题
-            plt.show()
+            cv2.imwrite("obs.jpg", image_rgb)
+            assert 1==2
             # print(resnet_output,resnet_output.shape)
             
 
