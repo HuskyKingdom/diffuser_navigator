@@ -362,7 +362,7 @@ class D3DiffusionNavigator(nn.Module):
                 pred_progress,
                 observations["progress"],
                 reduction="none",
-            )
+            ).squeeze(-1)
 
 
             overall_loss = action_loss + progress_loss
