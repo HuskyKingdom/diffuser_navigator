@@ -198,17 +198,17 @@ class TorchVisionResNet(nn.Module):
             rgb_observations = observations["rgb"].permute(0, 3, 1, 2)
             resnet_output = self.cnn(normalize(rgb_observations))
 
-            print(observations["rgb"])
-            # # show frame
-            import cv2
-            import matplotlib.pyplot as plt
-            print(observations["rgb"].squeeze(0).cpu().numpy().shape)
-            image_rgb = cv2.cvtColor(observations["rgb"].squeeze(0).cpu().numpy(), cv2.COLOR_BGR2RGB)
-            # 显示图片
-            plt.imshow(image_rgb)
-            plt.axis('off')  # 关闭坐标轴
-            cv2.imwrite("obs.jpg", image_rgb)
-            assert 1==2
+            # print(observations["rgb"])
+            # # # show frame
+            # import cv2
+            # import matplotlib.pyplot as plt
+            # print(observations["rgb"].squeeze(0).cpu().numpy().shape)
+            # image_rgb = cv2.cvtColor(observations["rgb"].squeeze(0).cpu().numpy(), cv2.COLOR_BGR2RGB)
+            # # 显示图片
+            # plt.imshow(image_rgb)
+            # plt.axis('off')  # 关闭坐标轴
+            # cv2.imwrite("obs.jpg", image_rgb)
+            # assert 1==2
             # print(resnet_output,resnet_output.shape)
             
 
