@@ -494,7 +494,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
         with lmdb.open(self.lmdb_features_dir,map_size=int(self.config.IL.DAGGER.lmdb_map_size),) as lmdb_env, torch.no_grad():
             
-            required_size = (data_it+1) * self.config.IL.DAGGER.update_size
+            required_size = (data_it) * self.config.IL.DAGGER.update_size
             remain_update_size = required_size - lmdb_env.stat()["entries"]
             start_id = lmdb_env.stat()["entries"]
 
