@@ -211,8 +211,8 @@ class TorchVisionResNet(nn.Module):
             # plt.axis('off')  # 关闭坐标轴
             # cv2.imwrite("obs.jpg", image_rgb)
             # assert 1==2
-            # print(resnet_output,resnet_output.shape)
-            # assert 1==2
+            print(resnet_output,resnet_output.shape)
+            assert 1==2
             
 
         if self.spatial_output:

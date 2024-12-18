@@ -92,8 +92,6 @@ class D3DiffusionPolicy(Policy):
 
     def build_loss(self,observations):
 
-        print(observations['ins_text'][0],observations['rgb_features'][0][0])
-        assert 1==2
 
         # (B,T,C,H,W) -> (B+T,C,H,W)
         B,T,C,H,W = observations['rgb_features'].shape
