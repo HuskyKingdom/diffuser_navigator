@@ -197,11 +197,12 @@ class TorchVisionResNet(nn.Module):
             # permute tensor to dimension [BATCH x CHANNEL x HEIGHT x WIDTH]
             rgb_observations = observations["rgb"].permute(0, 3, 1, 2)
             resnet_output = self.cnn(normalize(rgb_observations))
+
             print(observations["rgb"])
             # # show frame
             import cv2
             import matplotlib.pyplot as plt
-            image_rgb = cv2.cvtColor(rgb_observations, cv2.COLOR_BGR2RGB)
+            image_rgb = cv2.cvtColor(rgb_observations.cpu().numpy(), cv2.COLOR_BGR2RGB)
             # 显示图片
             plt.imshow(image_rgb)
             plt.axis('off')  # 关闭坐标轴
