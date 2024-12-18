@@ -628,10 +628,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                 random_values = torch.rand_like(actions, dtype=torch.float)
                 mask = random_values < beta
-                print(f"local rank {self.local_rank};  beta {beta} ;oracle {batch[expert_uuid].long()}; agent {actions}")
                 actions = torch.where(mask, batch[expert_uuid].long(), actions)
-                print(f"local rank {self.local_rank};  final {actions}")
-
                 
 
                 # collect inference features ----------------
