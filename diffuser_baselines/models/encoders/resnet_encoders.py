@@ -198,6 +198,8 @@ class TorchVisionResNet(nn.Module):
             rgb_observations = observations["rgb"].permute(0, 3, 1, 2)
             resnet_output = self.cnn(normalize(rgb_observations))
 
+        
+
             # print(observations["rgb"])
             # # # show frame
             # import cv2
@@ -209,7 +211,8 @@ class TorchVisionResNet(nn.Module):
             # plt.axis('off')  # 关闭坐标轴
             # cv2.imwrite("obs.jpg", image_rgb)
             # assert 1==2
-            # print(resnet_output,resnet_output.shape)
+            print(resnet_output,resnet_output.shape)
+            assert 1==2
             
 
         if self.spatial_output:
