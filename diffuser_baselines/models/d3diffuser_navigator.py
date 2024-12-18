@@ -363,6 +363,8 @@ class D3DiffusionNavigator(nn.Module):
                 reduction="none",
             )
 
+            print(action_loss.shape,progress_loss.shape)
+
             overall_loss = action_loss + progress_loss
             masked_weighted_loss = MaskedWeightedLoss(overall_loss,observations["lengths"],  observations["weights"]).sum()
         else:
