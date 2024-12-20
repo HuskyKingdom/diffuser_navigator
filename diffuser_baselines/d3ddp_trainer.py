@@ -527,6 +527,12 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         if len(episodes[i]) > 250:
                             episodes[i] = []
                             self.policy.module.clear_his()
+                            prev_actions = torch.zeros(
+                                self.config.NUM_PROCESSES,
+                                1,
+                                device=self.device,
+                                dtype=torch.long,
+                            )
                             continue
 
                         ep = episodes[i]
@@ -597,6 +603,12 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         episodes[i] = []
                         # reset
                         self.policy.module.clear_his()
+                        prev_actions = torch.zeros(
+                                self.config.NUM_PROCESSES,
+                                1,
+                                device=self.device,
+                                dtype=torch.long,
+                            )
     
 
                 if ensure_unique_episodes:
@@ -885,12 +897,12 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
     ):
         
 
-        print(f"rank {self.local_rank} ; rgb_features {observations['rgb_features'].shape}")
+        # print(f"rank {self.local_rank} ; rgb_features {observations['rgb_features'].shape}")
 
         loss, actions_pred = self.policy.module.build_loss(observations)  # Access the underlying module
 
-        print(f"rank {self.local_rank} ; \n ins_text {observations['ins_text'][0]}; \n gt_actions {observations['gt_actions'][0]}; \n actions pred {actions_pred[0]}; \n prev_actions {observations['prev_actions'][0]} ; \n loss {loss}")
-        
+        # print(f"rank {self.local_rank} ; \n ins_text {observations['ins_text'][0]}; \n gt_actions {observations['gt_actions'][0]}; \n actions pred {actions_pred[0]}; \n prev_actions {observations['prev_actions'][0]} ; \n loss {loss}")
+        # assert 1==2
         
         
         with torch.no_grad():
@@ -901,7 +913,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             
 
         
-        assert 1==2
+        
 
 
         loss = loss / loss_accumulation_scalar

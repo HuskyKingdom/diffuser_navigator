@@ -10,7 +10,7 @@ EVAL_CKPT_PATH_DIR: data/checkpoints/d3ddp_da
 RESULTS_DIR: data/checkpoints/d3ddp_da/evals
 VIDEO_OPTION: []
 JobName: d3ddp_da
-lr_Schedule: True
+lr_Schedule: False
 dagger: True
 
 
@@ -21,7 +21,7 @@ EVAL:
   ACTION_POP: True
 
 IL:
-  ckpt_to_load: data/checkpoints/d3ddp_da/ckpt.40.pth
+  ckpt_to_load: data/checkpoints/d3ddp_da/trained.pth
   load_from_ckpt: True # for testing overfitting only 
   epochs: 4
   batch_size: 20
@@ -36,7 +36,7 @@ IL:
     iterations: 10
     update_size: 5000
     p: 0.75
-    preload_lmdb_features: True
+    preload_lmdb_features: False
     lmdb_features_dir: data/trajectories_dirs/d3ddp_da/trajectories.lmdb
     lmdb_commit_frequency: 50
     
@@ -49,7 +49,7 @@ DIFFUSER:
   diffusion_timesteps: 100
   saving_frequency: 8
   logging_file: data/loggings/train.log
-  LR: 2.5e-4
+  LR: 2.5e-5
   traj_length: 3
   beta: 0.1
   action_space: 4
