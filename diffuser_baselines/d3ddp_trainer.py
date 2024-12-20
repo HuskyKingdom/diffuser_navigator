@@ -889,9 +889,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
         loss, actions_pred = self.policy.module.build_loss(observations)  # Access the underlying module
 
-        print(f"rank {self.local_rank} ; ins_text {observations['ins_text'][0]}; 
-              gt_actions {observations['gt_actions'][0]}; actions pred {actions_pred[0]}; prev_actions {observations['prev_actions'][0]} ;
-              loss {loss}")
+        print(f"rank {self.local_rank} ; \n ins_text {observations['ins_text'][0]}; \n gt_actions {observations['gt_actions'][0]}; \n actions pred {actions_pred[0]}; \n prev_actions {observations['prev_actions'][0]} ; \n loss {loss}")
         
         
         
