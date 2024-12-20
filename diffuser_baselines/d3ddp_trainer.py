@@ -885,7 +885,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
     ):
         
 
-        
+        print(f"rank {self.local_rank} ; rgb_features {observations['rgb_features'].shape}")
 
         loss = self.policy.module.build_loss(observations)  # Access the underlying module
 
@@ -900,9 +900,12 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         with torch.no_grad():
             loss_tensor = loss.clone()
             dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
+            print(f"rank {self.local_rank} ; loss tensor ori {loss_tensor}")
             loss_tensor = loss_tensor / self.world_size
+            print(f"rank {self.local_rank} ; loss tensor ori {loss_tensor}")
+            
 
-        print(f"rank {self.local_rank} ; loss {loss}")
+        
         assert 1==2
 
 
