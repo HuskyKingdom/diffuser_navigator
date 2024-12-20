@@ -886,15 +886,13 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         
 
         print(f"rank {self.local_rank} ; rgb_features {observations['rgb_features'].shape}")
-        print(f"rank {self.local_rank} ; prev_actions {observations['prev_actions'].shape} ; prev_actions {observations['prev_actions']}")
 
-        loss = self.policy.module.build_loss(observations)  # Access the underlying module
+        loss, actions_pred = self.policy.module.build_loss(observations)  # Access the underlying module
 
-        print(f"rank {self.local_rank} ; ins_text {observations['ins_text'][0]}")
-        print(f"rank {self.local_rank} ; gt_actions {observations['gt_actions'][0]}")
-        print(f"rank {self.local_rank} ; prev_actions {observations['prev_actions'][0]}")
-        print(f"rank {self.local_rank} ; loss {loss}")
-
+        print(f"rank {self.local_rank} ; ins_text {observations['ins_text'][0]}; 
+              gt_actions {observations['gt_actions'][0]}; actions pred {actions_pred[0]}; prev_actions {observations['prev_actions'][0]} ;
+              loss {loss}")
+        
         
         
         with torch.no_grad():

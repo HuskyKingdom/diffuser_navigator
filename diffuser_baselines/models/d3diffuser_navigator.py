@@ -123,10 +123,10 @@ class D3DiffusionPolicy(Policy):
 
         
         
-        loss = self.navigator(collected_data,(B,T), inference = False)
+        loss,actions_pred = self.navigator(collected_data,(B,T), inference = False)
 
 
-        return loss
+        return loss,actions_pred
     
     @classmethod
     def from_config(
@@ -351,8 +351,6 @@ class D3DiffusionNavigator(nn.Module):
         decoder_pred, pred_progress = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
         
 
-        
-
         action_loss = self.softmax_CE(decoder_pred,observations["gt_actions"].long())
         
     
@@ -375,7 +373,7 @@ class D3DiffusionNavigator(nn.Module):
             
         masked_weighted_loss /= B
             
-        return masked_weighted_loss
+        return masked_weighted_loss, decoder_pred.argmax(dim=-1) 
 
 
 
