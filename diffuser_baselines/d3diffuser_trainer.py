@@ -838,3 +838,5 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         )
         logger.info(f"Agent parameters: {params}. Trainable: {params_t}")
         logger.info("Finished setting up policy.")
+
+

@@ -819,6 +819,12 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                         ) as batch_iter:
                             
                             for batch in batch_iter:
+
+                                print(f"rank {self.local_rank} ; step {step_id} ; batch {batch['ins_text']}")
+                                print(f"rank {self.local_rank} ; step {step_id} ; batch {batch['rgb_features'].shape}")
+                                print(f"rank {self.local_rank} ; step {step_id} ; batch {batch['gt_actions']}")
+                                print(f"rank {self.local_rank} ; step {step_id} ; batch {batch['prev_actions']}")
+                                assert 1==2
                             
                                 batch = {
                                 k: (

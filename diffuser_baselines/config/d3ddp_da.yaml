@@ -21,7 +21,7 @@ EVAL:
   ACTION_POP: True
 
 IL:
-  ckpt_to_load: data/checkpoints/d3diffuser_da/trained.pth
+  ckpt_to_load: data/checkpoints/d3ddp_da/ckpt.40.pth
   load_from_ckpt: True # for testing overfitting only 
   epochs: 4
   batch_size: 20
