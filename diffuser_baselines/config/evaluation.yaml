@@ -57,6 +57,6 @@ MODEL:
     bidirectional: True
 
   PROGRESS_MONITOR:
-    use: True
+    use: False
 
 
