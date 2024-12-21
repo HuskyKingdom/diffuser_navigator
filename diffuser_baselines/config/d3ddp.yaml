@@ -25,7 +25,6 @@ IL:
   epochs: 50
   batch_size: 20
   is_requeue: False # continuo training
-  
 
   RECOLLECT_TRAINER:
     gt_file:
