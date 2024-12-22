@@ -250,8 +250,8 @@ class TrajectoryDataset(torch.utils.data.Dataset):
                     raise IndexError(f"Index {index} out of range in database")
 
                 
-                # trajectory = msgpack_numpy.unpackb(zlib.decompress(data), raw=False)
-                trajectory = msgpack_numpy.unpackb(data, raw=False)
+                trajectory = msgpack_numpy.unpackb(zlib.decompress(data), raw=False)
+                # trajectory = msgpack_numpy.unpackb(data, raw=False)
     
                 return trajectory
 
@@ -825,7 +825,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     for epoch in epoch_range:
                         with maybe_tqdm_iterable(
                             diter,
-                            total=diffusion_dataset.length // diffusion_dataset.batch_size,
+                            total=diffusion_dataset.length // diffusion_dataset.batch_size // self.world_size,
                             leave=False,
                             dynamic_ncols=True,
                             desc="Batches"
@@ -967,7 +967,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         if config.lr_Schedule: # train 250 + 500 + 750  + 1000 + 1250 + 1500 + 1750 + 2000 + 2250 + 2500 
             if not config.dagger: # self.config.IL.DAGGER.update_size // self.config.IL.batch_size
                 self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
-                                                steps_per_epoch=540, epochs=self.config.IL.epochs)
+                                                steps_per_epoch=135, epochs=self.config.IL.epochs)
             else:
                 self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
                                                 total_steps=55000)
