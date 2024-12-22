@@ -801,7 +801,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 ddp_sampler = DistributedSampler(diffusion_dataset)
                 diter = torch.utils.data.DataLoader(
                     diffusion_dataset,
-                    batch_size=self.config.IL.batch_size // self.world_size,
+                    batch_size=self.config.IL.batch_size,
                     shuffle=False,
                     sampler=ddp_sampler,
                     collate_fn=collate_fn,
