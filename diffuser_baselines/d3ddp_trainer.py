@@ -822,9 +822,10 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 num_epoch_batch = 0
 
                 with maybe_trange(self.config.IL.epochs, desc="Epochs", dynamic_ncols=True) as epoch_range:
+
                     for epoch in epoch_range:
 
-                        ddp_sampler.set_epoch(epoch)
+                        diter.ddp_sampler.set_epoch(epoch)
 
                         with maybe_tqdm_iterable(
                             diter,
@@ -862,18 +863,19 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                                 step_id += 1  # noqa: SIM113
                                 num_epoch_batch += 1
 
-                            if self.world_rank == 0: #ddp
-                                if (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0:
-                                    self.save_checkpoint(
-                                        f"ckpt.{diffuser_it * self.config.IL.epochs + epoch + 1}.pth"
-                                    )
-                                else:
-                                    print(diffuser_it * self.config.IL.epochs + epoch, "Not to save.")
+                        if self.world_rank == 0: #ddp
+                            if (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0:
+                                self.save_checkpoint(
+                                    f"ckpt.{diffuser_it * self.config.IL.epochs + epoch + 1}.pth"
+                                )
+                            else:
+                                print("Not to save.")
 
-                                epoch_loss /= num_epoch_batch
-                                epoch_loss = 0
-                                num_epoch_batch = 0
-                                logger.info(f"epoch loss: {loss}  | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
+                            epoch_loss /= num_epoch_batch
+                            logger.info(f"epoch loss: {epoch_loss}  | steps {num_epoch_batch} | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
+                            epoch_loss = 0
+                            num_epoch_batch = 0
+                            
 
                         dist.barrier() #ddp
         
@@ -937,7 +939,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             if self.config.lr_Schedule:
                 self.scheduler.step()
 
-        print(f"LR on {self.local_rank} : {self.optimizer.param_groups[0]['lr']} ")
+        # print(f"LR on {self.local_rank} : {self.optimizer.param_groups[0]['lr']} ")
 
 
         return loss_tensor.item()
