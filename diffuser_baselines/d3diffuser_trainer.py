@@ -202,7 +202,8 @@ class TrajectoryDataset(torch.utils.data.Dataset):
                     raise IndexError(f"Index {index} out of range in database")
 
                 
-                trajectory = msgpack_numpy.unpackb(zlib.decompress(data), raw=False)
+                trajectory = msgpack_numpy.unpackb(data, raw=False)
+                # trajectory = msgpack_numpy.unpackb(zlib.decompress(data), raw=False)
     
                 return trajectory
 
@@ -762,7 +763,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
     ):
         
 
-        loss = self.policy.build_loss(
+        loss, actions_pred = self.policy.build_loss(
             observations
         )
 
