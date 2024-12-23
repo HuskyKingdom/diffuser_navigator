@@ -10,7 +10,7 @@ EVAL_CKPT_PATH_DIR: data/checkpoints/d3ddp
 RESULTS_DIR: data/checkpoints/d3ddp/evals
 VIDEO_OPTION: []
 JobName: d3ddp
-lr_Schedule: False
+lr_Schedule: True
 dagger: False
 
 
