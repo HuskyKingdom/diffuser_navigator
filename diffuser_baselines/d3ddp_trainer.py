@@ -972,7 +972,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         if config.lr_Schedule: # train 250 + 500 + 750  + 1000 + 1250 + 1500 + 1750 + 2000 + 2250 + 2500 
             if not config.dagger: # self.config.IL.DAGGER.update_size // self.config.IL.batch_size
                 self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
-                                                steps_per_epoch=540, epochs=self.config.IL.epochs)
+                                                steps_per_epoch=541, epochs=self.config.IL.epochs)
             else:
                 self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
                                                 total_steps=55000)
