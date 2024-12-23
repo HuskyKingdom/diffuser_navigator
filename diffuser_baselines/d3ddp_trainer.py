@@ -250,8 +250,8 @@ class TrajectoryDataset(torch.utils.data.Dataset):
                     raise IndexError(f"Index {index} out of range in database")
 
                 
-                trajectory = msgpack_numpy.unpackb(zlib.decompress(data), raw=False)
-                # trajectory = msgpack_numpy.unpackb(data, raw=False)
+                # trajectory = msgpack_numpy.unpackb(zlib.decompress(data), raw=False)
+                trajectory = msgpack_numpy.unpackb(data, raw=False)
     
                 return trajectory
 
@@ -825,7 +825,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     for epoch in epoch_range:
 
                         ddp_sampler.set_epoch(epoch)
-                        
+
                         with maybe_tqdm_iterable(
                             diter,
                             total=diffusion_dataset.length // diffusion_dataset.batch_size // self.world_size,
