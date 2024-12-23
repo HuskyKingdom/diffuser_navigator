@@ -825,7 +825,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                     for epoch in epoch_range:
 
-                        diter.ddp_sampler.set_epoch(epoch)
+                        diter.sampler.set_epoch(epoch)
 
                         with maybe_tqdm_iterable(
                             diter,
