@@ -823,6 +823,9 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                 with maybe_trange(self.config.IL.epochs, desc="Epochs", dynamic_ncols=True) as epoch_range:
                     for epoch in epoch_range:
+
+                        ddp_sampler.set_epoch(epoch)
+                        
                         with maybe_tqdm_iterable(
                             diter,
                             total=diffusion_dataset.length // diffusion_dataset.batch_size // self.world_size,
