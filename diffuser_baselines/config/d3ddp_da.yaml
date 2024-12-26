@@ -10,7 +10,7 @@ EVAL_CKPT_PATH_DIR: data/checkpoints/d3ddp_da
 RESULTS_DIR: data/checkpoints/d3ddp_da/evals
 VIDEO_OPTION: []
 JobName: d3ddp_da
-lr_Schedule: False
+lr_Schedule: True
 dagger: True
 
 
@@ -49,7 +49,7 @@ DIFFUSER:
   diffusion_timesteps: 100
   saving_frequency: 8
   logging_file: data/loggings/train.log
-  LR: 2.5e-5
+  LR: 2.5e-4
   traj_length: 3
   beta: 0.1
   action_space: 4
