@@ -7,6 +7,7 @@ import zlib
 from collections import defaultdict
 import time
 from multiprocessing import Pool
+from multiprocessing.dummy import Pool as ThreadPool
 from gym import Space
 from habitat import Config
 import lmdb
@@ -59,11 +60,23 @@ def maybe_tqdm(total=None, desc=None, leave=True, dynamic_ncols=True):
         yield contextlib.nullcontext()
 
 @contextmanager
-def maybe_trange(*args, **kwargs):
+def maybe_trange(start_epoch, end_epoch, *args, **kwargs):
+    """
+    A wrapper to yield `tqdm.trange` if on rank 0, otherwise yield a plain range.
+
+    Args:
+        start_epoch (int): The starting epoch for the range.
+        end_epoch (int): The ending epoch for the range.
+        *args: Additional arguments to pass to `tqdm.trange` or `range`.
+        **kwargs: Additional keyword arguments to pass to `tqdm.trange` or `range`.
+
+    Yields:
+        tqdm.trange or range: Progress indicator for rank 0 or plain range for other ranks.
+    """
     if dist.get_rank() == 0:
-        yield tqdm.trange(*args, **kwargs)
+        yield tqdm.trange(start_epoch, end_epoch, *args, **kwargs)
     else:
-        yield range(*args)
+        yield range(start_epoch, end_epoch, *args)
 
 @contextmanager
 def maybe_tqdm_iterable(iterable, *args, **kwargs):
@@ -193,6 +206,7 @@ def collate_fn(batch):
             continue
         collected_data[key] = torch.stack(collected_data[key], dim=0)
 
+
     return collected_data
 
 
@@ -261,22 +275,23 @@ class IWTrajectoryDataset(torch.utils.data.IterableDataset):
     def __init__(
         self,
         lmdb_features_dir,
-        use_iw,
+        use_iw=True,
         inflection_weight_coef=1.0,
         lmdb_map_size=1e9,
         batch_size=1,
+        rank=-1,
+        world_size=-1
     ):
         super().__init__()
         self.lmdb_features_dir = lmdb_features_dir
         self.lmdb_map_size = lmdb_map_size
-        self.preload_size = batch_size * 100
+        self.preload_size = batch_size * 1
         self._preload = []
+        self._preload_index = []
         self.batch_size = batch_size
-
-        if use_iw:
-            self.inflec_weights = torch.tensor([1.0, inflection_weight_coef])
-        else:
-            self.inflec_weights = torch.tensor([1.0, 1.0])
+        self.rank = rank
+        self.world_size = world_size
+        self.num_loaded_data = 0
 
         with lmdb.open(
             self.lmdb_features_dir,
@@ -285,6 +300,8 @@ class IWTrajectoryDataset(torch.utils.data.IterableDataset):
             lock=False,
         ) as lmdb_env:
             self.length = lmdb_env.stat()["entries"]
+
+ 
 
     def _load_next(self):
         if len(self._preload) == 0:
@@ -303,14 +320,16 @@ class IWTrajectoryDataset(torch.utils.data.IterableDataset):
                     if len(self.load_ordering) == 0:
                         break
 
-                    new_preload.append(
-                        msgpack_numpy.unpackb(
-                            txn.get(str(self.load_ordering.pop()).encode()),
-                            raw=False,
-                        )
+                    load_index = self.load_ordering.pop()
+                    preload_data = msgpack_numpy.unpackb(
+                        zlib.decompress(txn.get(str(load_index).encode())), raw=False
                     )
+                    if 'ep_id' in preload_data[0].keys():
+                        del preload_data[0]['ep_id']
+                    new_preload.append(preload_data)
 
-                    lengths.append(len(new_preload[-1][0]))
+                    lengths.append(len(new_preload[-1][-1]))
+                    self._preload_index.append(load_index)
 
             sort_priority = list(range(len(lengths)))
             random.shuffle(sort_priority)
@@ -318,53 +337,72 @@ class IWTrajectoryDataset(torch.utils.data.IterableDataset):
             sorted_ordering = list(range(len(lengths)))
             sorted_ordering.sort(key=lambda k: (lengths[k], sort_priority[k]))
 
-            for idx in _block_shuffle(sorted_ordering, self.batch_size):
+            for idx in sorted_ordering:
                 self._preload.append(new_preload[idx])
 
         return self._preload.pop()
 
+    # def __next__(self):
+    #     obs, prev_actions, oracle_actions = self._load_next()
+
+    #     for k, v in obs.items():
+    #         obs[k] = torch.from_numpy(np.copy(v))
+
+    #     prev_actions = torch.from_numpy(np.copy(prev_actions))
+    #     oracle_actions = torch.from_numpy(np.copy(oracle_actions))
+
+      
+
+    #     return (obs, prev_actions, oracle_actions)
+
     def __next__(self):
-        obs, prev_actions, oracle_actions = self._load_next()
+        obs, prev_actions, oracle_actions, trajectories, ins_text = self._load_next()
+
 
         for k, v in obs.items():
-            obs[k] = torch.from_numpy(np.copy(v))
+            obs[k] = np.copy(v)
 
-        prev_actions = torch.from_numpy(np.copy(prev_actions))
-        oracle_actions = torch.from_numpy(np.copy(oracle_actions))
+        prev_actions = np.copy(prev_actions)
+        oracle_actions = np.copy(oracle_actions)
+        trajectories = np.copy(trajectories)
+        ins_text = np.copy(ins_text)
 
-        inflections = torch.cat(
-            [
-                torch.tensor([1], dtype=torch.long),
-                (oracle_actions[1:] != oracle_actions[:-1]).long(),
-            ]
-        )
-
-        return (
-            obs,
-            prev_actions,
-            oracle_actions,
-            self.inflec_weights[inflections],
-        )
+        # Return data
+        return (obs, prev_actions, oracle_actions, trajectories, ins_text)
 
     def __iter__(self):
         worker_info = torch.utils.data.get_worker_info()
         if worker_info is None:
-            start = 0
-            end = self.length
+            per_proc = int(np.floor(self.length / self.world_size))
+
+            start = per_proc * self.rank
+            end = min(start + per_proc, self.length)
+            assert end - start == per_proc 
         else:
-            per_worker = int(np.ceil(self.length / worker_info.num_workers))
+            per_proc = int(np.floor(self.length / self.world_size))
+            per_worker = int(np.floor(per_proc / worker_info.num_workers))
 
-            start = per_worker * worker_info.id
+            start = per_worker * worker_info.id + per_proc * self.rank
             end = min(start + per_worker, self.length)
+            assert end - start == per_worker 
 
-        # Reverse so we can use .pop()
         self.load_ordering = list(
-            reversed(
-                _block_shuffle(list(range(start, end)), self.preload_size)
-            )
+            reversed(_block_shuffle(list(range(start, end)), self.preload_size))
         )
+        if self.rank == 0:
+            logger.info(f'[Dataset]: Total data size {self.length}')
 
         return self
+    
+    def __len__(self):
+        worker_info = torch.utils.data.get_worker_info()
+        if worker_info is None:
+            return int(np.floor(self.length / self.world_size))
+        else:
+            per_proc = int(np.floor(self.length / self.world_size))
+            return int(np.floor(per_proc / worker_info.num_workers)) * worker_info.num_workers
+
+
 
 
 @baseline_registry.register_trainer(name="d3diffuser_ddp")
@@ -476,7 +514,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
 
         def writeCache(cache):
-            with Pool(8) as workers:
+            with ThreadPool(8) as workers:
                 cache = workers.map(compress_data, cache)
             txn = lmdb_env.begin(write=True)
             existed_size = lmdb_env.stat()["entries"]
@@ -495,7 +533,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
         with lmdb.open(self.lmdb_features_dir,map_size=int(self.config.IL.DAGGER.lmdb_map_size),) as lmdb_env, torch.no_grad():
             
-            required_size = (data_it) * self.config.IL.DAGGER.update_size
+            required_size = (data_it+1) * self.config.IL.DAGGER.update_size
             remain_update_size = required_size - lmdb_env.stat()["entries"]
             start_id = lmdb_env.stat()["entries"]
 
@@ -525,16 +563,16 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                     if dones[i] and not skips[i]:
 
-                        if len(episodes[i]) > 250:
-                            episodes[i] = []
-                            self.policy.module.clear_his()
-                            prev_actions = torch.zeros(
-                                self.config.NUM_PROCESSES,
-                                1,
-                                device=self.device,
-                                dtype=torch.long,
-                            )
-                            continue
+                        # if len(episodes[i]) > 250:
+                        #     episodes[i] = []
+                        #     self.policy.module.clear_his()
+                        #     prev_actions = torch.zeros(
+                        #         self.config.NUM_PROCESSES,
+                        #         1,
+                        #         device=self.device,
+                        #         dtype=torch.long,
+                        #     )
+                        #     continue
 
                         ep = episodes[i]
                         traj_obs = batch_obs(
@@ -634,14 +672,23 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     ins_text.append(self.envs.current_episodes()[i].instruction.instruction_text)   
 
           
-                actions = self.policy.module.act(
-                    batch,prev_actions,encode_only = False,ins_text=ins_text
-                    )
-                
 
-                random_values = torch.rand_like(actions, dtype=torch.float)
-                mask = random_values < beta
-                actions = torch.where(mask, batch[expert_uuid].long(), actions)
+                if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta):
+                    # action from expert
+                    actions = self.policy.module.act(
+                        batch, prev_actions, encode_only=True, ins_text=ins_text
+                    )
+                    actions = batch[expert_uuid].long()
+                else:
+                    # action from model
+                    actions = self.policy.module.act(
+                        batch, prev_actions, encode_only=False, ins_text=ins_text
+                    )
+                                
+
+                # random_values = torch.rand_like(actions, dtype=torch.float)
+                # mask = random_values < beta
+                # actions = torch.where(mask, batch[expert_uuid].long(), actions)
                 
 
                 # collect inference features ----------------
@@ -780,12 +827,13 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             purge_step=0,
         ) if self.world_rank == 0
             else contextlib.suppress() ) as writer:
-            for diffuser_it in range(self.config.IL.DAGGER.iterations):
+            for dagger_it in range(self.config.IL.DAGGER.iterations):
                 # get dataset ---
-                step_id = 0
+                step_id = self.step_id
+
                 if not self.config.IL.DAGGER.preload_lmdb_features:
                     self._update_dataset(
-                        diffuser_it + 1
+                        dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
                     )
                 dist.barrier()
                 if torch.cuda.is_available():
@@ -795,19 +843,36 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                 # get dataset ---
                     
-                diffusion_dataset = TrajectoryDataset(self.lmdb_features_dir,self.config.IL.DAGGER.lmdb_map_size,self.config.IL.batch_size)
-
+                # diffusion_dataset = TrajectoryDataset(self.lmdb_features_dir,self.config.IL.DAGGER.lmdb_map_size,self.config.IL.batch_size)
                 # ddp
-                ddp_sampler = DistributedSampler(diffusion_dataset)
+                # ddp_sampler = DistributedSampler(diffusion_dataset,shuffle=True)
+                # diter = torch.utils.data.DataLoader(
+                #     diffusion_dataset,
+                #     batch_size=self.config.IL.batch_size // self.world_size,
+                #     shuffle=False,
+                #     sampler=ddp_sampler,
+                #     collate_fn=collate_fn,
+                #     pin_memory=False,
+                #     drop_last=True,  # drop last batch if smaller
+                #     num_workers=4,
+                # )
+
+                diffusion_dataset = IWTrajectoryDataset(
+                    self.lmdb_features_dir,
+                    lmdb_map_size=self.config.IL.DAGGER.lmdb_map_size,
+                    batch_size=self.config.IL.batch_size,
+                    rank=self.local_rank,
+                    world_size=self.world_size
+                )
                 diter = torch.utils.data.DataLoader(
                     diffusion_dataset,
-                    batch_size=self.config.IL.batch_size // self.world_size,
+                    batch_size=self.config.IL.batch_size // self.world_size, 
                     shuffle=False,
-                    sampler=ddp_sampler,
                     collate_fn=collate_fn,
                     pin_memory=False,
                     drop_last=True,  # drop last batch if smaller
                     num_workers=4,
+                    sampler=None
                 )
 
 
@@ -821,11 +886,11 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 epoch_loss = 0
                 num_epoch_batch = 0
 
-                with maybe_trange(self.config.IL.epochs, desc="Epochs", dynamic_ncols=True) as epoch_range:
+                with maybe_trange(self.start_epoch, self.config.IL.epochs, desc="Epochs", dynamic_ncols=True) as epoch_range:
 
                     for epoch in epoch_range:
 
-                        diter.sampler.set_epoch(epoch)
+                        # diter.sampler.set_epoch(epoch)
 
                         with maybe_tqdm_iterable(
                             diter,
@@ -858,21 +923,21 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
                                 if self.world_rank == 0: #ddp
                                     writer.add_scalar(
-                                        f"train_loss_iter_{diffuser_it}_{self.config.JobName}", loss, step_id
+                                        f"train_loss_iter_{dagger_it}_{self.config.JobName}", loss, step_id
                                     )
                                 step_id += 1  # noqa: SIM113
                                 num_epoch_batch += 1
 
                         if self.world_rank == 0: #ddp
-                            if (diffuser_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0:
+                            if (dagger_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0:
                                 self.save_checkpoint(
-                                    f"ckpt.{diffuser_it * self.config.IL.epochs + epoch + 1}.pth"
+                                    f"ckpt.{dagger_it * self.config.IL.epochs + epoch + 1}.pth"
                                 )
                             else:
                                 print("Not to save.")
 
                             epoch_loss /= num_epoch_batch
-                            logger.info(f"epoch loss: {epoch_loss}  | steps {num_epoch_batch} | On Diffuser iter {diffuser_it}, Epoch {epoch}.")
+                            logger.info(f"epoch loss: {epoch_loss}  | steps {num_epoch_batch} | On Diffuser iter {dagger_it}, Epoch {epoch}.")
                             epoch_loss = 0
                             num_epoch_batch = 0
                             
@@ -907,8 +972,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
         loss, actions_pred = self.policy.module.build_loss(observations)  # Access the underlying module
 
-        # print(f"rank {self.local_rank} ; \n ins_text {observations['ins_text'][0]}; \n gt_actions {observations['gt_actions'][0]}; \n actions pred {actions_pred[0]}; \n prev_actions {observations['prev_actions'][0]} ; \n loss {loss}")
-        # assert 1==2
+        
         
         
         with torch.no_grad():
@@ -916,10 +980,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
             loss_tensor = loss_tensor / self.world_size
             
-            
-
-        
-        
+        # print(f"rank {self.local_rank} ; \n ins_text {observations['ins_text'][0]}; \n  gt_actions {observations['gt_actions'][0]}; \n  prev_actions {observations['prev_actions'][0]} ; \n  actions pred {actions_pred[0].argmax(dim=-1)}; \n raw actions pred {actions_pred[0]}; \n len {observations['lengths']} ;  \n loss {loss} ; \n loss tensor {loss_tensor}")
+        # assert 1==2
 
 
         loss = loss / loss_accumulation_scalar
@@ -972,10 +1034,10 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         if config.lr_Schedule: # train 250 + 500 + 750  + 1000 + 1250 + 1500 + 1750 + 2000 + 2250 + 2500 
             if not config.dagger: # self.config.IL.DAGGER.update_size // self.config.IL.batch_size
                 self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
-                                                steps_per_epoch=542, epochs=self.config.IL.epochs)
+                                                steps_per_epoch=7862, epochs=self.config.IL.epochs)
             else:
-                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
-                                                total_steps=55000)
+                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.2, 
+                                                total_steps=137500)
 
         if load_from_ckpt:
             ckpt_path = config.IL.ckpt_to_load
@@ -984,9 +1046,12 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
             if config.IL.is_requeue:
                 self.optimizer.load_state_dict(ckpt_dict["optim_state"])
-                self.start_epoch = ckpt_dict["epoch"] + 1
-                self.step_id = ckpt_dict["step_id"]
+                self.scheduler.load_state_dict(ckpt_dict["scheduler_state"])
+                self.start_epoch = 20
+                self.step_id = 235092
             logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
+
+        self.policy = nn.SyncBatchNorm.convert_sync_batchnorm(self.policy)
 
         if train:
             self.policy = DDP(self.policy, device_ids=[self.local_rank], output_device=self.local_rank)
@@ -1010,6 +1075,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
         checkpoint = {
             "state_dict": self.policy.module.state_dict(),
             "optim_state": self.optimizer.state_dict(),
+            "scheduler_state": self.scheduler.state_dict(),
             "config": self.config,
         }
         torch.save(

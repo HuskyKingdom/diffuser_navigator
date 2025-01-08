@@ -122,7 +122,6 @@ class D3DiffusionPolicy(Policy):
         }
 
         
-        
         loss,actions_pred = self.navigator(collected_data,(B,T), inference = False)
 
 
@@ -315,13 +314,18 @@ class D3DiffusionNavigator(nn.Module):
             context_feature = context_feature.view(B,T,-1)
             causal_mask = self.generate_causal_mask(T,device=context_feature.device)
 
-            decoder_pred, _ = self.decoder(context_feature,None, enc_out, encoder_pad_mask, causal_mask,ins_text) # (bs,seq_len,4)
+            decoder_pred, pg_pred = self.decoder(context_feature,None, enc_out, encoder_pad_mask, causal_mask,ins_text) # (bs,seq_len,4)
 
            
 
             # action sampling
             last_step_logits = decoder_pred[:, -1, :] 
             action_inferenced = last_step_logits.argmax(dim=-1).unsqueeze(-1)
+
+            # last_step_pg = pg_pred[:, -1, :]
+            # if last_step_pg > 0.8:
+            #     action_inferenced[0,0] = 0
+
             # probabilities = torch.softmax(last_step_logits, dim=-1)
             # probabilities = probabilities.squeeze(1)
             # m = torch.distributions.Categorical(probabilities)
@@ -340,13 +344,6 @@ class D3DiffusionNavigator(nn.Module):
         context_feature = self.get_context_feature(observations)
         context_feature = context_feature.view(B,T,-1)
         causal_mask = self.generate_causal_mask(T,device=context_feature.device)
-
-        # decoder_pred = self.decoder(context_feature[1,:,:].unsqueeze(0),observations["padding_mask"][1,:].unsqueeze(0), enc_out[1,:].unsqueeze(0), encoder_pad_mask[1,:].unsqueeze(0), causal_mask)
-
-        # print(decoder_pred[0,:10,:])
-        # print(observations["gt_actions"].long()[1,:10])
-        # # print(context_feature[1,:,:].unsqueeze(0)[0,0,:])
-        # assert 1==2
 
         decoder_pred, pred_progress = self.decoder(context_feature,observations["padding_mask"], enc_out, encoder_pad_mask, causal_mask)
         
@@ -372,8 +369,8 @@ class D3DiffusionNavigator(nn.Module):
 
             
         masked_weighted_loss /= B
-            
-        return masked_weighted_loss, decoder_pred.argmax(dim=-1) 
+        
+        return masked_weighted_loss, decoder_pred
 
 
 
