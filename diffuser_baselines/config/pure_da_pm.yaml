@@ -23,7 +23,7 @@ EVAL:
 IL:
   ckpt_to_load: data/checkpoints/pure_da/ckpt.24.pth
   load_from_ckpt: False # for testing overfitting only 
-  epochs: 7
+  epochs: 16
   batch_size: 20
   is_requeue: False # continuo training
   
@@ -34,7 +34,7 @@ IL:
     
   DAGGER:
     iterations: 10
-    update_size: 5000
+    update_size: 6000
     p: 0.75
     preload_lmdb_features: False
     lmdb_features_dir: data/trajectories_dirs/pure_da_pm/trajectories.lmdb
@@ -47,7 +47,7 @@ DIFFUSER:
   num_attention_heads: 8
   num_layers: 4
   diffusion_timesteps: 100
-  saving_frequency: 7
+  saving_frequency: 10
   logging_file: data/loggings/train.log
   LR: 2.5e-4
   traj_length: 3
@@ -62,6 +62,6 @@ MODEL:
     bidirectional: True
 
   PROGRESS_MONITOR:
-    use: False
+    use: True
 
 

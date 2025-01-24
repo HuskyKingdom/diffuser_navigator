@@ -162,6 +162,8 @@ def collate_fn(batch):
 
         collected_data["ins_text"].append(sample[4][0]) # instruction text
 
+        
+
         # compute weights
         inflection_weights = torch.tensor([1.0, 3.2])
         inflections = torch.cat(
@@ -586,6 +588,10 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                                 traj_obs[k] = traj_obs[k].astype(np.float16)
                         
 
+                        # modif
+                        prev_instructions[i] += "If you deviate from the correct path or do not see the clues above, try to explore and get back on track."
+                    
+
                         transposed_ep = [
                             traj_obs,
                             np.array([step[1] for step in ep], dtype=np.int64),
@@ -665,11 +671,11 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     if self.envs.num_envs == 0:
                         break
                 
-                # act ----------------
+                # act ---------------- modif
                     
                 ins_text = []
                 for i in range(self.envs.num_envs):
-                    ins_text.append(self.envs.current_episodes()[i].instruction.instruction_text)   
+                    ins_text.append(self.envs.current_episodes()[i].instruction.instruction_text + "If you deviate from the correct path or do not see the clues above, try to explore and get back on track.")   
 
           
 
@@ -1036,8 +1042,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                 self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
                                                 steps_per_epoch=7862, epochs=self.config.IL.epochs)
             else:
-                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.2, 
-                                                total_steps=137500)
+                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
+                                                total_steps = self.config.IL.DAGGER.update_size * 55 // self.config.IL.batch_size * self.config.IL.epochs)
 
         if load_from_ckpt:
             ckpt_path = config.IL.ckpt_to_load

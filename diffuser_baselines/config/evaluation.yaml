@@ -3,22 +3,22 @@ TRAINER_NAME: d3diffuser
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 1
-TENSORBOARD_DIR: data/tensorboard_dirs/d3diffuser
-CHECKPOINT_FOLDER: data/checkpoints/d3diffuser
-EVAL_CKPT_PATH_DIR: data/checkpoints/ddp_newdata
-RESULTS_DIR: data/checkpoints/ddp_newdata/evals
+TENSORBOARD_DIR: data/tensorboard_dirs/eval
+CHECKPOINT_FOLDER: data/checkpoints/eval
+EVAL_CKPT_PATH_DIR: data/checkpoints/eval
+RESULTS_DIR: data/checkpoints/eval/evals
 VIDEO_OPTION: []
 lr_Schedule: True
 dagger: False
 
 EVAL:
   USE_CKPT_CONFIG: False
-  SPLIT: val_unseen # for testing overfitting only
+  SPLIT: val_unseen
   EPISODE_COUNT: -1
   ACTION_POP: True
 
 IL:
-  ckpt_to_load: data/checkpoints/d3diffuser/ckpt.5.pth
+  ckpt_to_load: data/checkpoints/eval/ckpt.5.pth
   load_from_ckpt: False # for testing overfitting only 
   epochs: 50
   batch_size: 20
@@ -33,7 +33,7 @@ IL:
     update_size: 10819
     p: 1.0
     preload_lmdb_features: True
-    lmdb_features_dir: data/trajectories_dirs/diffuser/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/eval/trajectories.lmdb
     lmdb_commit_frequency: 200
 
 
