@@ -11,7 +11,9 @@ from habitat_baselines.common.obs_transformers import (
     apply_obs_transforms_batch,
 )
 from habitat_baselines.common.tensorboard_utils import TensorboardWriter
-from habitat_baselines.rl.ddppo.algo.ddp_utils import is_slurm_batch_job
+
+from habitat_baselines.rl.ddppo.ddp_utils import is_slurm_batch_job
+# from habitat_baselines.rl.ddppo.algo.ddp_utils import is_slurm_batch_job
 
 from vlnce_baselines.common.aux_losses import AuxLosses
 from vlnce_baselines.common.base_il_trainer import BaseVLNCETrainer

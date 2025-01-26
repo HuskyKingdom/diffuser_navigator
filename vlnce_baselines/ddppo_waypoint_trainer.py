@@ -14,22 +14,38 @@ from gym import Space, spaces
 from habitat import Config, logger
 from habitat.core.vector_env import VectorEnv
 from habitat_baselines.common.baseline_registry import baseline_registry
-from habitat_baselines.common.environments import get_env_class
+
+# from habitat_baselines.common.environments import get_env_class
+from habitat.core.environments import get_env_class
+
 from habitat_baselines.common.obs_transformers import (
     apply_obs_transforms_batch,
     apply_obs_transforms_obs_space,
     get_active_obs_transforms,
 )
 from habitat_baselines.common.tensorboard_utils import TensorboardWriter
-from habitat_baselines.rl.ddppo.algo.ddp_utils import (
+
+from habitat_baselines.rl.ddppo.ddp_utils import (
     EXIT,
     REQUEUE,
     add_signal_handlers,
     init_distrib_slurm,
-    load_interrupted_state,
     requeue_job,
-    save_interrupted_state,
 )
+
+# from habitat_baselines.rl.ddppo.algo.ddp_utils import (
+#     EXIT,
+#     REQUEUE,
+#     add_signal_handlers,
+#     init_distrib_slurm,
+#     load_interrupted_state,
+#     requeue_job,
+#     save_interrupted_,
+#     state,
+# )
+
+
+
 from habitat_baselines.rl.ppo.ppo_trainer import PPOTrainer
 from habitat_baselines.utils.common import batch_obs, linear_decay
 from torch import Tensor

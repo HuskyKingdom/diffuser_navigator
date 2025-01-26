@@ -4,8 +4,9 @@ from typing import List, Optional, Type, Union
 import habitat
 from habitat import Config, Env, RLEnv, VectorEnv, make_dataset
 from habitat.core.dataset import ALL_SCENES_MASK
-from habitat_baselines.utils.env_utils import make_env_fn
 
+# from habitat_baselines.utils.env_utils import make_env_fn
+from habitat.utils.env_utils import make_env_fn
 
 def construct_envs(
     config: Config,

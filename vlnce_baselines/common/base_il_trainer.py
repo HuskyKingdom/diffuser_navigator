@@ -14,14 +14,20 @@ from habitat import Config, logger
 from habitat.utils.visualizations.utils import append_text_to_image
 from habitat_baselines.common.base_il_trainer import BaseILTrainer
 from habitat_baselines.common.baseline_registry import baseline_registry
-from habitat_baselines.common.environments import get_env_class
+
+# from habitat_baselines.common.environments import get_env_class
+from habitat.core.environments import get_env_class
+
 from habitat_baselines.common.obs_transformers import (
     apply_obs_transforms_batch,
     apply_obs_transforms_obs_space,
     get_active_obs_transforms,
 )
 from habitat_baselines.common.tensorboard_utils import TensorboardWriter
-from habitat_baselines.rl.ddppo.algo.ddp_utils import is_slurm_batch_job
+
+# from habitat_baselines.rl.ddppo.algo.ddp_utils import is_slurm_batch_job
+from habitat_baselines.rl.ddppo.ddp_utils import is_slurm_batch_job
+
 from habitat_baselines.utils.common import batch_obs
 
 from habitat_extensions.utils import generate_video, observations_to_image

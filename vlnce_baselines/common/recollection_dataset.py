@@ -8,7 +8,10 @@ import tqdm
 from gym import Space
 from habitat.config.default import Config
 from habitat.sims.habitat_simulator.actions import HabitatSimActions
-from habitat_baselines.common.environments import get_env_class
+
+# from habitat_baselines.common.environments import get_env_class
+from habitat.core.environments import get_env_class
+
 from habitat_baselines.common.obs_transformers import (
     apply_obs_transforms_obs_space,
     get_active_obs_transforms,
