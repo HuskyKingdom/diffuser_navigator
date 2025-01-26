@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Union
 
 import attr
 from habitat.config import Config
+# from habitat.config.default_structured_configs import HabitatConfig as Config
 from habitat.core.dataset import ALL_SCENES_MASK, Dataset
 from habitat.core.registry import registry
 from habitat.core.utils import not_none_validator

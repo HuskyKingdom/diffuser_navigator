@@ -7,6 +7,7 @@ import numpy as np
 from dtw import dtw
 from fastdtw import fastdtw
 from habitat.config import Config
+# from habitat.config.default_structured_configs import HabitatConfig as Config
 from habitat.core.dataset import Episode
 from habitat.core.embodied_task import Action, EmbodiedTask, Measure
 from habitat.core.logging import logger

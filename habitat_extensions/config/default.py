@@ -1,6 +1,7 @@
 from typing import List, Optional, Union
 
 from habitat.config.default import Config as CN
+# from habitat.config.default_structured_configs import HabitatConfig as CN
 from habitat.config.default import get_config
 
 _C = get_config()
