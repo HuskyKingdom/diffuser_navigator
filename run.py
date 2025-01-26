@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import ctypes
+libgcc_s = ctypes.CDLL('libgcc_s.so.1')
 
 import argparse
 import os
