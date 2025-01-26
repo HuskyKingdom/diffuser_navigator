@@ -352,3 +352,46 @@ def MaskedWeightedLoss(loss_seq, valid_len, inflection_weights):
     return weighted_loss
 
 
+from typing import (
+    Any,
+    DefaultDict,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
+from habitat.utils import profiling_wrapper
+from habitat_baselines.common.tensor_dict import DictTree, TensorDict
+from collections import defaultdict
+
+@torch.no_grad()
+@profiling_wrapper.RangeContext("batch_obs")
+def batch_obs(
+    observations: List[DictTree],
+    device: Optional[torch.device] = None,
+) -> TensorDict:
+    r"""Transpose a batch of observation dicts to a dict of batched
+    observations.
+
+    Args:
+        observations:  list of dicts of observations.
+        device: The torch.device to put the resulting tensors on.
+            Will not move the tensors if None
+
+    Returns:
+        transposed dict of torch.Tensor of observations.
+    """
+    batch: DefaultDict[str, List] = defaultdict(list)
+
+    for obs in observations:
+        for sensor in obs:
+            batch[sensor].append(torch.as_tensor(obs[sensor]))
+
+    batch_t: TensorDict = TensorDict()
+
+    for sensor in batch:
+        batch_t[sensor] = torch.stack(batch[sensor], dim=0)
+
+    return batch_t.map(lambda v: v.to(device))

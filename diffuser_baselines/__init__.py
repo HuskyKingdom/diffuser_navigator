@@ -5,4 +5,4 @@ from diffuser_baselines import (
     d3ddp_trainer
 )
 from vlnce_baselines.common import environments
-from diffuser_baselines.models import diffuser_navigator,d3diffuser_navigator
+from diffuser_baselines.models import d3diffuser_navigator

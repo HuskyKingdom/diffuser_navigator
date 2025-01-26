@@ -17,12 +17,18 @@ import torch
 import tqdm
 from habitat import logger
 from habitat_baselines.common.baseline_registry import baseline_registry
-from habitat_baselines.common.environments import get_env_class
+
+# from habitat_baselines.common.environments import get_env_class
+from habitat.core.environments import get_env_class
+
 from habitat_baselines.common.obs_transformers import (
     apply_obs_transforms_batch,
 )
 from habitat_baselines.common.tensorboard_utils import TensorboardWriter
-from habitat_baselines.utils.common import batch_obs
+
+from diffuser_baselines.models.utils import batch_obs
+# from habitat_baselines.utils.common import batch_obs
+
 import contextlib
 from vlnce_baselines.common.aux_losses import AuxLosses
 from diffuser_baselines.common.base_il_d3trainer import BaseVLNCETrainer
@@ -36,20 +42,31 @@ import torch.nn as nn
 # ddp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
-from habitat_baselines.rl.ddppo.algo.ddp_utils import (
+
+from habitat_baselines.rl.ddppo.ddp_utils import (
     EXIT,
     REQUEUE,
     add_signal_handlers,
     init_distrib_slurm,
-    load_interrupted_state,
     requeue_job,
-    save_interrupted_state,
 )
+
+# from habitat_baselines.rl.ddppo.algo.ddp_utils import (
+#     EXIT,
+#     REQUEUE,
+#     add_signal_handlers,
+#     init_distrib_slurm,
+#     load_interrupted_state,
+#     requeue_job,
+#     save_interrupted_state,
+# )
+
 from torch.utils.data import DataLoader, DistributedSampler    
 
 import torch.nn.functional as Fuc
 
 from contextlib import contextmanager
+
 
 @contextmanager
 def maybe_tqdm(total=None, desc=None, leave=True, dynamic_ncols=True):
@@ -819,7 +836,6 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             )
         self.config.freeze()
 
-        observation_space, action_space = self._get_spaces(self.config)
 
         self._initialize_policy(
             self.config,

@@ -12,7 +12,11 @@ import torch
 import tqdm
 from habitat import logger
 from habitat_baselines.common.baseline_registry import baseline_registry
-from habitat_baselines.common.environments import get_env_class
+
+
+# from habitat_baselines.common.environments import get_env_class
+from habitat.core.environments import get_env_class
+
 from habitat_baselines.common.obs_transformers import (
     apply_obs_transforms_batch,
 )
@@ -27,14 +31,12 @@ from vlnce_baselines.common.utils import extract_instruction_tokens
 # ddp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
-from habitat_baselines.rl.ddppo.algo.ddp_utils import (
+from habitat_baselines.rl.ddppo.ddp_utils import (
     EXIT,
     REQUEUE,
     add_signal_handlers,
     init_distrib_slurm,
-    load_interrupted_state,
     requeue_job,
-    save_interrupted_state,
 )
 from torch.utils.data import DataLoader, DistributedSampler    
 

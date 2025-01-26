@@ -13,7 +13,10 @@ import tqdm
 import zlib
 from habitat import logger
 from habitat_baselines.common.baseline_registry import baseline_registry
-from habitat_baselines.common.environments import get_env_class
+
+# from habitat_baselines.common.environments import get_env_class
+from habitat.core.environments import get_env_class
+
 from habitat_baselines.common.obs_transformers import (
     apply_obs_transforms_batch,
 )
@@ -807,6 +810,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             num_layers = config.DIFFUSER.num_layers,
             diffusion_timesteps = config.DIFFUSER.diffusion_timesteps
         )
+
         self.policy.to(self.device)
 
         self.optimizer = torch.optim.AdamW(

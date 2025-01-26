@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
 from habitat_baselines.common.baseline_registry import baseline_registry
-from habitat_baselines.rl.ppo.policy import Policy
+
+from habitat_baselines.rl.ppo.policy import NetPolicy
+
 from diffuser_baselines.models.encoders.instruction_encoder import InstructionEncoder
 from diffuser_baselines.models.encoders.trajectory_decoder import TrajectoryDecoder
 
@@ -16,14 +17,14 @@ from gym import spaces
 import numpy as np
 
 @baseline_registry.register_policy
-class D3DiffusionPolicy(Policy):
+class D3DiffusionPolicy(NetPolicy):
     
     def __init__(
         self, config,
         num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps
     ) -> None:
         
-        super(Policy, self).__init__()
+        super(NetPolicy, self).__init__()
         self.config = config
         self.navigator = D3DiffusionNavigator(config,num_actions,embedding_dim,num_attention_heads,num_layers,diffusion_timesteps)
         self.rgb_his = []
