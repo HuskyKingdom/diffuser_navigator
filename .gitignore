@@ -3,3 +3,4 @@ transformers/
 out/
 hub/
 hf_token
+train.log
