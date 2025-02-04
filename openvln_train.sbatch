@@ -7,13 +7,13 @@
 #SBATCH -o out/openvln.out
 
 # running time
-#SBATCH -t 72:00:00  
+#SBATCH -t 24:00:00  
 
 # partition
-#SBATCH -p gpu
+#SBATCH -p gpulowbig
 
 #SBATCH -N 1 
-#SBATCH --gres=gpu:4  
+#SBATCH --gres=gpu:1
 
 # CPU Core
 #SBATCH -n 24 
@@ -50,6 +50,7 @@ conda activate openvln
 
 export NCCL_DEBUG=INFO
 export PYTHONUNBUFFERED=1
+export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 
 # job run
-export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --nproc_per_node=4 run.py   --exp-config diffuser_baselines/config/openvln.yaml   --run-type train
+export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.launch --nproc_per_node=1 run.py   --exp-config diffuser_baselines/config/openvln.yaml   --run-type train

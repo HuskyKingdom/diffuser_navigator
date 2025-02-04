@@ -10,7 +10,7 @@ EVAL_CKPT_PATH_DIR: data/checkpoints/openvln
 RESULTS_DIR: data/checkpoints/openvln/evals
 VIDEO_OPTION: []
 JobName: openvln
-lr_Schedule: True
+lr_Schedule: False
 dagger: True
 
 
@@ -24,7 +24,7 @@ IL:
   ckpt_to_load: data/checkpoints/pure_da/ckpt.24.pth
   load_from_ckpt: False # for testing overfitting only 
   epochs: 16
-  batch_size: 20
+  batch_size: 3
   is_requeue: False # continuo training
   
 
@@ -37,31 +37,18 @@ IL:
     update_size: 6000
     p: 0.75
     preload_lmdb_features: True
-    lmdb_features_dir: data/trajectories_dirs/d3ddp_pm_da/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/d3ddp_phase1/trajectories.lmdb
     lmdb_commit_frequency: 50
     
     
 
-DIFFUSER:
-  embedding_dim: 256
-  num_attention_heads: 8
-  num_layers: 4
-  diffusion_timesteps: 100
+OPENVLN:
   saving_frequency: 10
   logging_file: data/loggings/train.log
   LR: 2.5e-4
-  traj_length: 3
-  beta: 0.1
-  action_space: 4
-  traj_space: 4
+  stage: "align" 
+  # stage: training stage in < "align" | "finetune" | "full-finetune" >
 
 MODEL:
   policy_name: OpenVLNPolicy
-
-  INSTRUCTION_ENCODER:
-    bidirectional: True
-
-  PROGRESS_MONITOR:
-    use: True
-
 

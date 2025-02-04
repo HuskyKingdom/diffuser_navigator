@@ -146,8 +146,9 @@ def collate_fn(batch):
 
     collected_data = {
         'instruction': [],           
-        'rgb_features': [],          
-        'depth_features': [],         
+        # 'rgb_features': [],          
+        # 'depth_features': [],         
+        'rgb': [],
         'gt_actions': [],            
         'trajectories':[],
         'prev_actions':[],
@@ -156,6 +157,7 @@ def collate_fn(batch):
         'weights': [],
         'ins_text': [],
         'progress': [],
+        'labels': [],
     }
     
     # Transpose the batch to separate each component
@@ -170,8 +172,11 @@ def collate_fn(batch):
         # Extract data from the sample
         sample_dict = sample[0]
         instr = torch.tensor(sample_dict['instruction'][0])  # (len_seq, 200) only take one instruction
-        rgb_feat = torch.tensor(sample_dict['rgb_features'])  # (len_seq, 2048, 4, 4)
-        depth_feat = torch.tensor(sample_dict['depth_features'])  # (len_seq, 128, 4, 4)
+        # rgb_feat = torch.tensor(sample_dict['rgb_features'])  # (len_seq, 2048, 4, 4)
+        # depth_feat = torch.tensor(sample_dict['depth_features'])  # (len_seq, 128, 4, 4)
+
+        rgb = torch.tensor(sample_dict['rgb']) # (len_seq, 224, 224, 3)
+     
         gt_actions = torch.tensor(sample[2])  # (len_seq)
         trajectories = torch.tensor(sample[3])  # (len_seq, 4)
         prev_actions = torch.tensor(sample[1]) 
@@ -194,8 +199,9 @@ def collate_fn(batch):
         seq_len = gt_actions.shape[0]
 
         # Pad sequences to the maximum length
-        pad_rgb_feat = _pad_helper(rgb_feat, max_len)
-        pad_depth_feat = _pad_helper(depth_feat, max_len)
+        # pad_rgb_feat = _pad_helper(rgb_feat, max_len)
+        # pad_depth_feat = _pad_helper(depth_feat, max_len)
+        pad_rgb = _pad_helper(rgb, max_len)
         pad_gt_actions = _pad_helper(gt_actions, max_len)
         pad_prev_actions = _pad_helper(prev_actions, max_len)
         pad_trajectories = _pad_helper(trajectories, max_len)
@@ -210,8 +216,13 @@ def collate_fn(batch):
 
         # Append padded data to collected_data
         collected_data['instruction'].append(instr)
-        collected_data['rgb_features'].append(pad_rgb_feat)
-        collected_data['depth_features'].append(pad_depth_feat)
+
+        # collected_data['rgb_features'].append(pad_rgb_feat)
+        # collected_data['depth_features'].append(pad_depth_feat)
+
+        collected_data['rgb'].append(pad_rgb)
+
+
         collected_data['gt_actions'].append(pad_gt_actions)
         collected_data["prev_actions"].append(pad_prev_actions)
         collected_data['trajectories'].append(pad_trajectories)
@@ -219,12 +230,18 @@ def collate_fn(batch):
         collected_data["weights"].append(pad_weights),
         collected_data["progress"].append(pad_progress)
 
+
     # Stack each list in collected_data into a tensor
     for key in collected_data:
-        if key == 'lengths' or key == "ins_text":
+        if key == 'lengths' or key == "ins_text" or key == "labels":
             continue
         collected_data[key] = torch.stack(collected_data[key], dim=0)
 
+    # pipeline test only
+    collected_data["labels"] = [
+    "Short text",
+    "This is a slightly longer text",
+    "This is an even longer text that is used to test cases where text lengths vary",]
 
     return collected_data
 
@@ -785,6 +802,7 @@ class OpenVLNTrainer(BaseVLNCETrainer):
         # ddp
         if not dist.is_initialized():
             self.local_rank, tcp_store = init_distrib_slurm("NCCL")
+            print("NCCL INITIALIZED.")
         else:
             self.local_rank = int(os.environ.get("LOCAL_RANK", 0))
             tcp_store = torch.distributed.distributed_c10d._get_default_store()
@@ -843,7 +861,6 @@ class OpenVLNTrainer(BaseVLNCETrainer):
             4, 
         )
 
-        assert 1==2
 
         with (TensorboardWriter(
             self.config.TENSORBOARD_DIR,
@@ -859,11 +876,12 @@ class OpenVLNTrainer(BaseVLNCETrainer):
                 # get dataset ---
                 step_id = self.step_id
 
-                dist.barrier()
-                if torch.cuda.is_available():
-                    with torch.cuda.device(self.device):
-                        torch.cuda.empty_cache()
-                gc.collect()
+                # dist.barrier()
+                # if torch.cuda.is_available():
+                #     with torch.cuda.device(self.device):
+                #         torch.cuda.empty_cache()
+                # gc.collect()
+
 
                 pre_collected_dataset = IWTrajectoryDataset(
                     self.lmdb_features_dir,
@@ -913,12 +931,12 @@ class OpenVLNTrainer(BaseVLNCETrainer):
                             
                                 batch = {
                                 k: (
-                                        v.to(
+                                    v.to(
                                     device=self.device,
                                     dtype=torch.float32,
                                     non_blocking=True,
                                 )
-                                if k != "ins_text" else v
+                                if k != "ins_text" and k != "labels" else v
                                 )
                                 for k, v in batch.items()
                                 }
@@ -926,6 +944,8 @@ class OpenVLNTrainer(BaseVLNCETrainer):
                                 loss = self._update_agent(
                                     batch
                                 )
+
+                    
 
                                 epoch_loss += loss
 
@@ -937,7 +957,7 @@ class OpenVLNTrainer(BaseVLNCETrainer):
                                 num_epoch_batch += 1
 
                         if self.world_rank == 0: #ddp
-                            if (dagger_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0:
+                            if (dagger_it * self.config.IL.epochs + epoch + 1) % self.config.OPENVLN.saving_frequency == 0:
                                 self.save_checkpoint(
                                     f"ckpt.{dagger_it * self.config.IL.epochs + epoch + 1}.pth"
                                 )
@@ -978,7 +998,7 @@ class OpenVLNTrainer(BaseVLNCETrainer):
 
         # print(f"rank {self.local_rank} ; rgb_features {observations['rgb_features'].shape}")
 
-        loss, actions_pred = self.policy.module.build_loss(observations)  # Access the underlying module
+        loss = self.policy.module.build_loss(observations)  # Access the underlying module
 
         
         
@@ -1021,31 +1041,34 @@ class OpenVLNTrainer(BaseVLNCETrainer):
         load_from_ckpt: bool,
         num_actions: int,
     ) -> None:
+
+        torch.cuda.empty_cache()
         
         train = True
         
         policy = baseline_registry.get_policy(self.config.MODEL.policy_name)
         self.policy = policy(
             config,
-            num_actions=num_actions,
-            embedding_dim = config.DIFFUSER.embedding_dim,
-            num_attention_heads= config.DIFFUSER.num_attention_heads,
-            num_layers = config.DIFFUSER.num_layers,
-            diffusion_timesteps = config.DIFFUSER.diffusion_timesteps
         )
+        print(f"Rank {self.local_rank} has {sum(p.numel() for p in self.policy.parameters())} parameters")
+
         self.policy.to(self.device)
 
+
+        trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
         self.optimizer = torch.optim.AdamW(
-            self.policy.parameters(), lr=self.config.DIFFUSER.LR
+            trainable_params, lr=self.config.OPENVLN.LR
         )
+
 
         if config.lr_Schedule: # train 250 + 500 + 750  + 1000 + 1250 + 1500 + 1750 + 2000 + 2250 + 2500 
             if not config.dagger: # self.config.IL.DAGGER.update_size // self.config.IL.batch_size
-                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
+                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.OPENVLN.LR, pct_start=0.35, 
                                                 steps_per_epoch=7862, epochs=self.config.IL.epochs)
             else:
-                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
+                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.OPENVLN.LR, pct_start=0.35, 
                                                 total_steps = self.config.IL.DAGGER.update_size * 55 // self.config.IL.batch_size * self.config.IL.epochs)
+
 
         if load_from_ckpt:
             ckpt_path = config.IL.ckpt_to_load
@@ -1059,10 +1082,15 @@ class OpenVLNTrainer(BaseVLNCETrainer):
                 self.step_id = 235092
             logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
 
-        self.policy = nn.SyncBatchNorm.convert_sync_batchnorm(self.policy)
+        # self.policy = nn.SyncBatchNorm.convert_sync_batchnorm(self.policy)
+        
+
+        print(f"Rank {self.local_rank} has {sum(p.numel() for p in self.policy.parameters())} parameters")
+
 
         if train:
-            self.policy = DDP(self.policy, device_ids=[self.local_rank], output_device=self.local_rank)
+            self.policy = DDP(self.policy, device_ids=[self.local_rank], output_device=self.local_rank, gradient_as_bucket_view=True)
+
             
 
         params = sum(param.numel() for param in self.policy.parameters())
