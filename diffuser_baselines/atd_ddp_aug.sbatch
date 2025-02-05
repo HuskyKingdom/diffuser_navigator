@@ -50,3 +50,6 @@ export NCCL_DEBUG=INFO
 
 # job run
 export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --nproc_per_node=4 run.py   --exp-config diffuser_baselines/config/d3ddp_aug.yaml   --run-type train
+
+
+export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 run.py   --exp-config diffuser_baselines/config/d3ddp_aug.yaml   --run-type train

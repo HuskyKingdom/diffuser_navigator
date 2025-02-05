@@ -48,7 +48,13 @@ OPENVLN:
   LR: 2.5e-4
   stage: "align" 
   # stage: training stage in < "align" | "finetune" | "full-finetune" >
+  forward_type: "pre-train"
+  # forward_type: in < "action_only" | "pre-train"  >
 
 MODEL:
   policy_name: OpenVLNPolicy
 
+TYPE: VLN-CE-v1
+SPLIT: joint_train_envdrop
+DATA_PATH: data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}.json.gz
+SCENES_DIR: data/scene_datasets/

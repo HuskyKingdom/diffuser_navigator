@@ -10,7 +10,7 @@
 #SBATCH -t 24:00:00  
 
 # partition
-#SBATCH -p gpulowbig
+#SBATCH -p gpulowsmall
 
 #SBATCH -N 1 
 #SBATCH --gres=gpu:1
