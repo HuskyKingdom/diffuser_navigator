@@ -16,7 +16,7 @@
 #SBATCH --gres=gpu:8
 
 # CPU Core
-#SBATCH -n 24 
+#SBATCH -n 64 
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk

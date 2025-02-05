@@ -16,7 +16,7 @@
 #SBATCH --gres=gpu:8
 
 # CPU Core
-#SBATCH -n 24 
+#SBATCH -n 48
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk
@@ -52,4 +52,3 @@ export NCCL_DEBUG=INFO
 export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 torchrun --nproc_per_node=8 run.py   --exp-config diffuser_baselines/config/d3ddp_aug.yaml   --run-type train
 
 
-export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 run.py   --exp-config diffuser_baselines/config/d3ddp_aug.yaml   --run-type train
