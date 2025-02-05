@@ -791,12 +791,12 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
 
         if self.envs is None:
-            allocated_cuda_memory = torch.cuda.memory_allocated(device=self.local_rank) / (1024 * 1024 * 1024)
-            if allocated_cuda_memory > 6:
-                self.config.defrost()
-                self.config.NUM_PROCESSES = int((12 - allocated_cuda_memory) // 2.5)
-                self.config.freeze()
-                logger.info("cuda memory is not enough, processes reduce to ", int((12 - allocated_cuda_memory) // 2.5))
+            # allocated_cuda_memory = torch.cuda.memory_allocated(device=self.local_rank) / (1024 * 1024 * 1024)
+            # if allocated_cuda_memory > 6:
+            #     self.config.defrost()
+            #     self.config.NUM_PROCESSES = int((12 - allocated_cuda_memory) // 2.5)
+            #     self.config.freeze()
+            #     logger.info("cuda memory is not enough, processes reduce to ", int((12 - allocated_cuda_memory) // 2.5))
             self.config.defrost()
             self.config.TASK_CONFIG.DATASET.split_num = self.world_size
             self.config.TASK_CONFIG.DATASET.split_rank = self.local_rank
