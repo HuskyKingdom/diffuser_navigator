@@ -69,7 +69,7 @@ def run_exp(exp_config: str, run_type: str, opts=None, local_rank=None) -> None:
     logger.add_filehandler(config.LOG_FILE)
 
     import os
-    os.path.exists(
+    assert os.path.exists(
             config.DATA_PATH.format(split=config.SPLIT)
         ) and os.path.exists(config.SCENES_DIR)
 
