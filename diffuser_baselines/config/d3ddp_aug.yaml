@@ -63,8 +63,3 @@ MODEL:
   PROGRESS_MONITOR:
     use: True
 
-
-TYPE: VLN-CE-v1
-SPLIT: joint_train_envdrop
-DATA_PATH: data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}.json.gz
-SCENES_DIR: data/scene_datasets/
