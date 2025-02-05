@@ -798,7 +798,7 @@ class OpenVLNTrainer(BaseVLNCETrainer):
         self.policy.module.clear_his()
 
     def train(self) -> None:
-
+            
         # ddp
         if not dist.is_initialized():
             self.local_rank, tcp_store = init_distrib_slurm("NCCL")
@@ -1087,7 +1087,7 @@ class OpenVLNTrainer(BaseVLNCETrainer):
 
         print(f"Rank {self.local_rank} has {sum(p.numel() for p in self.policy.parameters())} parameters")
 
-
+        
         if train:
             self.policy = DDP(self.policy, device_ids=[self.local_rank], output_device=self.local_rank, gradient_as_bucket_view=True)
 
