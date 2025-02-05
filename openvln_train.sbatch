@@ -12,8 +12,8 @@
 # partition
 #SBATCH -p gpulowsmall
 
-#SBATCH -N 1 
-#SBATCH --gres=gpu:1
+#SBATCH -N 2
+#SBATCH --gres=gpu:2
 
 # CPU Core
 #SBATCH -n 24 
@@ -51,6 +51,7 @@ conda activate openvln
 export NCCL_DEBUG=INFO
 export PYTHONUNBUFFERED=1
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+export TOKENIZERS_PARALLELISM=true
 
 # job run
-export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.launch --nproc_per_node=1 run.py   --exp-config diffuser_baselines/config/openvln.yaml   --run-type train
+export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 run.py   --exp-config diffuser_baselines/config/openvln.yaml   --run-type train

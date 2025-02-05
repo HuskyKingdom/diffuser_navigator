@@ -47,5 +47,5 @@ conda activate openvln
 
 export NCCL_DEBUG=INFO
 
-# job run
+# job run sbatch --account=MST113264 atd_ddp_aug.sbatch
 export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 torchrun --nproc_per_node=8 run.py   --exp-config diffuser_baselines/config/d3ddp_aug.yaml   --run-type train
