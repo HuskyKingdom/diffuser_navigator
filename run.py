@@ -69,9 +69,10 @@ def run_exp(exp_config: str, run_type: str, opts=None, local_rank=None) -> None:
     logger.add_filehandler(config.LOG_FILE)
 
     import os
+    print(config.DATA_PATH.format(split=config.SPLIT)) 
     assert os.path.exists(
             config.DATA_PATH.format(split=config.SPLIT)
-        ) 
+        )
 
     assert 1==2
 
