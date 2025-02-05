@@ -4,7 +4,7 @@ fastdtw==0.3.4
 msgpack_numpy
 jsonlines
 psutil
-transformers==4.46.3
+
 tokenizers==0.20.3
 tensorboard==2.8.0
 requests
