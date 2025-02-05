@@ -4,7 +4,7 @@ fastdtw==0.3.4
 msgpack_numpy
 jsonlines
 psutil
-transformers==4.38.1
+transformers==4.46.3
 tokenizers==0.20.3
 tensorboard==2.8.0
 requests
@@ -18,7 +18,14 @@ tqdm>=4.0.0
 tb-nightly
 yacs>=0.1.5
 Opencv-python>=3.3.0
-
+numba == 0.55.1
+numpy == 1.21.6
+protobuf==3.20.1
+numpy-quaternion==2022.4.2
+huggingface-hub==0.27.1
+setuptools==75.1.0
 braceexpand
 objectio
 simplejson
+
+importlib_metadata==8.5.0

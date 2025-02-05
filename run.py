@@ -20,6 +20,8 @@ from vlnce_baselines.nonlearning_agents import (
     nonlearning_inference,
 )
 
+import sys
+sys.dont_write_bytecode = True
 
 def main():
     parser = argparse.ArgumentParser()
