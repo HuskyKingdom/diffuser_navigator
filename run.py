@@ -71,7 +71,7 @@ def run_exp(exp_config: str, run_type: str, opts=None, local_rank=None) -> None:
     import os
     assert os.path.exists(
             config.DATA_PATH.format(split=config.SPLIT)
-        ) and os.path.exists(config.SCENES_DIR)
+        ) 
 
     assert 1==2
 
