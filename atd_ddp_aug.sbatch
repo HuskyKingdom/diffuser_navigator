@@ -49,7 +49,7 @@ export NCCL_DEBUG=INFO
 export PYTHONUNBUFFERED=1
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
 export TOKENIZERS_PARALLELISM=true
-export NCCL_P2P_DISABLE=1
+# export NCCL_P2P_DISABLE=1
 
 
 # job run sbatch --account=MST113264 atd_ddp_aug.sbatch
