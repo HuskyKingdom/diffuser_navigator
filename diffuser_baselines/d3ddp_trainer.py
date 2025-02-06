@@ -1122,7 +1122,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             depth_hook.remove()
         
         # reset
-        self.policy.module.clear_his()
+        # self.policy.module.clear_his()
 
 
 
