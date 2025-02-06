@@ -7,16 +7,16 @@
 #SBATCH -o out/atd_ddp_aug.out
 
 # running time
-#SBATCH -t 48:00:00  
+#SBATCH -t 2:00:00  
 
 # partition
-#SBATCH -p normal
+#SBATCH -p dev
 
 #SBATCH -N 1 
-#SBATCH --gres=gpu:8
+#SBATCH --gres=gpu:4
 
 # CPU Core
-#SBATCH -n 64 
+#SBATCH -n 24
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk
@@ -53,4 +53,4 @@ export NCCL_P2P_DISABLE=1
 
 
 # job run sbatch --account=MST113264 atd_ddp_aug.sbatch
-export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 torchrun --nproc_per_node=8 run.py   --exp-config diffuser_baselines/config/d3ddp_aug.yaml   --run-type train
+export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --nproc_per_node=4 run.py   --exp-config diffuser_baselines/config/d3ddp_aug.yaml   --run-type train
