@@ -1426,8 +1426,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
         self.policy = nn.SyncBatchNorm.convert_sync_batchnorm(self.policy)
 
-        if train:
-            self.policy = DDP(self.policy, device_ids=[self.local_rank], output_device=self.local_rank)
+        # if train:
+        #     self.policy = DDP(self.policy, device_ids=[self.local_rank], output_device=self.local_rank)
             
 
         params = sum(param.numel() for param in self.policy.parameters())
