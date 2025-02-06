@@ -1006,7 +1006,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     if dones[i]:
                         episodes[i] = []
                         # reset
-                        self.policy.module.clear_his()
+                        # self.policy.module.clear_his()
                         prev_actions = torch.zeros(
                                 self.config.NUM_PROCESSES,
                                 1,
