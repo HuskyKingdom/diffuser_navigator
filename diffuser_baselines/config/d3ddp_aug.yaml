@@ -36,7 +36,7 @@ IL:
     update_size: 50000
     p: 1.0
     preload_lmdb_features: False
-    lmdb_features_dir: data/trajectories_dirs/d3ddp_phase1/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/d3ddp_phase2/trajectories.lmdb
     lmdb_commit_frequency: 50
     
     
