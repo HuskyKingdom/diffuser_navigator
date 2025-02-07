@@ -50,8 +50,8 @@ class OpenVLNPolicy(NetPolicy):
         # == openvln ==
 
         # init
-        # base_vlm = "prism-dinosiglip-224px+7b"
-        base_vlm = "hub/models--TRI-ML--prismatic-vlms/snapshots/a3ba8a19c453a82eaf5a3fb1e699dd9e441f0a12/prism-dinosiglip-224px+7b/" # find model weight locally
+        base_vlm = "prism-dinosiglip-224px+7b"
+        # base_vlm = "hub/models--TRI-ML--prismatic-vlms/snapshots/a3ba8a19c453a82eaf5a3fb1e699dd9e441f0a12/prism-dinosiglip-224px+7b/" # find model weight locally
 
         # load backbones
         hf_token = Path(".hf_token").read_text().strip()
