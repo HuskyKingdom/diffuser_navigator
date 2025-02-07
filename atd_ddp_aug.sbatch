@@ -54,3 +54,4 @@ export TOKENIZERS_PARALLELISM=true
 
 # job run sbatch --account=MST113264 atd_ddp_aug.sbatch
 export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --nproc_per_node=4 run.py   --exp-config diffuser_baselines/config/d3ddp_aug.yaml   --run-type train
+export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 run.py   --exp-config diffuser_baselines/config/d3ddp_aug.yaml   --run-type train

@@ -43,7 +43,7 @@ IL:
     
 
 OPENVLN:
-  saving_frequency: 10
+  saving_frequency: 6
   logging_file: data/loggings/train.log
   LR: 2.5e-4
   stage: "align" 
