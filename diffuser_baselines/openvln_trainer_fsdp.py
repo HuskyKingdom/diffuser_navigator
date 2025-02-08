@@ -1147,8 +1147,9 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
         
         if train:
-            self.policy = FSDP(self.policy,cpu_offload=CPUOffload(offload_params=True), use_orig_params=True)
             self.policy.half() 
+            self.policy = FSDP(self.policy,cpu_offload=CPUOffload(offload_params=True), use_orig_params=True)
+            
 
             
 

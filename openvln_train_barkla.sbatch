@@ -10,10 +10,10 @@
 #SBATCH -t 2:00:00  
 
 # partition
-#SBATCH -p gpulowbig
+#SBATCH -p gpulowsmall
 
 #SBATCH -N 1
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:2
 
 # CPU Core
 #SBATCH -n 48 
@@ -59,4 +59,4 @@ export TOKENIZERS_PARALLELISM=true
 export NCCL_P2P_DISABLE=1
 
 # job run
-export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.launch --nproc_per_node=4 run.py   --exp-config diffuser_baselines/config/openvln.yaml   --run-type train
+export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 run.py   --exp-config diffuser_baselines/config/openvln.yaml   --run-type train
