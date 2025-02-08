@@ -4,3 +4,4 @@ out/
 hub/
 .hf_token
 train.log
+wandb/
