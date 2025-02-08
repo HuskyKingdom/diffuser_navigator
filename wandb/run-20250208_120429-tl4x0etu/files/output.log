@@ -1,0 +1,48 @@
+Downloading `prism-dinosiglip-224px+7b from HF Hub
+Found Config =>> Loading & Freezing [bold blue]prism-dinosiglip-224px+7b[/] with:
+             Vision Backbone =>> [bold]dinosiglip-vit-so-224px[/]
+             LLM Backbone    =>> [bold]llama2-7b-pure[/]
+             Arch Specifier  =>> [bold]no-align+fused-gelu-mlp[/]
+             Checkpoint Path =>> [underline]`./hub/models--TRI-ML--prismatic-vlms/snapshots/a3ba8a19c453a82eaf5a3fb1e699dd9e441f0a12/prism-dinosiglip-224px+7b/checkpoints/latest-checkpoint.pt`[/]
+Loading Vision Backbone [bold]dinosiglip-vit-so-224px[/]
+02/08 [12:04:34] INFO     | >> Loading pretrained weights from   _builder.py:186
+                          Hugging Face hub
+                          (timm/vit_large_patch14_reg4_dinov2.lv
+                          d142m)
+02/08 [12:04:35] INFO     | >>  Safe alternative available for       _hub.py:180
+                          'pytorch_model.bin' (as
+                          'model.safetensors'). Loading weights
+                          using safetensors.
+                 INFO     | >> Resized position embedding: (37,  pos_embed.py:55
+                          37) to (16, 16).
+02/08 [12:04:40] INFO     | >> Loading pretrained weights from   _builder.py:186
+                          Hugging Face hub
+                          (('timm/ViT-SO400M-14-SigLIP',
+                          'open_clip_pytorch_model.bin'))
+                 INFO     | >>  Safe alternative available for       _hub.py:180
+                          'open_clip_pytorch_model.bin' (as
+                          'open_clip_model.safetensors'). Loading
+                          weights using safetensors.
+Loading Pretrained LLM [bold]llama2-7b-pure[/] via HF Transformers
+Loading checkpoint shards: 100%|██████████| 2/2 [00:10<00:00,  5.01s/it]
+Loading VLM [bold blue]prism-dinosiglip-224px+7b[/] from Checkpoint
+Rank 3 has 7541237184 parameters
+Rank 3 has 7541237184 parameters
+Traceback (most recent call last):
+  File "run.py", line 105, in <module>
+    main()
+  File "run.py", line 55, in main
+    run_exp(**vars(args))
+  File "run.py", line 97, in run_exp
+    trainer.train()
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/openvln_trainer_fsdp.py", line 895, in train
+    self._initialize_policy(
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/openvln_trainer_fsdp.py", line 1150, in _initialize_policy
+    self.policy = FSDP(self.policy,auto_wrap_policy=my_default_auto_wrap_policy,cpu_offload=CPUOffload(offload_params=True))
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/distributed/fsdp/fully_sharded_data_parallel.py", line 463, in __init__
+    _auto_wrap(
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/distributed/fsdp/_wrap_utils.py", line 101, in _auto_wrap
+    _recursive_wrap(**recursive_wrap_kwargs, **root_kwargs)  # type: ignore[arg-type]
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/distributed/fsdp/wrap.py", line 531, in _recursive_wrap
+    if auto_wrap_policy(module=module, recurse=True, nonwrapped_numel=nonwrapped_numel):
+TypeError: my_default_auto_wrap_policy() got an unexpected keyword argument 'nonwrapped_numel'

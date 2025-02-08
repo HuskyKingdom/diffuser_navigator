@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "run.py", line 105, in <module>
+    main()
+  File "run.py", line 55, in main
+    run_exp(**vars(args))
+  File "run.py", line 94, in run_exp
+    trainer = trainer_init(config)
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/openvln_trainer.py", line 471, in __init__
+    for name, module in model.named_modules():
+NameError: name 'model' is not defined

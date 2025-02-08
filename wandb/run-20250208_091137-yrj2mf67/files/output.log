@@ -1,0 +1,54 @@
+Downloading `prism-dinosiglip-224px+7b from HF Hub
+Found Config =>> Loading & Freezing [bold blue]prism-dinosiglip-224px+7b[/] with:
+             Vision Backbone =>> [bold]dinosiglip-vit-so-224px[/]
+             LLM Backbone    =>> [bold]llama2-7b-pure[/]
+             Arch Specifier  =>> [bold]no-align+fused-gelu-mlp[/]
+             Checkpoint Path =>> [underline]`./hub/models--TRI-ML--prismatic-vlms/snapshots/a3ba8a19c453a82eaf5a3fb1e699dd9e441f0a12/prism-dinosiglip-224px+7b/checkpoints/latest-checkpoint.pt`[/]
+Loading Vision Backbone [bold]dinosiglip-vit-so-224px[/]
+02/08 [09:11:44] INFO     | >> Loading pretrained weights from   _builder.py:186
+                          Hugging Face hub
+                          (timm/vit_large_patch14_reg4_dinov2.lv
+                          d142m)
+                 INFO     | >>  Safe alternative available for       _hub.py:180
+                          'pytorch_model.bin' (as
+                          'model.safetensors'). Loading weights
+                          using safetensors.
+                 INFO     | >> Resized position embedding: (37,  pos_embed.py:55
+                          37) to (16, 16).
+02/08 [09:11:49] INFO     | >> Loading pretrained weights from   _builder.py:186
+                          Hugging Face hub
+                          (('timm/ViT-SO400M-14-SigLIP',
+                          'open_clip_pytorch_model.bin'))
+                 INFO     | >>  Safe alternative available for       _hub.py:180
+                          'open_clip_pytorch_model.bin' (as
+                          'open_clip_model.safetensors'). Loading
+                          weights using safetensors.
+Loading Pretrained LLM [bold]llama2-7b-pure[/] via HF Transformers
+Loading checkpoint shards: 100%|██████████| 2/2 [00:11<00:00,  5.59s/it]
+Loading VLM [bold blue]prism-dinosiglip-224px+7b[/] from Checkpoint
+Rank 1 has 7541237184 parameters
+Exiting cleanly and saving state
+Traceback (most recent call last):
+  File "run.py", line 105, in <module>
+    main()
+  File "run.py", line 55, in main
+    run_exp(**vars(args))
+  File "run.py", line 97, in run_exp
+    trainer.train()
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/openvln_trainer.py", line 876, in train
+    self._initialize_policy(
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/openvln_trainer.py", line 1094, in _initialize_policy
+    policy = get_peft_model(policy, self.lora_config)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/peft/mapping.py", line 193, in get_peft_model
+    return MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type](
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/peft/peft_model.py", line 1609, in __init__
+    super().__init__(model, peft_config, adapter_name, **kwargs)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/peft/peft_model.py", line 171, in __init__
+    self.base_model = cls(model, {adapter_name: peft_config}, adapter_name)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/peft/tuners/lora/model.py", line 141, in __init__
+    super().__init__(model, config, adapter_name, low_cpu_mem_usage=low_cpu_mem_usage)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/peft/tuners/tuners_utils.py", line 184, in __init__
+    self.inject_adapter(self.model, adapter_name, low_cpu_mem_usage=low_cpu_mem_usage)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/peft/tuners/tuners_utils.py", line 439, in inject_adapter
+    key_list = [key for key, _ in model.named_modules()]
+TypeError: named_modules() missing 1 required positional argument: 'self'

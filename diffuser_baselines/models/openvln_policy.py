@@ -140,14 +140,6 @@ class OpenVLNPolicy(NetPolicy):
     def build_loss(self,observations):
 
 
-        # # (B,T,C,H,W) -> (B+T,C,H,W)
-        # B,T,C,H,W = observations['rgb_features'].shape
-        # observations['rgb_features'] = observations['rgb_features'].view(-1,C,H,W)
-        # B,T,C,H,W = observations['depth_features'].shape
-        # observations['depth_features'] = observations['depth_features'].view(-1,C,H,W)
-        
-        
-
 
         # rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
         
@@ -156,20 +148,16 @@ class OpenVLNPolicy(NetPolicy):
         # format batch data
         collected_data = {
         'instruction': observations['instruction'],
+        'rgb': observations['rgb'],
 
-        # 'rgb_features': rgb_features.to(observations['instruction'].device),
-        # 'depth_features': depth_features.to(observations['instruction'].device),
-
-        'rgb': observations['rgb'].to(observations['instruction'].device),
-
-        'gt_actions': observations['gt_actions'].to(observations['instruction'].device), # (bs,T)
-        'prev_actions': observations['prev_actions'].to(observations['instruction'].device),
-        'trajectories': observations['trajectories'].to(observations['instruction'].device),
-        'padding_mask': observations['padding_mask'].to(observations['instruction'].device).bool(),
-        'lengths': observations['lengths'].to(observations['instruction'].device),
-        'weights': observations['weights'].to(observations['instruction'].device),
+        'gt_actions': observations['gt_actions'], # (bs,T)
+        'prev_actions': observations['prev_actions'],
+        'trajectories': observations['trajectories'],
+        'padding_mask': observations['padding_mask'].bool(),
+        'lengths': observations['lengths'],
+        'weights': observations['weights'],
         'ins_text': observations['ins_text'],
-        'progress': observations['progress'].to(observations['instruction'].device),
+        'progress': observations['progress'],
         'labels': observations["labels"],
         }
 
@@ -221,13 +209,13 @@ class OpenVLNPolicy(NetPolicy):
         } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
 
         
-       
+        with torch.cuda.amp.autocast(dtype=torch.float16):
+            modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = collected_data['gt_actions'].long(), img_ori_shape = (B,T), sample_valid_len = observations['lengths'], config = self.config)
         
-        modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = collected_data['gt_actions'].long(), img_ori_shape = (B,T), sample_valid_len = observations['lengths'], config = self.config)
-
-
 
         return modelout.loss
+    
+
     
     @classmethod
     def from_config(
@@ -264,6 +252,10 @@ class OpenVLN(PrismaticVLM):
         **kwargs):
 
         super().__init__(*args, **kwargs)
+        
+        # linear transform vit tokens
+        # self.vit_linear = nn.Linear(256,1)
+
     
 
     
@@ -272,11 +264,17 @@ class OpenVLN(PrismaticVLM):
 
         pat_dim = projected_patch_embeddings.shape[1]
         feature_dim = projected_patch_embeddings.shape[2]
-        projected_patch_embeddings = projected_patch_embeddings.view(img_ori_shape[0], img_ori_shape[1], pat_dim, feature_dim) # (B,T,256,2176)
-        projected_patch_embeddings = projected_patch_embeddings.mean(dim=2) # reduce dimension -> (B,T,2176)
+        projected_patch_embeddings = projected_patch_embeddings.view(img_ori_shape[0], img_ori_shape[1], pat_dim, feature_dim) # (B,T,256,4096)
+
+        # projected_patch_embeddings = self.vit_linear(projected_patch_embeddings)
+        projected_patch_embeddings = projected_patch_embeddings.mean(dim=2) # reduce dimension -> (B,T,4096)
         projected_patch_embeddings = projected_patch_embeddings.squeeze(2)
 
         return projected_patch_embeddings
+
+
+
+
 
     def get_input(self, input_ids, img_features, input_mask, img_mask, labels, label_mask):
 
@@ -506,19 +504,19 @@ class OpenVLN(PrismaticVLM):
 
         # Run LLM Forward --> returns CausalLMOutputWithPast!
 
-        with torch.cuda.amp.autocast(dtype=torch.float16):
-            return self.llm_backbone(
-                input_ids=None,
-                attention_mask=fused_attention_mask, # ([3, 128])
-                position_ids=None,
-                past_key_values=past_key_values,
-                inputs_embeds=fused_embeddings, # ([3, 128, 4096])
-                labels=fused_labels, # ([3, 146])
-                use_cache=use_cache,
-                output_attentions=output_attentions,
-                output_hidden_states=output_hidden_states,
-                return_dict=return_dict,
-            )
+        
+        return self.llm_backbone(
+            input_ids=None,
+            attention_mask=fused_attention_mask, # ([3, 128])
+            position_ids=None,
+            past_key_values=past_key_values,
+            inputs_embeds=fused_embeddings, # ([3, 128, 4096])
+            labels=fused_labels, # ([3, 146])
+            use_cache=use_cache,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            return_dict=return_dict,
+        )
 
 
 

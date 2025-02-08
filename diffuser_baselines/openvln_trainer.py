@@ -68,6 +68,10 @@ import torch.nn.functional as Fuc
 from contextlib import contextmanager
 
 
+# openvln
+import wandb
+from peft import get_peft_model, LoraConfig
+
 @contextmanager
 def maybe_tqdm(total=None, desc=None, leave=True, dynamic_ncols=True):
     if dist.get_rank() == 0:
@@ -449,6 +453,22 @@ class OpenVLNTrainer(BaseVLNCETrainer):
         )
         self.envs = None
         super().__init__(config)
+
+        # init wandb
+        wandb.init(
+
+            project="yhscode-university-of-liverpool",
+            # track hyperparameters and run metadata
+            config={
+            "learning_rate": config.OPENVLN.LR,
+            "epochs": config.IL.epochs,
+            "bs": config.IL.batch_size,
+            }
+        )
+
+        self.scaler = torch.cuda.amp.GradScaler()
+
+        
 
     def _make_dirs(self) -> None:
         self._make_ckpt_dir()
@@ -902,6 +922,7 @@ class OpenVLNTrainer(BaseVLNCETrainer):
                 )
 
 
+
                     
                 if torch.cuda.is_available():
                     with torch.cuda.device(self.device):
@@ -941,6 +962,8 @@ class OpenVLNTrainer(BaseVLNCETrainer):
                                 for k, v in batch.items()
                                 }
 
+
+
                                 loss = self._update_agent(
                                     batch
                                 )
@@ -966,6 +989,7 @@ class OpenVLNTrainer(BaseVLNCETrainer):
 
                             epoch_loss /= num_epoch_batch
                             logger.info(f"epoch loss: {epoch_loss}  | steps {num_epoch_batch} | On Diffuser iter {dagger_it}, Epoch {epoch}.")
+                            wandb.log({"epoch loss": epoch_loss, "steps": num_epoch_batch, "Epoch": epoch})
                             epoch_loss = 0
                             num_epoch_batch = 0
                             
@@ -973,6 +997,7 @@ class OpenVLNTrainer(BaseVLNCETrainer):
                         dist.barrier() #ddp
         
         dist.destroy_process_group() #ddp
+        wandb.finish()
                     
 
     def grad_clipping(self, net, theta):  # @save
@@ -996,40 +1021,33 @@ class OpenVLNTrainer(BaseVLNCETrainer):
     ):
         
 
-        # print(f"rank {self.local_rank} ; rgb_features {observations['rgb_features'].shape}")
-
         loss = self.policy.module.build_loss(observations)  # Access the underlying module
-
-        
-        
         
         with torch.no_grad():
             loss_tensor = loss.clone()
             dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
             loss_tensor = loss_tensor / self.world_size
-            
-        # print(f"rank {self.local_rank} ; \n ins_text {observations['ins_text'][0]}; \n  gt_actions {observations['gt_actions'][0]}; \n  prev_actions {observations['prev_actions'][0]} ; \n  actions pred {actions_pred[0].argmax(dim=-1)}; \n raw actions pred {actions_pred[0]}; \n len {observations['lengths']} ;  \n loss {loss} ; \n loss tensor {loss_tensor}")
-        # assert 1==2
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache() 
+            gc.collect() 
 
 
-        loss = loss / loss_accumulation_scalar
-        loss.backward()
 
-        # for name, param in self.policy.named_parameters():
-        #     if param.grad is not None:
-        #         print(f"Layer: {name} | Gradient Norm: {param.grad.norm()}")
-        #     else:
-        #         print(f"Layer: {name} | No gradient (possibly frozen)")
-        # self.grad_clipping(self.policy, 1)
+        
+        self.scaler.scale(loss).backward()
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
+
+        # loss = loss / loss_accumulation_scalar
+        # loss.backward()
 
 
-        if step_grad:
-            self.optimizer.step()
-            self.optimizer.zero_grad()
-            if self.config.lr_Schedule:
-                self.scheduler.step()
-
-        # print(f"LR on {self.local_rank} : {self.optimizer.param_groups[0]['lr']} ")
+        # if step_grad:
+        #     self.optimizer.step()
+        #     self.optimizer.zero_grad()
+        #     if self.config.lr_Schedule:
+        #         self.scheduler.step()
 
 
         return loss_tensor.item()
@@ -1053,6 +1071,28 @@ class OpenVLNTrainer(BaseVLNCETrainer):
         print(f"Rank {self.local_rank} has {sum(p.numel() for p in self.policy.parameters())} parameters")
 
         self.policy.to(self.device)
+
+
+        # # lora
+
+        # target_modules = []
+        # for name, module in self.policy.named_modules():  # self.policy 是模型实例
+        #     if isinstance(module, torch.nn.Linear) or isinstance(module, torch.nn.MultiheadAttention):
+        #         target_modules.append(name)
+
+  
+
+        # self.lora_config = LoraConfig(
+        #     r=8, 
+        #     lora_alpha=16, 
+        #     lora_dropout=0.1,  
+        #     bias="none", 
+        #     task_type="CAUSAL_LM" ,
+        #     target_modules=target_modules,
+        # )
+
+        # # lora
+        # self.policy = get_peft_model(self.policy, self.lora_config)
 
 
         trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
@@ -1089,7 +1129,7 @@ class OpenVLNTrainer(BaseVLNCETrainer):
 
         
         if train:
-            self.policy = DDP(self.policy, device_ids=[self.local_rank], output_device=self.local_rank, gradient_as_bucket_view=True)
+            self.policy = DDP(self.policy, device_ids=[self.local_rank], output_device=self.local_rank)
 
             
 
@@ -1100,6 +1140,13 @@ class OpenVLNTrainer(BaseVLNCETrainer):
         logger.info(f"Agent parameters: {params}. Trainable: {params_t}")
         logger.info("Finished setting up policy.")
 
+
+        # MEM LEFT 25GB
+        
+
+
+        
+
         
 
     def save_checkpoint(self, file_name: str) -> None: # rewrite for ddp
@@ -1108,12 +1155,19 @@ class OpenVLNTrainer(BaseVLNCETrainer):
         Args:
             file_name: file name for checkpoint
         """
-        checkpoint = {
-            "state_dict": self.policy.module.state_dict(),
-            "optim_state": self.optimizer.state_dict(),
-            "scheduler_state": self.scheduler.state_dict(),
-            "config": self.config,
-        }
+        if config.lr_Schedule:
+            checkpoint = {
+                "state_dict": self.policy.module.state_dict(),
+                "optim_state": self.optimizer.state_dict(),
+                "scheduler_state": self.scheduler.state_dict(),
+                "config": self.config,
+            }
+        else:
+            checkpoint = {
+                "state_dict": self.policy.module.state_dict(),
+                "optim_state": self.optimizer.state_dict(),
+                "config": self.config,
+            }
         torch.save(
             checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name)
         )

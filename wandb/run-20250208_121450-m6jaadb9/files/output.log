@@ -1,0 +1,115 @@
+02/08 [12:14:51] INFO     | >> [*] Downloading                        load.py:67
+                          `prism-dinosiglip-224px+7b from HF Hub
+Downloading `prism-dinosiglip-224px+7b from HF Hub
+02/08 [12:14:53] INFO     | >> [*] Found Config =>> Loading &         load.py:81
+                          Freezing prism-dinosiglip-224px+7b with:
+                                       Vision Backbone =>>
+                          dinosiglip-vit-so-224px
+                                       LLM Backbone    =>>
+                          llama2-7b-pure
+                                       Arch Specifier  =>>
+                          no-align+fused-gelu-mlp
+                                       Checkpoint Path =>>
+                          `./hub/models--TRI-ML--prismatic-vlms/snaps
+                          hots/a3ba8a19c453a82eaf5a3fb1e699dd9e441f0a
+                          12/prism-dinosiglip-224px+7b/checkpoints/la
+                          test-checkpoint.pt`
+Found Config =>> Loading & Freezing [bold blue]prism-dinosiglip-224px+7b[/] with:
+             Vision Backbone =>> [bold]dinosiglip-vit-so-224px[/]
+             LLM Backbone    =>> [bold]llama2-7b-pure[/]
+             Arch Specifier  =>> [bold]no-align+fused-gelu-mlp[/]
+             Checkpoint Path =>> [underline]`./hub/models--TRI-ML--prismatic-vlms/snapshots/a3ba8a19c453a82eaf5a3fb1e699dd9e441f0a12/prism-dinosiglip-224px+7b/checkpoints/latest-checkpoint.pt`[/]
+                 INFO     | >> [*] Loading Vision Backbone            load.py:98
+                          dinosiglip-vit-so-224px
+Loading Vision Backbone [bold]dinosiglip-vit-so-224px[/]
+02/08 [12:14:56] INFO     | >> Loading pretrained weights from   _builder.py:186
+                          Hugging Face hub
+                          (timm/vit_large_patch14_reg4_dinov2.lv
+                          d142m)
+                 INFO     | >>  Safe alternative available for       _hub.py:180
+                          'pytorch_model.bin' (as
+                          'model.safetensors'). Loading weights
+                          using safetensors.
+                 INFO     | >> Resized position embedding: (37,  pos_embed.py:55
+                          37) to (16, 16).
+02/08 [12:15:02] INFO     | >> Loading pretrained weights from   _builder.py:186
+                          Hugging Face hub
+                          (('timm/ViT-SO400M-14-SigLIP',
+                          'open_clip_pytorch_model.bin'))
+                 INFO     | >>  Safe alternative available for       _hub.py:180
+                          'open_clip_pytorch_model.bin' (as
+                          'open_clip_model.safetensors'). Loading
+                          weights using safetensors.
+                 INFO     | >> [*] Loading Pretrained LLM            load.py:107
+                          llama2-7b-pure via HF Transformers
+Loading Pretrained LLM [bold]llama2-7b-pure[/] via HF Transformers
+                 INFO     | >>     |=> Loading llama2 LLM from   base_llm.py:117
+                          `meta-llama/Llama-2-7b-hf`
+Loading checkpoint shards: 100%|██████████| 2/2 [00:09<00:00,  4.75s/it]
+02/08 [12:15:12] INFO     | >>     |=> Loading llama2 (Fast)     base_llm.py:147
+                          Tokenizer via the AutoTokenizer API
+02/08 [12:16:03] INFO     | >> [*] Loading VLM                       load.py:118
+                          prism-dinosiglip-224px+7b from Checkpoint
+Loading VLM [bold blue]prism-dinosiglip-224px+7b[/] from Checkpoint
+02/08 [12:16:10] INFO     | >>     |=> [Frozen]    🥶 =>>       prismatic.py:151
+                          Vision Backbone
+                          `dinosiglip-vit-so-224px`
+                 INFO     | >>     |=> [Frozen]    🥶 =>> LLM   prismatic.py:152
+                          Backbone `llama2-7b-pure`
+                 INFO     | >>     |=> [TRAINABLE] 🔥 =>>       prismatic.py:153
+                          Projector `no-align+fused-gelu-mlp`
+Rank 0 has 7541237184 parameters
+Rank 0 has 7541237184 parameters
+2025-02-08 12:16:17,743 Agent parameters: 1885309296. Trainable: 0
+2025-02-08 12:16:17,744 Finished setting up policy.
+Epochs:   0%|          | 0/16 [00:00<?, ?it/s]
+Traceback (most recent call last):             
+  File "run.py", line 105, in <module>
+    main()
+  File "run.py", line 55, in main
+    run_exp(**vars(args))
+  File "run.py", line 97, in run_exp
+    trainer.train()
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/openvln_trainer_fsdp.py", line 984, in train
+    loss = self._update_agent(
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/openvln_trainer_fsdp.py", line 1041, in _update_agent
+    loss = self.policy.module.build_loss(observations)  # Access the underlying module
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/models/openvln_policy.py", line 213, in build_loss
+    modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = collected_data['gt_actions'].long(), img_ori_shape = (B,T), sample_valid_len = observations['lengths'], config = self.config)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/models/openvln_policy.py", line 405, in forward
+    patch_features = self.vision_backbone({k: pixel_values[k] for k in pixel_values})
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/prismatic/models/backbones/vision/dinosiglip_vit.py", line 144, in forward
+    dino_patches = self.dino_featurizer(pixel_values["dino"])
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/prismatic/models/backbones/vision/base_vision.py", line 29, in wrapper
+    result = fn(*args, **kwargs)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/timm/models/vision_transformer.py", line 644, in get_intermediate_layers
+    outputs = self._intermediate_layers(x, n)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/timm/models/vision_transformer.py", line 621, in _intermediate_layers
+    x = self.patch_embed(x)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/timm/layers/patch_embed.py", line 87, in forward
+    x = self.proj(x)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/nn/modules/conv.py", line 460, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/users/sgyson10/volatile/miniconda3/envs/openvln/lib/python3.8/site-packages/torch/nn/modules/conv.py", line 456, in _conv_forward
+    return F.conv2d(input, weight, bias, self.stride,
+RuntimeError: weight should have at least three dimensions

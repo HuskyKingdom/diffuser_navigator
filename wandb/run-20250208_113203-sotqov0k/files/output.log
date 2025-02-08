@@ -1,0 +1,46 @@
+Downloading `prism-dinosiglip-224px+7b from HF Hub
+Found Config =>> Loading & Freezing [bold blue]prism-dinosiglip-224px+7b[/] with:
+             Vision Backbone =>> [bold]dinosiglip-vit-so-224px[/]
+             LLM Backbone    =>> [bold]llama2-7b-pure[/]
+             Arch Specifier  =>> [bold]no-align+fused-gelu-mlp[/]
+             Checkpoint Path =>> [underline]`./hub/models--TRI-ML--prismatic-vlms/snapshots/a3ba8a19c453a82eaf5a3fb1e699dd9e441f0a12/prism-dinosiglip-224px+7b/checkpoints/latest-checkpoint.pt`[/]
+Loading Vision Backbone [bold]dinosiglip-vit-so-224px[/]
+02/08 [11:32:10] INFO     | >> Loading pretrained weights from   _builder.py:186
+                          Hugging Face hub
+                          (timm/vit_large_patch14_reg4_dinov2.lv
+                          d142m)
+                 INFO     | >>  Safe alternative available for       _hub.py:180
+                          'pytorch_model.bin' (as
+                          'model.safetensors'). Loading weights
+                          using safetensors.
+                 INFO     | >> Resized position embedding: (37,  pos_embed.py:55
+                          37) to (16, 16).
+02/08 [11:32:15] INFO     | >> Loading pretrained weights from   _builder.py:186
+                          Hugging Face hub
+                          (('timm/ViT-SO400M-14-SigLIP',
+                          'open_clip_pytorch_model.bin'))
+                 INFO     | >>  Safe alternative available for       _hub.py:180
+                          'open_clip_pytorch_model.bin' (as
+                          'open_clip_model.safetensors'). Loading
+                          weights using safetensors.
+Loading Pretrained LLM [bold]llama2-7b-pure[/] via HF Transformers
+Loading checkpoint shards: 100%|██████████| 2/2 [00:11<00:00,  5.56s/it]
+Loading VLM [bold blue]prism-dinosiglip-224px+7b[/] from Checkpoint
+Rank 3 has 7541237184 parameters
+Rank 3 has 7541237184 parameters
+2025-02-08 11:33:31,717 Agent parameters: 7541237184. Trainable: 71385600
+2025-02-08 11:33:31,718 Finished setting up policy.
+The input hidden states seems to be silently casted in float32, this might be related to the fact you have upcasted embedding or layer norm layers in float32. We will cast back the input in torch.float16.
+before Allocated memory: 42.83 GB, Reserved memory: 43.94 GB, Total memory: 79.14 GB, Free memory: 35.20 GB
+Traceback (most recent call last):
+  File "run.py", line 105, in <module>
+    main()
+  File "run.py", line 55, in main
+    run_exp(**vars(args))
+  File "run.py", line 97, in run_exp
+    trainer.train()
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/openvln_trainer.py", line 965, in train
+    loss = self._update_agent(
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/openvln_trainer.py", line 1046, in _update_agent
+    scaler.step(optimizer)
+NameError: name 'optimizer' is not defined

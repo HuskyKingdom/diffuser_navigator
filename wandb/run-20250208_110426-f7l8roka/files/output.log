@@ -1,0 +1,82 @@
+02/08 [11:04:27] INFO     | >> [*] Downloading                        load.py:67
+                          `prism-dinosiglip-224px+7b from HF Hub
+Downloading `prism-dinosiglip-224px+7b from HF Hub
+02/08 [11:04:29] INFO     | >> [*] Found Config =>> Loading &         load.py:81
+                          Freezing prism-dinosiglip-224px+7b with:
+                                       Vision Backbone =>>
+                          dinosiglip-vit-so-224px
+                                       LLM Backbone    =>>
+                          llama2-7b-pure
+                                       Arch Specifier  =>>
+                          no-align+fused-gelu-mlp
+                                       Checkpoint Path =>>
+                          `./hub/models--TRI-ML--prismatic-vlms/snaps
+                          hots/a3ba8a19c453a82eaf5a3fb1e699dd9e441f0a
+                          12/prism-dinosiglip-224px+7b/checkpoints/la
+                          test-checkpoint.pt`
+Found Config =>> Loading & Freezing [bold blue]prism-dinosiglip-224px+7b[/] with:
+             Vision Backbone =>> [bold]dinosiglip-vit-so-224px[/]
+             LLM Backbone    =>> [bold]llama2-7b-pure[/]
+             Arch Specifier  =>> [bold]no-align+fused-gelu-mlp[/]
+             Checkpoint Path =>> [underline]`./hub/models--TRI-ML--prismatic-vlms/snapshots/a3ba8a19c453a82eaf5a3fb1e699dd9e441f0a12/prism-dinosiglip-224px+7b/checkpoints/latest-checkpoint.pt`[/]
+                 INFO     | >> [*] Loading Vision Backbone            load.py:98
+                          dinosiglip-vit-so-224px
+Loading Vision Backbone [bold]dinosiglip-vit-so-224px[/]
+02/08 [11:04:32] INFO     | >> Loading pretrained weights from   _builder.py:186
+                          Hugging Face hub
+                          (timm/vit_large_patch14_reg4_dinov2.lv
+                          d142m)
+                 INFO     | >>  Safe alternative available for       _hub.py:180
+                          'pytorch_model.bin' (as
+                          'model.safetensors'). Loading weights
+                          using safetensors.
+                 INFO     | >> Resized position embedding: (37,  pos_embed.py:55
+                          37) to (16, 16).
+02/08 [11:04:37] INFO     | >> Loading pretrained weights from   _builder.py:186
+                          Hugging Face hub
+                          (('timm/ViT-SO400M-14-SigLIP',
+                          'open_clip_pytorch_model.bin'))
+                 INFO     | >>  Safe alternative available for       _hub.py:180
+                          'open_clip_pytorch_model.bin' (as
+                          'open_clip_model.safetensors'). Loading
+                          weights using safetensors.
+02/08 [11:04:38] INFO     | >> [*] Loading Pretrained LLM            load.py:107
+                          llama2-7b-pure via HF Transformers
+Loading Pretrained LLM [bold]llama2-7b-pure[/] via HF Transformers
+                 INFO     | >>     |=> Loading llama2 LLM from   base_llm.py:117
+                          `meta-llama/Llama-2-7b-hf`
+Loading checkpoint shards: 100%|██████████| 2/2 [00:10<00:00,  5.12s/it]
+02/08 [11:04:49] INFO     | >>     |=> Loading llama2 (Fast)     base_llm.py:147
+                          Tokenizer via the AutoTokenizer API
+02/08 [11:05:39] INFO     | >> [*] Loading VLM                       load.py:118
+                          prism-dinosiglip-224px+7b from Checkpoint
+Loading VLM [bold blue]prism-dinosiglip-224px+7b[/] from Checkpoint
+02/08 [11:05:47] INFO     | >>     |=> [Frozen]    🥶 =>>       prismatic.py:167
+                          Vision Backbone
+                          `dinosiglip-vit-so-224px`
+                 INFO     | >>     |=> [TRAINABLE] 🔥 =>> LLM   prismatic.py:168
+                          Backbone `llama2-7b-pure`
+                 INFO     | >>     |=> [TRAINABLE] 🔥 =>>       prismatic.py:169
+                          Projector `no-align+fused-gelu-mlp`
+Rank 0 has 7541237184 parameters
+Rank 0 has 7541237184 parameters
+2025-02-08 11:05:57,838 Agent parameters: 7541237184. Trainable: 6810325504
+2025-02-08 11:05:57,839 Finished setting up policy.
+Epochs:   0%|          | 0/16 [00:00<?, ?it/s] The input hidden states seems to be silently casted in float32, this might be related to the fact you have upcasted embedding or layer norm layers in float32. We will cast back the input in torch.float16.
+Epochs:   0%|          | 0/16 [00:01<?, ?it/s]]
+before Allocated memory: 68.14 GB, Reserved memory: 78.48 GB, Total memory: 79.14 GB, Free memory: 0.66 GB
+after Allocated memory: 68.14 GB, Reserved memory: 68.32 GB, Total memory: 79.14 GB, Free memory: 10.82 GB
+Traceback (most recent call last):             
+  File "run.py", line 105, in <module>
+    main()
+  File "run.py", line 55, in main
+    run_exp(**vars(args))
+  File "run.py", line 97, in run_exp
+    trainer.train()
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/openvln_trainer.py", line 965, in train
+    loss = self._update_agent(
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/openvln_trainer.py", line 1055, in _update_agent
+    self.grad_clipping(self.policy, 1)
+  File "/mnt/data1/users/sgyson10/diffuser_navigator/diffuser_baselines/openvln_trainer.py", line 1008, in grad_clipping
+    norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
+TypeError: sqrt(): argument 'input' (position 1) must be Tensor, not int

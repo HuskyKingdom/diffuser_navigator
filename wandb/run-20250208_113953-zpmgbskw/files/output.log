@@ -1,0 +1,129 @@
+Downloading `prism-dinosiglip-224px+7b from HF Hub
+Found Config =>> Loading & Freezing [bold blue]prism-dinosiglip-224px+7b[/] with:
+             Vision Backbone =>> [bold]dinosiglip-vit-so-224px[/]
+             LLM Backbone    =>> [bold]llama2-7b-pure[/]
+             Arch Specifier  =>> [bold]no-align+fused-gelu-mlp[/]
+             Checkpoint Path =>> [underline]`./hub/models--TRI-ML--prismatic-vlms/snapshots/a3ba8a19c453a82eaf5a3fb1e699dd9e441f0a12/prism-dinosiglip-224px+7b/checkpoints/latest-checkpoint.pt`[/]
+Loading Vision Backbone [bold]dinosiglip-vit-so-224px[/]
+02/08 [11:39:59] INFO     | >> Loading pretrained weights from   _builder.py:186
+                          Hugging Face hub
+                          (timm/vit_large_patch14_reg4_dinov2.lv
+                          d142m)
+                 INFO     | >>  Safe alternative available for       _hub.py:180
+                          'pytorch_model.bin' (as
+                          'model.safetensors'). Loading weights
+                          using safetensors.
+                 INFO     | >> Resized position embedding: (37,  pos_embed.py:55
+                          37) to (16, 16).
+02/08 [11:40:05] INFO     | >> Loading pretrained weights from   _builder.py:186
+                          Hugging Face hub
+                          (('timm/ViT-SO400M-14-SigLIP',
+                          'open_clip_pytorch_model.bin'))
+                 INFO     | >>  Safe alternative available for       _hub.py:180
+                          'open_clip_pytorch_model.bin' (as
+                          'open_clip_model.safetensors'). Loading
+                          weights using safetensors.
+Loading Pretrained LLM [bold]llama2-7b-pure[/] via HF Transformers
+Loading checkpoint shards: 100%|██████████| 2/2 [00:08<00:00,  4.16s/it]
+Loading VLM [bold blue]prism-dinosiglip-224px+7b[/] from Checkpoint
+Rank 3 has 7541237184 parameters
+Rank 3 has 7541237184 parameters
+2025-02-08 11:41:20,718 Agent parameters: 7541237184. Trainable: 71385600
+2025-02-08 11:41:20,719 Finished setting up policy.
+The input hidden states seems to be silently casted in float32, this might be related to the fact you have upcasted embedding or layer norm layers in float32. We will cast back the input in torch.float16.
+before Allocated memory: 42.83 GB, Reserved memory: 43.94 GB, Total memory: 79.14 GB, Free memory: 35.20 GB
+before Allocated memory: 42.81 GB, Reserved memory: 44.72 GB, Total memory: 79.14 GB, Free memory: 34.41 GB
+before Allocated memory: 43.06 GB, Reserved memory: 44.90 GB, Total memory: 79.14 GB, Free memory: 34.24 GB
+before Allocated memory: 42.60 GB, Reserved memory: 44.45 GB, Total memory: 79.14 GB, Free memory: 34.69 GB
+before Allocated memory: 42.73 GB, Reserved memory: 44.57 GB, Total memory: 79.14 GB, Free memory: 34.56 GB
+before Allocated memory: 42.16 GB, Reserved memory: 44.16 GB, Total memory: 79.14 GB, Free memory: 34.98 GB
+before Allocated memory: 42.73 GB, Reserved memory: 43.81 GB, Total memory: 79.14 GB, Free memory: 35.32 GB
+before Allocated memory: 43.22 GB, Reserved memory: 44.95 GB, Total memory: 79.14 GB, Free memory: 34.19 GB
+before Allocated memory: 42.63 GB, Reserved memory: 44.66 GB, Total memory: 79.14 GB, Free memory: 34.48 GB
+before Allocated memory: 43.31 GB, Reserved memory: 45.12 GB, Total memory: 79.14 GB, Free memory: 34.02 GB
+before Allocated memory: 42.55 GB, Reserved memory: 44.88 GB, Total memory: 79.14 GB, Free memory: 34.26 GB
+before Allocated memory: 42.82 GB, Reserved memory: 44.78 GB, Total memory: 79.14 GB, Free memory: 34.36 GB
+before Allocated memory: 42.70 GB, Reserved memory: 43.99 GB, Total memory: 79.14 GB, Free memory: 35.15 GB
+before Allocated memory: 42.91 GB, Reserved memory: 44.93 GB, Total memory: 79.14 GB, Free memory: 34.21 GB
+before Allocated memory: 42.96 GB, Reserved memory: 44.21 GB, Total memory: 79.14 GB, Free memory: 34.93 GB
+before Allocated memory: 43.37 GB, Reserved memory: 45.34 GB, Total memory: 79.14 GB, Free memory: 33.80 GB
+before Allocated memory: 42.48 GB, Reserved memory: 45.02 GB, Total memory: 79.14 GB, Free memory: 34.12 GB
+before Allocated memory: 43.05 GB, Reserved memory: 55.01 GB, Total memory: 79.14 GB, Free memory: 24.13 GB
+before Allocated memory: 42.56 GB, Reserved memory: 44.59 GB, Total memory: 79.14 GB, Free memory: 34.55 GB
+before Allocated memory: 42.45 GB, Reserved memory: 43.96 GB, Total memory: 79.14 GB, Free memory: 35.18 GB
+before Allocated memory: 43.16 GB, Reserved memory: 44.89 GB, Total memory: 79.14 GB, Free memory: 34.25 GB
+before Allocated memory: 42.54 GB, Reserved memory: 44.77 GB, Total memory: 79.14 GB, Free memory: 34.37 GB
+before Allocated memory: 42.56 GB, Reserved memory: 43.69 GB, Total memory: 79.14 GB, Free memory: 35.45 GB
+before Allocated memory: 42.94 GB, Reserved memory: 55.07 GB, Total memory: 79.14 GB, Free memory: 24.06 GB
+before Allocated memory: 43.12 GB, Reserved memory: 44.99 GB, Total memory: 79.14 GB, Free memory: 34.15 GB
+before Allocated memory: 42.52 GB, Reserved memory: 44.91 GB, Total memory: 79.14 GB, Free memory: 34.23 GB
+before Allocated memory: 42.56 GB, Reserved memory: 44.00 GB, Total memory: 79.14 GB, Free memory: 35.14 GB
+before Allocated memory: 42.95 GB, Reserved memory: 54.94 GB, Total memory: 79.14 GB, Free memory: 24.20 GB
+before Allocated memory: 42.48 GB, Reserved memory: 44.54 GB, Total memory: 79.14 GB, Free memory: 34.60 GB
+before Allocated memory: 42.81 GB, Reserved memory: 44.46 GB, Total memory: 79.14 GB, Free memory: 34.68 GB
+before Allocated memory: 43.06 GB, Reserved memory: 44.94 GB, Total memory: 79.14 GB, Free memory: 34.20 GB
+before Allocated memory: 43.37 GB, Reserved memory: 45.51 GB, Total memory: 79.14 GB, Free memory: 33.63 GB
+before Allocated memory: 42.63 GB, Reserved memory: 44.98 GB, Total memory: 79.14 GB, Free memory: 34.16 GB
+before Allocated memory: 42.91 GB, Reserved memory: 44.89 GB, Total memory: 79.14 GB, Free memory: 34.24 GB
+before Allocated memory: 42.97 GB, Reserved memory: 44.20 GB, Total memory: 79.14 GB, Free memory: 34.94 GB
+before Allocated memory: 42.43 GB, Reserved memory: 44.61 GB, Total memory: 79.14 GB, Free memory: 34.53 GB
+before Allocated memory: 43.16 GB, Reserved memory: 44.87 GB, Total memory: 79.14 GB, Free memory: 34.27 GB
+before Allocated memory: 43.10 GB, Reserved memory: 54.60 GB, Total memory: 79.14 GB, Free memory: 24.54 GB
+before Allocated memory: 42.72 GB, Reserved memory: 44.71 GB, Total memory: 79.14 GB, Free memory: 34.43 GB
+before Allocated memory: 42.82 GB, Reserved memory: 45.09 GB, Total memory: 79.14 GB, Free memory: 34.04 GB
+before Allocated memory: 42.70 GB, Reserved memory: 44.06 GB, Total memory: 79.14 GB, Free memory: 35.07 GB
+before Allocated memory: 43.31 GB, Reserved memory: 45.16 GB, Total memory: 79.14 GB, Free memory: 33.98 GB
+before Allocated memory: 42.56 GB, Reserved memory: 44.95 GB, Total memory: 79.14 GB, Free memory: 34.19 GB
+before Allocated memory: 43.21 GB, Reserved memory: 44.99 GB, Total memory: 79.14 GB, Free memory: 34.15 GB
+before Allocated memory: 42.74 GB, Reserved memory: 45.11 GB, Total memory: 79.14 GB, Free memory: 34.03 GB
+before Allocated memory: 42.17 GB, Reserved memory: 44.19 GB, Total memory: 79.14 GB, Free memory: 34.95 GB
+before Allocated memory: 42.55 GB, Reserved memory: 43.78 GB, Total memory: 79.14 GB, Free memory: 35.36 GB
+before Allocated memory: 42.62 GB, Reserved memory: 44.25 GB, Total memory: 79.14 GB, Free memory: 34.89 GB
+before Allocated memory: 42.67 GB, Reserved memory: 44.21 GB, Total memory: 79.14 GB, Free memory: 34.93 GB
+before Allocated memory: 43.04 GB, Reserved memory: 55.13 GB, Total memory: 79.14 GB, Free memory: 24.01 GB
+before Allocated memory: 43.00 GB, Reserved memory: 44.07 GB, Total memory: 79.14 GB, Free memory: 35.07 GB
+before Allocated memory: 43.21 GB, Reserved memory: 44.99 GB, Total memory: 79.14 GB, Free memory: 34.15 GB
+before Allocated memory: 43.16 GB, Reserved memory: 44.24 GB, Total memory: 79.14 GB, Free memory: 34.90 GB
+before Allocated memory: 42.81 GB, Reserved memory: 45.15 GB, Total memory: 79.14 GB, Free memory: 33.99 GB
+before Allocated memory: 42.75 GB, Reserved memory: 44.29 GB, Total memory: 79.14 GB, Free memory: 34.85 GB
+before Allocated memory: 42.82 GB, Reserved memory: 45.15 GB, Total memory: 79.14 GB, Free memory: 33.99 GB
+before Allocated memory: 42.75 GB, Reserved memory: 43.95 GB, Total memory: 79.14 GB, Free memory: 35.19 GB
+before Allocated memory: 42.57 GB, Reserved memory: 44.17 GB, Total memory: 79.14 GB, Free memory: 34.97 GB
+before Allocated memory: 42.54 GB, Reserved memory: 44.20 GB, Total memory: 79.14 GB, Free memory: 34.94 GB
+before Allocated memory: 43.39 GB, Reserved memory: 44.46 GB, Total memory: 79.14 GB, Free memory: 34.68 GB
+before Allocated memory: 42.63 GB, Reserved memory: 45.15 GB, Total memory: 79.14 GB, Free memory: 33.99 GB
+before Allocated memory: 42.91 GB, Reserved memory: 44.92 GB, Total memory: 79.14 GB, Free memory: 34.22 GB
+before Allocated memory: 43.06 GB, Reserved memory: 44.80 GB, Total memory: 79.14 GB, Free memory: 34.33 GB
+before Allocated memory: 42.62 GB, Reserved memory: 44.68 GB, Total memory: 79.14 GB, Free memory: 34.45 GB
+before Allocated memory: 43.17 GB, Reserved memory: 44.92 GB, Total memory: 79.14 GB, Free memory: 34.22 GB
+before Allocated memory: 42.18 GB, Reserved memory: 44.22 GB, Total memory: 79.14 GB, Free memory: 34.91 GB
+before Allocated memory: 42.55 GB, Reserved memory: 43.78 GB, Total memory: 79.14 GB, Free memory: 35.36 GB
+before Allocated memory: 42.94 GB, Reserved memory: 55.09 GB, Total memory: 79.14 GB, Free memory: 24.05 GB
+before Allocated memory: 42.48 GB, Reserved memory: 44.44 GB, Total memory: 79.14 GB, Free memory: 34.70 GB
+before Allocated memory: 43.31 GB, Reserved memory: 45.03 GB, Total memory: 79.14 GB, Free memory: 34.11 GB
+before Allocated memory: 42.55 GB, Reserved memory: 44.99 GB, Total memory: 79.14 GB, Free memory: 34.15 GB
+before Allocated memory: 42.45 GB, Reserved memory: 43.87 GB, Total memory: 79.14 GB, Free memory: 35.27 GB
+before Allocated memory: 42.62 GB, Reserved memory: 44.18 GB, Total memory: 79.14 GB, Free memory: 34.96 GB
+before Allocated memory: 42.81 GB, Reserved memory: 44.64 GB, Total memory: 79.14 GB, Free memory: 34.49 GB
+before Allocated memory: 42.58 GB, Reserved memory: 44.15 GB, Total memory: 79.14 GB, Free memory: 34.98 GB
+before Allocated memory: 42.64 GB, Reserved memory: 43.99 GB, Total memory: 79.14 GB, Free memory: 35.15 GB
+before Allocated memory: 42.48 GB, Reserved memory: 44.15 GB, Total memory: 79.14 GB, Free memory: 34.99 GB
+before Allocated memory: 42.91 GB, Reserved memory: 44.66 GB, Total memory: 79.14 GB, Free memory: 34.47 GB
+before Allocated memory: 42.71 GB, Reserved memory: 44.25 GB, Total memory: 79.14 GB, Free memory: 34.88 GB
+before Allocated memory: 43.38 GB, Reserved memory: 45.33 GB, Total memory: 79.14 GB, Free memory: 33.81 GB
+before Allocated memory: 43.16 GB, Reserved memory: 45.39 GB, Total memory: 79.14 GB, Free memory: 33.75 GB
+before Allocated memory: 43.09 GB, Reserved memory: 54.82 GB, Total memory: 79.14 GB, Free memory: 24.32 GB
+before Allocated memory: 42.99 GB, Reserved memory: 44.57 GB, Total memory: 79.14 GB, Free memory: 34.57 GB
+before Allocated memory: 43.21 GB, Reserved memory: 45.10 GB, Total memory: 79.14 GB, Free memory: 34.04 GB
+before Allocated memory: 43.16 GB, Reserved memory: 44.22 GB, Total memory: 79.14 GB, Free memory: 34.92 GB
+before Allocated memory: 42.52 GB, Reserved memory: 44.88 GB, Total memory: 79.14 GB, Free memory: 34.26 GB
+before Allocated memory: 42.56 GB, Reserved memory: 43.67 GB, Total memory: 79.14 GB, Free memory: 35.46 GB
+before Allocated memory: 42.82 GB, Reserved memory: 44.86 GB, Total memory: 79.14 GB, Free memory: 34.28 GB
+before Allocated memory: 42.75 GB, Reserved memory: 43.85 GB, Total memory: 79.14 GB, Free memory: 35.29 GB
+before Allocated memory: 43.31 GB, Reserved memory: 45.31 GB, Total memory: 79.14 GB, Free memory: 33.83 GB
+before Allocated memory: 43.05 GB, Reserved memory: 45.44 GB, Total memory: 79.14 GB, Free memory: 33.70 GB
+before Allocated memory: 42.96 GB, Reserved memory: 54.79 GB, Total memory: 79.14 GB, Free memory: 24.34 GB
+before Allocated memory: 42.67 GB, Reserved memory: 44.83 GB, Total memory: 79.14 GB, Free memory: 34.31 GB
+before Allocated memory: 42.17 GB, Reserved memory: 44.03 GB, Total memory: 79.14 GB, Free memory: 35.11 GB
+before Allocated memory: 42.55 GB, Reserved memory: 43.83 GB, Total memory: 79.14 GB, Free memory: 35.30 GB
+before Allocated memory: 42.43 GB, Reserved memory: 44.11 GB, Total memory: 79.14 GB, Free memory: 35.03 GB

@@ -1006,7 +1006,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
                     if dones[i]:
                         episodes[i] = []
                         # reset
-                        # self.policy.module.clear_his()
+                        self.policy.module.clear_his()
                         prev_actions = torch.zeros(
                                 self.config.NUM_PROCESSES,
                                 1,
@@ -1122,7 +1122,7 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
             depth_hook.remove()
         
         # reset
-        # self.policy.module.clear_his()
+        self.policy.module.clear_his()
 
 
 
@@ -1426,8 +1426,8 @@ class D3DiffuserTrainer(BaseVLNCETrainer):
 
         self.policy = nn.SyncBatchNorm.convert_sync_batchnorm(self.policy)
 
-        # if train:
-        #     self.policy = DDP(self.policy, device_ids=[self.local_rank], output_device=self.local_rank)
+        if train:
+            self.policy = DDP(self.policy, device_ids=[self.local_rank], output_device=self.local_rank)
             
 
         params = sum(param.numel() for param in self.policy.parameters())
