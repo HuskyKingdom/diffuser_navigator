@@ -971,11 +971,13 @@ class OpenVLNTrainer(BaseVLNCETrainer):
                     
 
                                 epoch_loss += loss
+                                wandb.log({"loss": loss})
 
                                 if self.world_rank == 0: #ddp
                                     writer.add_scalar(
                                         f"train_loss_iter_{dagger_it}_{self.config.JobName}", loss, step_id
                                     )
+
                                 step_id += 1  # noqa: SIM113
                                 num_epoch_batch += 1
 
@@ -1155,7 +1157,7 @@ class OpenVLNTrainer(BaseVLNCETrainer):
         Args:
             file_name: file name for checkpoint
         """
-        if config.lr_Schedule:
+        if self.config.lr_Schedule:
             checkpoint = {
                 "state_dict": self.policy.module.state_dict(),
                 "optim_state": self.optimizer.state_dict(),
