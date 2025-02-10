@@ -1075,28 +1075,6 @@ class OpenVLNTrainer(BaseVLNCETrainer):
         self.policy.to(self.device)
 
 
-        # # lora
-
-        # target_modules = []
-        # for name, module in self.policy.named_modules():  # self.policy 是模型实例
-        #     if isinstance(module, torch.nn.Linear) or isinstance(module, torch.nn.MultiheadAttention):
-        #         target_modules.append(name)
-
-  
-
-        # self.lora_config = LoraConfig(
-        #     r=8, 
-        #     lora_alpha=16, 
-        #     lora_dropout=0.1,  
-        #     bias="none", 
-        #     task_type="CAUSAL_LM" ,
-        #     target_modules=target_modules,
-        # )
-
-        # # lora
-        # self.policy = get_peft_model(self.policy, self.lora_config)
-
-
         trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
         self.optimizer = torch.optim.AdamW(
             trainable_params, lr=self.config.OPENVLN.LR

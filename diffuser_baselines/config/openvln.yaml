@@ -1,5 +1,5 @@
 BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
-TRAINER_NAME: openvln_trainer
+TRAINER_NAME: openvln_trainer_fsdp
 SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 1
@@ -24,7 +24,7 @@ IL:
   ckpt_to_load: data/checkpoints/pure_da/ckpt.24.pth
   load_from_ckpt: False # for testing overfitting only 
   epochs: 16
-  batch_size: 24
+  batch_size: 2
   is_requeue: False # continuo training
   
 
@@ -46,7 +46,7 @@ OPENVLN:
   saving_frequency: 4
   logging_file: data/loggings/train.log
   LR: 2.5e-4
-  stage: "align" 
+  stage: "full-finetune" 
   # stage: training stage in < "align" | "finetune" | "full-finetune" >
   forward_type: "pre-train"
   # forward_type: in < "action_only" | "pre-train"  >

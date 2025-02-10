@@ -77,6 +77,13 @@ from contextlib import contextmanager
 # openvln
 import wandb
 from peft import get_peft_model, LoraConfig
+from torch.distributed.fsdp import (
+    FullStateDictConfig,
+    MixedPrecision,
+    ShardingStrategy,
+    StateDictType,
+)
+
 
 @contextmanager
 def maybe_tqdm(total=None, desc=None, leave=True, dynamic_ncols=True):
@@ -119,21 +126,6 @@ def compress_data(data):
 
 
 
-def my_default_auto_wrap_policy(module: nn.Module, recurse: bool, unwrapped_params, min_num_params: int = int(1e8)) -> bool:
-
-    # 如果模块没有参数，则无需包裹
-    if not list(module.parameters()):
-        return False
-
-    total_params = sum(p.numel() for p in unwrapped_params)
-    return total_params >= min_num_params
-
-class ObservationsDict(dict):
-    def pin_memory(self):
-        for k, v in self.items():
-            self[k] = v.pin_memory()
-
-        return self
     
 
 def collate_fn(batch):
@@ -1078,6 +1070,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         num_actions: int,
     ) -> None:
 
+
         torch.cuda.empty_cache()
         
         train = True
@@ -1089,28 +1082,6 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         print(f"Rank {self.local_rank} has {sum(p.numel() for p in self.policy.parameters())} parameters")
 
         self.policy.to(self.device)
-
-
-        # # lora
-
-        # target_modules = []
-        # for name, module in self.policy.named_modules():  # self.policy 是模型实例
-        #     if isinstance(module, torch.nn.Linear) or isinstance(module, torch.nn.MultiheadAttention):
-        #         target_modules.append(name)
-
-  
-
-        # self.lora_config = LoraConfig(
-        #     r=8, 
-        #     lora_alpha=16, 
-        #     lora_dropout=0.1,  
-        #     bias="none", 
-        #     task_type="CAUSAL_LM" ,
-        #     target_modules=target_modules,
-        # )
-
-        # # lora
-        # self.policy = get_peft_model(self.policy, self.lora_config)
 
 
         trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
@@ -1145,10 +1116,24 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
         print(f"Rank {self.local_rank} has {sum(p.numel() for p in self.policy.parameters())} parameters")
 
+        # fsdp
+        self.reduce_in_full_precision = False
+        reduce_buffer_dtype = torch.bfloat16 if not self.reduce_in_full_precision else torch.float32
+        fsdp_precision_policy = MixedPrecision(param_dtype=torch.bfloat16, reduce_dtype=reduce_buffer_dtype, buffer_dtype=reduce_buffer_dtype)
+
+        if config.OPENVLN.stage not in {"full-finetune", "vla-full-train", "vla-sandwich-train"}:
+                self.policy.vlm.vision_backbone.to(dtype=self.policy.vlm.vision_backbone.half_precision_dtype)
         
         if train:
-            self.policy.half() 
-            self.policy = FSDP(self.policy,cpu_offload=CPUOffload(offload_params=True), use_orig_params=True)
+            self.policy = FSDP(
+            self.policy,
+            auto_wrap_policy=self.policy.vlm.get_fsdp_wrapping_policy(),
+            mixed_precision=fsdp_precision_policy,
+            sharding_strategy=ShardingStrategy._HYBRID_SHARD_ZERO2,
+            device_id=torch.cuda.current_device(),
+            limit_all_gathers=True,
+            use_orig_params=True,
+            )
             
 
             

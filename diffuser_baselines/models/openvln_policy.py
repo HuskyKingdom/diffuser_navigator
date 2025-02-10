@@ -43,7 +43,6 @@ class OpenVLNPolicy(NetPolicy):
         self.config = config
         # self.navigator = OpenVLN(norm_stats=None)
         self.rgb_his = []
-        self.depth_his = []
         self.pre_actions = None
 
 
@@ -81,11 +80,11 @@ class OpenVLNPolicy(NetPolicy):
     def act(self,observations, prev_actions, encode_only=False,print_info = False,ins_text=None): 
 
 
-        rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # raw batch
+        rgb = observations["rgb"]
 
         # storing histories
-        self.rgb_his.append(rgb_features)
-        self.depth_his.append(depth_features)
+        self.rgb_his.append(rgb)
+
         if self.pre_actions == None:
             self.pre_actions = prev_actions
         else:
@@ -140,16 +139,10 @@ class OpenVLNPolicy(NetPolicy):
     def build_loss(self,observations):
 
 
-
-        # rgb_features,depth_features = self.navigator.encode_visions(observations,self.config) # stored vision features
-        
-        
-
         # format batch data
         collected_data = {
         'instruction': observations['instruction'],
         'rgb': observations['rgb'],
-
         'gt_actions': observations['gt_actions'], # (bs,T)
         'prev_actions': observations['prev_actions'],
         'trajectories': observations['trajectories'],
@@ -175,22 +168,8 @@ class OpenVLNPolicy(NetPolicy):
 
         
 
-        # for i in range(len(collected_data['labels'])):
-        #     collected_data['labels'][i] = self.tokenlizer(collected_data['labels'][i], truncation=False, return_tensors="pt").input_ids[0]
-        # inputids_label = pad_sequence(collected_data['labels'], batch_first=True, padding_value=self.tokenlizer.pad_token_id).to(observations['instruction'].device)
-        # attention_mask_label = inputids.ne(self.tokenlizer.pad_token_id)
-
-
-
-
-       
-
 
         # == formulating images ==
-
-        # # (B,T,H,W,C) -> (B,T,C,H,W)
-        # collected_data['rgb'] = collected_data['rgb'].permute(0, 1, 4, 2, 3) 
-        
 
         # reshape and format
         B,T,H,W,C = collected_data['rgb'].shape
@@ -210,7 +189,7 @@ class OpenVLNPolicy(NetPolicy):
 
         
         with torch.cuda.amp.autocast(dtype=torch.float16):
-            modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = collected_data['gt_actions'].long(), img_ori_shape = (B,T), sample_valid_len = observations['lengths'], config = self.config)
+            modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = collected_data['gt_actions'].long(), img_ori_shape = (B,T), sample_valid_len = observations['lengths'])
         
 
         return modelout.loss
@@ -332,8 +311,50 @@ class OpenVLN(PrismaticVLM):
        
         return multimodal_embeddings, multimodal_attention_mask, interleaved_labels
         
+    
+    def inference_action(self,):
+
+        # ===== inference forward logic =====
+
+        # ==== IMG PATCH FEATURES ====
+        # Run Visual Feature Extraction # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
+        patch_features = self.vision_backbone({k: pixel_values[k] for k in pixel_values})
      
-                
+
+        # Projection Logic :: [bsz, num_patches, llm_embed_dim] =>> num_patches = (2 *) (256 + 1) for ViT-L + CLS
+        projected_patch_embeddings = self.projector(patch_features)
+
+        # ==== FORMULATE IMG FEATURES ====
+        # openvln: reshape the resulting features into seq shape & generate img attention mask
+        img_pat_feature = self.reshape_vision_features(projected_patch_embeddings, img_ori_shape) # (bs,T,4096)
+        
+        # ==== IMG PATCH MASK ====
+        img_pat_mask = torch.arange(img_ori_shape[1]).unsqueeze(0).to(img_pat_feature.device) < sample_valid_len.unsqueeze(1) # (B,T)
+
+        img_pat_mask = img_pat_mask.to(
+            dtype=attention_mask.dtype,
+            device=attention_mask.device,
+            )
+
+        # ==== INPUT & MASK ====
+        multimodal_embeddings, multimodal_attention_mask, interleaved_labels = self.get_input(input_ids=input_ids,img_features=img_pat_feature, input_mask=attention_mask, img_mask=img_pat_mask, labels=labels, label_mask=img_pat_mask)
+
+
+        inference_result = self.llm_backbone(
+            input_ids=None,
+            attention_mask=None, # inference
+            position_ids=None,
+            past_key_values=None,
+            inputs_embeds=multimodal_embeddings, # ([3, 128, 4096])
+            labels=None, # inference
+        ).logits
+
+        # decode action
+        action = inference_result
+
+        return action
+
+
 
     def forward(
         self,
@@ -350,11 +371,16 @@ class OpenVLN(PrismaticVLM):
         multimodal_indices: Optional[torch.LongTensor] = None,
         img_ori_shape = None,
         sample_valid_len = None,
-        config = None,
+        inference: Optional[bool] = False,
     ) -> CausalLMOutputWithPast:
         """Run a forward pass through the VLN, returning a CausalLMOutputWithPast instance (contains loss)."""
 
         # Handle Inference (leverage cache, short-circuit on just LLM forward)
+
+        if inference:
+
+            return self.inference_action()
+
         if input_ids.shape[1] == 1 and past_key_values is not None:
             # We're leveraging the cache, so just redirect to `self.llm_backbone` with `input_ids` and `past_key_values`
             output = self.llm_backbone(
@@ -394,8 +420,6 @@ class OpenVLN(PrismaticVLM):
             )
 
         # ===== training forward logic =====
-
-
 
         # ==== IMG PATCH FEATURES ====
         # Run Visual Feature Extraction # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
