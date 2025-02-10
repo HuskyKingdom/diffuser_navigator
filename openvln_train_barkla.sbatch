@@ -28,7 +28,6 @@
 # module load libs/nvidia-cuda/12.1.1/bin
 
 module purge
-module purge
 module load apps/cmake/3.25.1/gcc-11.2.0
 
 
