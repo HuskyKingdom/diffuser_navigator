@@ -7,7 +7,7 @@
 #SBATCH -o out/openvln.out
 
 # running time
-#SBATCH -t 48:00:00  
+#SBATCH -t 2:00:00  
 
 # partition
 #SBATCH -p dev
