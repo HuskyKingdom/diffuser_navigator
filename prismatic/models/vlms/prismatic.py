@@ -247,7 +247,7 @@ class PrismaticVLM(VLM):
         def my_fsdp_wrap_policy(module, recurse, nonwrapped_numel):
             if isinstance(module, torch.nn.Embedding):
                 return False
-             if nonwrapped_numel < 1e6:  # 举例：参数总数小于 1e6 的模块不包裹
+            if nonwrapped_numel < 1e6:  # 举例：参数总数小于 1e6 的模块不包裹
                 return False
             return True
 
