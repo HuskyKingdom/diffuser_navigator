@@ -31,21 +31,17 @@ from diffuser_baselines.models.utils import batch_obs
 
 import contextlib
 from vlnce_baselines.common.aux_losses import AuxLosses
-from diffuser_baselines.common.base_il_d3trainer import BaseVLNCETrainer
 from vlnce_baselines.common.env_utils import construct_envs,construct_envs_process
 from vlnce_baselines.common.utils import extract_instruction_tokens
 
 import torch.nn.functional as Fuc
 import torch.nn as nn
 
-
-# ddp
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
-
 # fsdp
+import torch.distributed as dist
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed.fsdp import CPUOffload
+from diffuser_baselines.common.base_openvln_trainer import BaseVLNCETrainer
 
 
 
@@ -83,6 +79,8 @@ from torch.distributed.fsdp import (
     ShardingStrategy,
     StateDictType,
 )
+from transformers.models.llama.modeling_llama import LlamaRMSNorm
+
 
 
 @contextmanager
@@ -1030,7 +1028,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
     ):
         
 
-        loss = self.policy.module.build_loss(observations)  # Access the underlying module
+        loss = self.policy.build_loss(observations)  # Access the underlying module
 
         
         with torch.no_grad():
@@ -1111,8 +1109,6 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
                 self.step_id = 235092
             logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
 
-        # self.policy = nn.SyncBatchNorm.convert_sync_batchnorm(self.policy)
-        
 
         print(f"Rank {self.local_rank} has {sum(p.numel() for p in self.policy.parameters())} parameters")
 
@@ -1122,11 +1118,12 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         fsdp_precision_policy = MixedPrecision(param_dtype=torch.bfloat16, reduce_dtype=reduce_buffer_dtype, buffer_dtype=reduce_buffer_dtype)
 
         if config.OPENVLN.stage not in {"full-finetune", "vla-full-train", "vla-sandwich-train"}:
-                self.policy.vlm.vision_backbone.to(dtype=self.policy.vlm.vision_backbone.half_precision_dtype)
+            self.policy.vlm.vision_backbone.to(dtype=self.policy.vlm.vision_backbone.half_precision_dtype)
         
+
         if train:
-            self.policy = FSDP(
-            self.policy,
+            self.policy.vlm = FSDP(
+            self.policy.vlm,
             auto_wrap_policy=self.policy.vlm.get_fsdp_wrapping_policy(),
             mixed_precision=fsdp_precision_policy,
             sharding_strategy=ShardingStrategy._HYBRID_SHARD_ZERO2,
@@ -1160,19 +1157,21 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         Args:
             file_name: file name for checkpoint
         """
-        if config.lr_Schedule:
-            checkpoint = {
-                "state_dict": self.policy.module.state_dict(),
-                "optim_state": self.optimizer.state_dict(),
-                "scheduler_state": self.scheduler.state_dict(),
-                "config": self.config,
+
+
+        with FSDP.state_dict_type(self.policy.vlm, StateDictType.FULL_STATE_DICT, FullStateDictConfig(offload_to_cpu=True, rank0_only=True)):
+
+            full_vlm_state_dict = self.policy.vlm.state_dict()
+            model_state_dicts = {
+                mkey: OrderedDict() for mkey in (self.policy.vlm.all_module_keys)
             }
-        else:
-            checkpoint = {
-                "state_dict": self.policy.module.state_dict(),
-                "optim_state": self.optimizer.state_dict(),
-                "config": self.config,
-            }
-        torch.save(
-            checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name)
-        )
+            # Iterate through `full_vlm_state_dict` and split `mkey.{full_dotted_path}` -> `mkey: {full_dotted_path}`
+            for key, param in full_vlm_state_dict.items():
+                for mkey in model_state_dicts:
+                    if key.startswith(mprefix := f"{mkey}."):
+                        model_state_dicts[mkey][key.removeprefix(mprefix)] = param
+
+            checkpoint_path = file_name
+
+            # Save Checkpoint & Copy Latest to `latest-checkpoint.pt`
+            torch.save({"model": model_state_dicts}, checkpoint_path)

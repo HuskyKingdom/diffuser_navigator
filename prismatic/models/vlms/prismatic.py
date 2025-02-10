@@ -231,7 +231,7 @@ class PrismaticVLM(VLM):
             raise ValueError(f"Could not find valid `align` checkpoint at {pretrained_checkpoint}!")
     
 
-    
+
 
     def get_fsdp_wrapping_policy(self) -> Callable:
         """Return an FSDP _or_policy over the policies returned by each individual backbone (and our VLM policy)."""
@@ -244,21 +244,16 @@ class PrismaticVLM(VLM):
             module_classes={LinearProjector, MLPProjector, FusedMLPProjector},
         )
 
-        def my_fsdp_wrap_policy(module, recurse, nonwrapped_numel):
-            if isinstance(module, torch.nn.Embedding):
-                return False
-            return True
-
         # Return union (_or_) over constituent policies
         #   => Note: there is *not* a fall-through policy; any module that isn't covered by the above constituents will
         #            automatically be folded into the root VLM FSDP instance.
+
         return partial(
             _or_policy,
             policies=[
                 vision_fsdp_wrapping_policy,
                 llm_fsdp_wrapping_policy,
                 prismatic_fsdp_wrapping_policy,
-                my_fsdp_wrap_policy
             ],
         )
 

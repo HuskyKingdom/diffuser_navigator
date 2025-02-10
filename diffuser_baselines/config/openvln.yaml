@@ -46,7 +46,7 @@ OPENVLN:
   saving_frequency: 4
   logging_file: data/loggings/train.log
   LR: 2.5e-4
-  stage: "full-finetune" 
+  stage: "finetune" 
   # stage: training stage in < "align" | "finetune" | "full-finetune" >
   forward_type: "pre-train"
   # forward_type: in < "action_only" | "pre-train"  >

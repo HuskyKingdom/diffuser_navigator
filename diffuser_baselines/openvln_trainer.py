@@ -18,7 +18,6 @@ import tqdm
 from habitat import logger
 from habitat_baselines.common.baseline_registry import baseline_registry
 
-# from habitat_baselines.common.environments import get_env_class
 from habitat.core.environments import get_env_class
 
 from habitat_baselines.common.obs_transformers import (
@@ -27,11 +26,10 @@ from habitat_baselines.common.obs_transformers import (
 from habitat_baselines.common.tensorboard_utils import TensorboardWriter
 
 from diffuser_baselines.models.utils import batch_obs
-# from habitat_baselines.utils.common import batch_obs
+
 
 import contextlib
 from vlnce_baselines.common.aux_losses import AuxLosses
-from diffuser_baselines.common.base_il_d3trainer import BaseVLNCETrainer
 from vlnce_baselines.common.env_utils import construct_envs,construct_envs_process
 from vlnce_baselines.common.utils import extract_instruction_tokens
 
@@ -42,6 +40,7 @@ import torch.nn as nn
 # ddp
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
+from diffuser_baselines.common.base_openvln_trainer import BaseVLNCETrainer
 
 from habitat_baselines.rl.ddppo.ddp_utils import (
     EXIT,
@@ -1037,19 +1036,19 @@ class OpenVLNTrainer(BaseVLNCETrainer):
 
 
         
-        self.scaler.scale(loss).backward()
-        self.scaler.step(self.optimizer)
-        self.scaler.update()
+        # self.scaler.scale(loss).backward()
+        # self.scaler.step(self.optimizer)
+        # self.scaler.update()
 
-        # loss = loss / loss_accumulation_scalar
-        # loss.backward()
+        loss = loss / loss_accumulation_scalar
+        loss.backward()
 
 
-        # if step_grad:
-        #     self.optimizer.step()
-        #     self.optimizer.zero_grad()
-        #     if self.config.lr_Schedule:
-        #         self.scheduler.step()
+        if step_grad:
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+            if self.config.lr_Schedule:
+                self.scheduler.step()
 
 
         return loss_tensor.item()
