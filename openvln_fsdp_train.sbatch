@@ -4,7 +4,7 @@
 #SBATCH -J openvln
 
 # output file name
-#SBATCH -o out/openvln.out
+#SBATCH -o out/openvln_fsdp.out
 
 # running time
 #SBATCH -t 2:00:00  
