@@ -24,7 +24,7 @@ IL:
   ckpt_to_load: data/checkpoints/pure_da/ckpt.24.pth
   load_from_ckpt: False # for testing overfitting only 
   epochs: 16
-  batch_size: 6
+  batch_size: 24
   is_requeue: False # continuo training
   
 
