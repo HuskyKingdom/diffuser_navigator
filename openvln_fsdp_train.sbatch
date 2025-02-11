@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 # job name
-#SBATCH -J openvln
+#SBATCH -J openvln_fsdp
 
 # output file name
 #SBATCH -o out/openvln_fsdp.out
