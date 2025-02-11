@@ -7,10 +7,10 @@
 #SBATCH -o out/openvln.out
 
 # running time
-#SBATCH -t 48:00:00  
+#SBATCH -t 00:30:00  
 
 # partition
-#SBATCH -p normal
+#SBATCH -p dev
 
 #SBATCH -N 1
 #SBATCH --gres=gpu:8
