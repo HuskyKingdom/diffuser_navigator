@@ -1036,19 +1036,20 @@ class OpenVLNTrainer(BaseVLNCETrainer):
 
 
         
-        # self.scaler.scale(loss).backward()
-        # self.scaler.step(self.optimizer)
-        # self.scaler.update()
+        self.scaler.scale(loss).backward()
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
+        self.optimizer.zero_grad()
 
-        loss = loss / loss_accumulation_scalar
-        loss.backward()
+        # loss = loss / loss_accumulation_scalar
+        # loss.backward()
 
 
-        if step_grad:
-            self.optimizer.step()
-            self.optimizer.zero_grad()
-            if self.config.lr_Schedule:
-                self.scheduler.step()
+        # if step_grad:
+        #     self.optimizer.step()
+        #     self.optimizer.zero_grad()
+        #     if self.config.lr_Schedule:
+        #         self.scheduler.step()
 
 
         return loss_tensor.item()

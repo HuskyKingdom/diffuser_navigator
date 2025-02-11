@@ -188,7 +188,7 @@ class OpenVLNPolicy(NetPolicy):
         } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
 
         
-        with torch.autocast("cuda",dtype=torch.bfloat16,enabled=True):
+        with torch.cuda.amp.autocast(dtype=torch.float16):
             modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = collected_data['gt_actions'].long(), img_ori_shape = (B,T), sample_valid_len = observations['lengths'])
         
 

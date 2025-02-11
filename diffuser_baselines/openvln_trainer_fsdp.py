@@ -42,7 +42,7 @@ import torch.distributed as dist
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed.fsdp import CPUOffload
 from diffuser_baselines.common.base_openvln_trainer import BaseVLNCETrainer
-
+from torch.cuda.amp import autocast, GradScaler
 
 
 from habitat_baselines.rl.ddppo.ddp_utils import (
@@ -473,7 +473,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             }
         )
 
-        self.scaler = torch.cuda.amp.GradScaler()
+        self.scaler = GradScaler()
 
         
 
@@ -1043,19 +1043,28 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
 
         
-        # self.scaler.scale(loss).backward()
-        # self.scaler.step(self.optimizer)
-        # self.scaler.update()
+        self.scaler.scale(loss).backward()
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
+        self.optimizer.zero_grad()
 
-        loss = loss / loss_accumulation_scalar
-        loss.backward()
+        # loss = loss / loss_accumulation_scalar
+        # loss.backward()
+
+        # if torch.cuda.is_available():
+        #     torch.cuda.empty_cache() 
+        #     gc.collect() 
 
 
-        if step_grad:
-            self.optimizer.step()
-            self.optimizer.zero_grad()
-            if self.config.lr_Schedule:
-                self.scheduler.step()
+        # if step_grad:
+        #     self.optimizer.step()
+        #     self.optimizer.zero_grad()
+        #     if self.config.lr_Schedule:
+        #         self.scheduler.step()
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache() 
+            gc.collect() 
 
 
         return loss_tensor.item()
