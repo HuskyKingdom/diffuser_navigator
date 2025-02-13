@@ -7,10 +7,10 @@
 #SBATCH -o out/openvln_fsdp.out
 
 # running time
-#SBATCH -t 2:00:00  
+#SBATCH -t 48:00:00  
 
 # partition
-#SBATCH -p dev
+#SBATCH -p normal
 
 #SBATCH -N 1
 #SBATCH --gres=gpu:8
