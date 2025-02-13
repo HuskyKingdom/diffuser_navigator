@@ -148,6 +148,7 @@ class PrismaticVLM(VLM):
             self.vision_backbone_requires_grad = False
 
             # Explicitly Log Frozen / Trainable Components
+            
             overwatch.info(f"[Frozen]    🥶 =>> Vision Backbone `{self.vision_backbone.identifier}`", ctx_level=1)
             overwatch.info(f"[Frozen]    🥶 =>> LLM Backbone `{self.llm_backbone.identifier}`", ctx_level=1)
             overwatch.info(f"[TRAINABLE] 🔥 =>> Projector `{self.arch_specifier}`", ctx_level=1)
