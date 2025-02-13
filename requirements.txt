@@ -27,6 +27,6 @@ setuptools==75.1.0
 braceexpand
 objectio
 simplejson
-
+peft
 
 importlib_metadata==8.5.0

@@ -85,48 +85,63 @@ class OpenVLNPolicy(NetPolicy):
         # storing histories
         self.rgb_his.append(rgb)
 
+
+
         if self.pre_actions == None:
-            self.pre_actions = prev_actions
+            self.pre_actions = prev_actions # to <spc> token
         else:
             self.pre_actions = torch.cat((self.pre_actions,prev_actions),dim=1)
-
-    
-       
-        if encode_only:
-            return None
+        
         
         
 
         # action inference
-
-        rgb_features = torch.stack(self.rgb_his, dim=1)
-        depth_features = torch.stack(self.depth_his, dim=1)
+        rgbs = torch.stack(self.rgb_his, dim=1) # (1,seq,224,224,3)
 
 
-        # (B,T,C,H,W) -> (B+T,C,H,W)
-        B,T,C,H,W = rgb_features.shape
-        rgb_features = rgb_features.view(-1,C,H,W)
-        B,T,C,H,W = depth_features.shape
-        depth_features = depth_features.view(-1,C,H,W)
-        
+    
        
         # format batch data
         collected_data = {
-        'instruction': observations['instruction'],
-        'rgb_features': rgb_features.to(observations['instruction'].device),
-        'depth_features': depth_features.to(observations['instruction'].device),
-        'prev_actions': self.pre_actions.to(observations['instruction'].device).long(),
-        'trajectories': None,
-        'padding_mask': None,
-        'lengths': None,
-        'weights': None,
-        'ins_text': ins_text
+        'rgb': rgbs,
+        'prev_actions': self.pre_actions.to(observations['rgb'].device).long(),
+        'ins_text': [ins_text],
+        'lengths': torch.tensor([rgbs.shape[1]])
         }
 
-        
 
-        action = self.navigator(collected_data,(B,T), inference = True, ins_text=ins_text)
+
+
+        # == add <SPC> & tokenlization instructions & labels ==
+        for i in range(len(collected_data['ins_text'])):
+            collected_data['ins_text'][i] += "<SPC>" 
+            collected_data['ins_text'][i] = self.tokenlizer(collected_data['ins_text'][i], truncation=False, return_tensors="pt").input_ids[0] # auto added BOS
+
+
+        # == formulating images ==
+        # reshape and format
+        B,T,H,W,C = collected_data['rgb'].shape
+        collected_data['rgb'] = collected_data['rgb'].view(-1,H,W,C).cpu().numpy().astype(np.uint8)
+
+
+        # to PIL image for transform
+        pil_images = [Image.fromarray(img) for img in collected_data['rgb']]
+        transformed_images = [self.image_transform(img) for img in pil_images]
+
+        # back to tensor
+        transformed_images_tensor = {
+        k: torch.stack([sample[k] for sample in transformed_images]).float().to(observations['rgb'].device).cpu()
+        for k in transformed_images[0].keys()
+        } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
+
+
         
+        modelout = self.vlm(input_ids=collected_data['ins_text'], attention_mask=None,pixel_values=transformed_images_tensor, labels = collected_data['prev_actions'].cpu(), img_ori_shape = (B,T), sample_valid_len = collected_data['lengths'], inference = True)
+        
+        inference_logits = modelout.logits
+
+        print(inference_logits.shape)
+        assert 1==2
 
         if print_info:
             print(f"Action inferenced : {action.item()}, with history length {len(self.rgb_his)}")
@@ -170,7 +185,6 @@ class OpenVLNPolicy(NetPolicy):
 
 
         # == formulating images ==
-
         # reshape and format
         B,T,H,W,C = collected_data['rgb'].shape
         collected_data['rgb'] = collected_data['rgb'].view(-1,H,W,C).cpu().numpy().astype(np.uint8)
@@ -285,34 +299,34 @@ class OpenVLN(PrismaticVLM):
 
 
         # interleaved mask
-        interleaved_mask = label_mask.unsqueeze(2).expand(img_features.shape[0], img_features.shape[1], 2).reshape(img_features.shape[0], img_features.shape[1] * 2)
-
-
-
         multimodal_attention_mask = None
-        multimodal_attention_mask = torch.cat(
-                [
-                    input_mask[multimodal_indices, :],
-                    interleaved_mask,
-                ],
-                dim=1,
-        )
+        if input_mask != None:
+            interleaved_mask = label_mask.unsqueeze(2).expand(img_features.shape[0], img_features.shape[1], 2).reshape(img_features.shape[0], img_features.shape[1] * 2)
+            multimodal_attention_mask = torch.cat(
+                    [
+                        input_mask[multimodal_indices, :],
+                        interleaved_mask,
+                    ],
+                    dim=1,
+            )
 
 
         # label indicator
-        img_labels = torch.full(
-                (tokenlized_labels.shape[0], tokenlized_labels.shape[1]),
-                IGNORE_INDEX,
-                dtype=labels.dtype,
-                device=labels.device,
-            )
-        interleaved_labels = torch.stack((img_labels, tokenlized_labels), dim=2).view(tokenlized_labels.shape[0], tokenlized_labels.shape[1] * 2)
+        interleaved_labels = None
+        if input_mask != None:
+            img_labels = torch.full(
+                    (tokenlized_labels.shape[0], tokenlized_labels.shape[1]),
+                    IGNORE_INDEX,
+                    dtype=labels.dtype,
+                    device=labels.device,
+                )
+            interleaved_labels = torch.stack((img_labels, tokenlized_labels), dim=2).view(tokenlized_labels.shape[0], tokenlized_labels.shape[1] * 2)
 
        
         return multimodal_embeddings, multimodal_attention_mask, interleaved_labels
         
     
-    def inference_action(self,):
+    def inference_action(self,input_ids, prev_actions, pixel_values,img_ori_shape,sample_valid_len):
 
         # ===== inference forward logic =====
 
@@ -328,16 +342,9 @@ class OpenVLN(PrismaticVLM):
         # openvln: reshape the resulting features into seq shape & generate img attention mask
         img_pat_feature = self.reshape_vision_features(projected_patch_embeddings, img_ori_shape) # (bs,T,4096)
         
-        # ==== IMG PATCH MASK ====
-        img_pat_mask = torch.arange(img_ori_shape[1]).unsqueeze(0).to(img_pat_feature.device) < sample_valid_len.unsqueeze(1) # (B,T)
-
-        img_pat_mask = img_pat_mask.to(
-            dtype=attention_mask.dtype,
-            device=attention_mask.device,
-            )
 
         # ==== INPUT & MASK ====
-        multimodal_embeddings, multimodal_attention_mask, interleaved_labels = self.get_input(input_ids=input_ids,img_features=img_pat_feature, input_mask=attention_mask, img_mask=img_pat_mask, labels=labels, label_mask=img_pat_mask)
+        multimodal_embeddings, _ , _ = self.get_input(input_ids=input_ids,img_features=img_pat_feature, input_mask=None, img_mask=None, labels=prev_actions, label_mask=None)
 
 
         inference_result = self.llm_backbone(
@@ -347,12 +354,10 @@ class OpenVLN(PrismaticVLM):
             past_key_values=None,
             inputs_embeds=multimodal_embeddings, # ([3, 128, 4096])
             labels=None, # inference
-        ).logits
+        )
 
-        # decode action
-        action = inference_result
 
-        return action
+        return inference_result
 
 
 
@@ -361,7 +366,7 @@ class OpenVLN(PrismaticVLM):
         input_ids: Optional[torch.LongTensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
         pixel_values: Optional[torch.FloatTensor] = None,
-        labels: Optional[torch.LongTensor] = None,
+        labels: Optional[torch.LongTensor] = None, # expect labels during train, expect prev_actions during inference
         inputs_embeds: Optional[torch.FloatTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
         use_cache: Optional[bool] = None,
@@ -378,27 +383,8 @@ class OpenVLN(PrismaticVLM):
         # Handle Inference (leverage cache, short-circuit on just LLM forward)
 
         if inference:
+            return self.inference_action(input_ids, labels, pixel_values,img_ori_shape,sample_valid_len)
 
-            return self.inference_action()
-
-        if input_ids.shape[1] == 1 and past_key_values is not None:
-            # We're leveraging the cache, so just redirect to `self.llm_backbone` with `input_ids` and `past_key_values`
-            output = self.llm_backbone(
-                input_ids=input_ids,
-                attention_mask=None,
-                position_ids=None,
-                past_key_values=past_key_values,
-                inputs_embeds=None,
-                labels=None,
-                use_cache=use_cache,
-                output_attentions=output_attentions,
-                output_hidden_states=output_hidden_states,
-                return_dict=return_dict,
-            )
-            return output
-
-        elif input_ids.shape[1] == 1 or pixel_values is None:
-            raise RuntimeError("Invalid `forward()` call!")
 
         # Handle Multimodal Indices is None --> pretend like the batch is fully multimodal (always image + text)!
         if multimodal_indices is None:

@@ -1064,15 +1064,14 @@ class OpenVLNTrainer(BaseVLNCETrainer):
 
         torch.cuda.empty_cache()
         
-        train = True
+        train = not load_from_ckpt
         
         policy = baseline_registry.get_policy(self.config.MODEL.policy_name)
         self.policy = policy(
             config,
         )
-        print(f"Rank {self.local_rank} has {sum(p.numel() for p in self.policy.parameters())} parameters")
 
-        self.policy.to(self.device)
+        # self.policy.to(self.device)
 
 
         trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
@@ -1093,19 +1092,15 @@ class OpenVLNTrainer(BaseVLNCETrainer):
         if load_from_ckpt:
             ckpt_path = config.IL.ckpt_to_load
             ckpt_dict = self.load_checkpoint(ckpt_path, map_location="cpu")
+
+
             self.policy.load_state_dict(ckpt_dict["state_dict"])
 
-            if config.IL.is_requeue:
-                self.optimizer.load_state_dict(ckpt_dict["optim_state"])
-                self.scheduler.load_state_dict(ckpt_dict["scheduler_state"])
-                self.start_epoch = 20
-                self.step_id = 235092
             logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
 
         # self.policy = nn.SyncBatchNorm.convert_sync_batchnorm(self.policy)
         
 
-        print(f"Rank {self.local_rank} has {sum(p.numel() for p in self.policy.parameters())} parameters")
 
         
         if train:
@@ -1121,7 +1116,6 @@ class OpenVLNTrainer(BaseVLNCETrainer):
         logger.info("Finished setting up policy.")
 
 
-        # MEM LEFT 25GB
         
 
 

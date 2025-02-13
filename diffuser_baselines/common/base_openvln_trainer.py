@@ -61,6 +61,8 @@ class BaseVLNCETrainer(BaseILTrainer):
         observation_space: Space,
         action_space: Space,
     ) -> None:
+
+
         policy = baseline_registry.get_policy(self.config.MODEL.policy_name)
         self.policy = policy.from_config(
             config=config,
@@ -88,6 +90,9 @@ class BaseVLNCETrainer(BaseILTrainer):
         )
         logger.info(f"Agent parameters: {params}. Trainable: {params_t}")
         logger.info("Finished setting up policy.")
+
+
+
 
     def _get_spaces(
         self, config: Config, envs: Optional[Any] = None
@@ -536,9 +541,6 @@ class BaseVLNCETrainer(BaseILTrainer):
         )
 
         # init policy
-        
-
-
         self._initialize_policy(
             config,
             True,

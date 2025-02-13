@@ -1086,7 +1086,6 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         self.policy = policy(
             config,
         )
-        print(f"Rank {self.local_rank} has {sum(p.numel() for p in self.policy.parameters())} parameters")
 
         self.policy.to(self.device)
 
@@ -1109,17 +1108,12 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         if load_from_ckpt:
             ckpt_path = config.IL.ckpt_to_load
             ckpt_dict = self.load_checkpoint(ckpt_path, map_location="cpu")
-            self.policy.load_state_dict(ckpt_dict["state_dict"])
 
-            if config.IL.is_requeue:
-                self.optimizer.load_state_dict(ckpt_dict["optim_state"])
-                self.scheduler.load_state_dict(ckpt_dict["scheduler_state"])
-                self.start_epoch = 20
-                self.step_id = 235092
+
+            self.policy.vlm.load_state_dict(ckpt_dict["state_dict"])
+
             logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
 
-
-        print(f"Rank {self.local_rank} has {sum(p.numel() for p in self.policy.parameters())} parameters")
 
         # fsdp
         self.reduce_in_full_precision = False
