@@ -1168,9 +1168,9 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         """
 
 
-        with FSDP.state_dict_type(self.policy.vlm, StateDictType.FULL_STATE_DICT, FullStateDictConfig(offload_to_cpu=True, rank0_only=True)):
+        with FSDP.state_dict_type(self.policy, StateDictType.FULL_STATE_DICT, FullStateDictConfig(offload_to_cpu=True, rank0_only=True)):
 
-            full_vlm_state_dict = self.policy.vlm.state_dict()
+            full_vlm_state_dict = self.policy.state_dict()
 
             checkpoint = {
                 "state_dict": full_vlm_state_dict,
