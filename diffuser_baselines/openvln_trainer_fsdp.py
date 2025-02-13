@@ -1171,16 +1171,30 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         with FSDP.state_dict_type(self.policy.vlm, StateDictType.FULL_STATE_DICT, FullStateDictConfig(offload_to_cpu=True, rank0_only=True)):
 
             full_vlm_state_dict = self.policy.vlm.state_dict()
-            model_state_dicts = {
-                mkey: OrderedDict() for mkey in (self.policy.vlm.all_module_keys)
+
+            checkpoint = {
+                "state_dict": full_vlm_state_dict,
+                "optim_state": None,
+                "scheduler_state": None,
+                "config": self.config,
             }
-            # Iterate through `full_vlm_state_dict` and split `mkey.{full_dotted_path}` -> `mkey: {full_dotted_path}`
-            for key, param in full_vlm_state_dict.items():
-                for mkey in model_state_dicts:
-                    if key.startswith(mprefix := f"{mkey}."):
-                        model_state_dicts[mkey][key.removeprefix(mprefix)] = param
 
-            checkpoint_path = file_name
+            torch.save(
+            checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name)
+            )
 
-            # Save Checkpoint & Copy Latest to `latest-checkpoint.pt`
-            torch.save({"model": model_state_dicts}, checkpoint_path)
+
+
+            # model_state_dicts = {
+            #     mkey: OrderedDict() for mkey in (self.policy.vlm.all_module_keys)
+            # }
+            # # Iterate through `full_vlm_state_dict` and split `mkey.{full_dotted_path}` -> `mkey: {full_dotted_path}`
+            # for key, param in full_vlm_state_dict.items():
+            #     for mkey in model_state_dicts:
+            #         if key.startswith(mprefix := f"{mkey}."):
+            #             model_state_dicts[mkey][key.removeprefix(mprefix)] = param
+
+            # checkpoint_path = file_name
+
+            # # Save Checkpoint & Copy Latest to `latest-checkpoint.pt`
+            # torch.save({"model": model_state_dicts}, checkpoint_path)
