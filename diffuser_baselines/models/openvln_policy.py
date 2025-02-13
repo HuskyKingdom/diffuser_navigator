@@ -271,7 +271,7 @@ class OpenVLN(PrismaticVLM):
 
     def get_input(self, input_ids, img_features, input_mask, img_mask, labels, label_mask):
 
-        multimodal_indices = torch.arange(len(input_ids), dtype=torch.long, device=input_ids.device)
+        multimodal_indices = torch.arange(len(input_ids), dtype=torch.long, device=img_features.device)
 
         # Get Input Embeddings from LLM Backbone :: [bsz, input_seq_len, llm_embed_dim]
         input_embeddings = self.llm_backbone.embed_input_ids(input_ids)
