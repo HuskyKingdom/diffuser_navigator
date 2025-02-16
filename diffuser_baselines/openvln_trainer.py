@@ -1071,22 +1071,21 @@ class OpenVLNTrainer(BaseVLNCETrainer):
             config,
         )
 
-        # self.policy.to(self.device)
+        self.policy.to(self.device)
 
 
-        trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
-        self.optimizer = torch.optim.AdamW(
-            trainable_params, lr=self.config.OPENVLN.LR
-        )
-
-
-        if config.lr_Schedule: # train 250 + 500 + 750  + 1000 + 1250 + 1500 + 1750 + 2000 + 2250 + 2500 
-            if not config.dagger: # self.config.IL.DAGGER.update_size // self.config.IL.batch_size
-                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.OPENVLN.LR, pct_start=0.35, 
-                                                steps_per_epoch=7862, epochs=self.config.IL.epochs)
-            else:
-                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.OPENVLN.LR, pct_start=0.35, 
-                                                total_steps = self.config.IL.DAGGER.update_size * 55 // self.config.IL.batch_size * self.config.IL.epochs)
+        if train:
+            trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
+            self.optimizer = torch.optim.AdamW(
+                trainable_params, lr=self.config.OPENVLN.LR
+            )
+            if config.lr_Schedule: # train 250 + 500 + 750  + 1000 + 1250 + 1500 + 1750 + 2000 + 2250 + 2500 
+                if not config.dagger: # self.config.IL.DAGGER.update_size // self.config.IL.batch_size
+                    self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.OPENVLN.LR, pct_start=0.35, 
+                                                    steps_per_epoch=7862, epochs=self.config.IL.epochs)
+                else:
+                    self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.OPENVLN.LR, pct_start=0.35, 
+                                                    total_steps = self.config.IL.DAGGER.update_size * 55 // self.config.IL.batch_size * self.config.IL.epochs)
 
 
         if load_from_ckpt:

@@ -4,7 +4,7 @@ import time
 import warnings
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
-
+import gc
 import jsonlines
 import torch
 import torch.nn.functional as F
@@ -600,10 +600,14 @@ class BaseVLNCETrainer(BaseILTrainer):
 
             # print info for anylyze
             ins_text = current_episodes[i].instruction.instruction_text
-            ins_text += "If you deviate from the correct path or do not see the clues above, try to explore and get back on track."
-            # print(ins_text)
+            # ins_text += "If you deviate from the correct path or do not see the clues above, try to explore and get back on track."
 
-            actions = self.policy.act(batch,prev_actions,print_info=True,ins_text=ins_text)
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache() 
+                gc.collect() 
+
+            with torch.no_grad():
+                actions = self.policy.act(batch,prev_actions,print_info=True,ins_text=ins_text)
             prev_actions.copy_(actions)
 
             outputs = envs.step([a[0].item() for a in actions])

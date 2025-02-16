@@ -90,7 +90,7 @@ class OpenVLNPolicy(NetPolicy):
         if self.pre_actions == None:
             self.pre_actions = prev_actions # to <spc> token
         else:
-            self.pre_actions = torch.cat((self.pre_actions,prev_actions),dim=1)
+            self.pre_actions = torch.cat((prev_actions,self.pre_actions),dim=1)
         
         
         
@@ -110,12 +110,12 @@ class OpenVLNPolicy(NetPolicy):
         }
 
 
-
-
         # == add <SPC> & tokenlization instructions & labels ==
         for i in range(len(collected_data['ins_text'])):
             collected_data['ins_text'][i] += "<SPC>" 
             collected_data['ins_text'][i] = self.tokenlizer(collected_data['ins_text'][i], truncation=False, return_tensors="pt").input_ids[0] # auto added BOS
+
+        collected_data['ins_text'] = torch.stack(collected_data['ins_text']).to(observations['rgb'].device)
 
 
         # == formulating images ==
@@ -130,21 +130,37 @@ class OpenVLNPolicy(NetPolicy):
 
         # back to tensor
         transformed_images_tensor = {
-        k: torch.stack([sample[k] for sample in transformed_images]).float().to(observations['rgb'].device).cpu()
+        k: torch.stack([sample[k] for sample in transformed_images]).float().to(observations['rgb'].device)
         for k in transformed_images[0].keys()
         } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
 
 
-        
-        modelout = self.vlm(input_ids=collected_data['ins_text'], attention_mask=None,pixel_values=transformed_images_tensor, labels = collected_data['prev_actions'].cpu(), img_ori_shape = (B,T), sample_valid_len = collected_data['lengths'], inference = True)
+        with torch.cuda.amp.autocast(dtype=torch.float16):
+            modelout = self.vlm(input_ids=collected_data['ins_text'], attention_mask=None,pixel_values=transformed_images_tensor, labels = collected_data['prev_actions'], img_ori_shape = (B,T), sample_valid_len = collected_data['lengths'], inference = True)
         
         inference_logits = modelout.logits
 
-        print(inference_logits.shape)
-        assert 1==2
+        # retrive last action logits
+        action_logits = modelout.logits[:, -2, :]
+        predicted_token_id = torch.argmax(action_logits, dim=-1)
+        predicted_token_id_list = predicted_token_id.cpu().tolist()
+        decoded_text = self.tokenlizer.decode(predicted_token_id_list, skip_special_tokens=False)
+
+        if decoded_text == "<LEFT>":
+            action = [[2]]
+        elif decoded_text == "<RIGHT>":
+            action = [[3]]
+        elif decoded_text == "<FORWARD>":
+            action = [[1]]
+        elif decoded_text == "<STOP>":
+            action = [[0]]
+        else:
+            action = [[0]]
+
+        action = torch.tensor(action).to(modelout.logits.device)
 
         if print_info:
-            print(f"Action inferenced : {action.item()}, with history length {len(self.rgb_his)}")
+            print(f"Action inferenced : {action[0][0]}, with history length {len(self.rgb_his)}")
 
 
         return action
@@ -229,9 +245,7 @@ class OpenVLNPolicy(NetPolicy):
         return one_hot
     
     def clear_his(self):
-
         self.rgb_his = []
-        self.depth_his = []
         self.pre_actions = None
 
 
