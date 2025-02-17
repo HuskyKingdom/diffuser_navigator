@@ -4,6 +4,12 @@ libgcc_s = ctypes.CDLL('libgcc_s.so.1')
 
 import argparse
 import os
+
+os.environ["NCCL_BLOCKING_WAIT"] = "1" 
+os.environ["NCCL_ASYNC_ERROR_HANDLING"] = "1" 
+os.environ["NCCL_TIMEOUT"] = "3600"
+
+
 import random
 
 import numpy as np
