@@ -49,7 +49,7 @@ conda activate openvln
 
 export NCCL_DEBUG=INFO
 export PYTHONUNBUFFERED=1
-export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:64
 export TOKENIZERS_PARALLELISM=true
 export NCCL_P2P_DISABLE=1
 
