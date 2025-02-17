@@ -460,9 +460,6 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         )
         self.envs = None
         super().__init__(config)
-        os.environ["NCCL_BLOCKING_WAIT"] = "1" 
-        os.environ["NCCL_ASYNC_ERROR_HANDLING"] = "1" 
-        os.environ["NCCL_TIMEOUT"] = "3600"
 
         # init wandb
         wandb.init(
