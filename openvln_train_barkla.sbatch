@@ -14,7 +14,7 @@
 
 #SBATCH -N 1
 #SBATCH --gres=gpu:2
-#SBATCH --nodelist=gpu15
+#SBATCH --nodelist=gpu11
 
 # CPU Core
 #SBATCH -n 48 
@@ -54,7 +54,7 @@ conda activate openvln
 
 export NCCL_DEBUG=INFO
 export PYTHONUNBUFFERED=1
-export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:64
+export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:24
 export TOKENIZERS_PARALLELISM=true
 export NCCL_P2P_DISABLE=1
 

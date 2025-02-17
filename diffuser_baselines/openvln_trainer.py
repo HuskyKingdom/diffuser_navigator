@@ -1029,17 +1029,18 @@ class OpenVLNTrainer(BaseVLNCETrainer):
             dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
             loss_tensor = loss_tensor / self.world_size
 
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache() 
-            gc.collect() 
-
-
+    
 
         
         self.scaler.scale(loss).backward()
         self.scaler.step(self.optimizer)
         self.scaler.update()
         self.optimizer.zero_grad()
+
+
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache() 
+            gc.collect() 
 
         # loss = loss / loss_accumulation_scalar
         # loss.backward()

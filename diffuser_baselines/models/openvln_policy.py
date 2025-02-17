@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from habitat_baselines.common.baseline_registry import baseline_registry
-
+import re
 from habitat_baselines.rl.ppo.policy import NetPolicy
 
 
@@ -44,6 +44,7 @@ class OpenVLNPolicy(NetPolicy):
         # self.navigator = OpenVLN(norm_stats=None)
         self.rgb_his = []
         self.pre_actions = None
+        self.addti_action_token = None
 
 
         # == openvln ==
@@ -79,6 +80,8 @@ class OpenVLNPolicy(NetPolicy):
 
     def act(self,observations, prev_actions, encode_only=False,print_info = False,ins_text=None): 
 
+        if self.addti_action_token == None:
+            self.addti_action_token = torch.zeros(1, 1, device=observations['rgb'].device, dtype=torch.long)
 
         rgb = observations["rgb"]
 
@@ -88,9 +91,13 @@ class OpenVLNPolicy(NetPolicy):
 
 
         if self.pre_actions == None:
-            self.pre_actions = prev_actions # to <spc> token
+            self.pre_actions = self.addti_action_token # [0]
+            final_actions = self.addti_action_token
         else:
-            self.pre_actions = torch.cat((prev_actions,self.pre_actions),dim=1)
+            self.pre_actions = torch.cat((self.pre_actions,prev_actions),dim=1) # [0,1,...]
+            final_actions = torch.cat((self.pre_actions[:,1:],self.addti_action_token),dim=1) # [1,2 ...+... 0]
+
+
         
         
         
@@ -104,7 +111,7 @@ class OpenVLNPolicy(NetPolicy):
         # format batch data
         collected_data = {
         'rgb': rgbs,
-        'prev_actions': self.pre_actions.to(observations['rgb'].device).long(),
+        'prev_actions': final_actions.to(observations['rgb'].device).long(),
         'ins_text': [ins_text],
         'lengths': torch.tensor([rgbs.shape[1]])
         }
@@ -141,18 +148,32 @@ class OpenVLNPolicy(NetPolicy):
         inference_logits = modelout.logits
 
         # retrive last action logits
-        action_logits = modelout.logits[:, -2, :]
-        predicted_token_id = torch.argmax(action_logits, dim=-1)
+        predicted_token_id = torch.argmax(modelout.logits, dim=-1)
         predicted_token_id_list = predicted_token_id.cpu().tolist()
-        decoded_text = self.tokenlizer.decode(predicted_token_id_list, skip_special_tokens=False)
+        decoded_text = self.tokenlizer.decode(predicted_token_id_list[0], skip_special_tokens=False)
+        pattern = r"(<FORWARD>|<LEFT>|<STOP>|<RIGHT>)"
+        tokens = re.findall(pattern, decoded_text)
 
-        if decoded_text == "<LEFT>":
+        # if decoded_text == "<LEFT>":
+        #     action = [[2]]
+        # elif decoded_text == "<RIGHT>":
+        #     action = [[3]]
+        # elif decoded_text == "<FORWARD>":
+        #     action = [[1]]
+        # elif decoded_text == "<STOP>":
+        #     action = [[0]]
+        # else:
+        #     action = [[1]]
+
+        action_token = tokens[-1]
+
+        if action_token == "<LEFT>":
             action = [[2]]
-        elif decoded_text == "<RIGHT>":
+        elif action_token == "<RIGHT>":
             action = [[3]]
-        elif decoded_text == "<FORWARD>":
+        elif action_token == "<FORWARD>":
             action = [[1]]
-        elif decoded_text == "<STOP>":
+        elif action_token == "<STOP>":
             action = [[0]]
         else:
             action = [[0]]
@@ -160,7 +181,7 @@ class OpenVLNPolicy(NetPolicy):
         action = torch.tensor(action).to(modelout.logits.device)
 
         if print_info:
-            print(f"Action inferenced : {action[0][0]}, with history length {len(self.rgb_his)}")
+            print(f"Action inferenced : {action[0][0]}, with history length {len(self.rgb_his)}, predicted ids {predicted_token_id_list}; text {decoded_text}")
 
 
         return action
@@ -221,6 +242,21 @@ class OpenVLNPolicy(NetPolicy):
         with torch.cuda.amp.autocast(dtype=torch.float16):
             modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = collected_data['gt_actions'].long(), img_ori_shape = (B,T), sample_valid_len = observations['lengths'])
         
+
+        # print(modelout.logits.shape,inputids.shape,T)
+
+        # pred = modelout.logits.argmax(dim=-1)
+        # predicted_token_id_list = pred.cpu().tolist()
+        # decoded_text = self.tokenlizer.decode(predicted_token_id_list[0], skip_special_tokens=False)
+
+        # pattern = r"(<FORWARD>|<LEFT>|<STOP>|<RIGHT>)"
+        # tokens = re.findall(pattern, decoded_text)
+
+        # print(collected_data['gt_actions'].long(),pred[:,-10:])
+        # print(tokens)
+
+        # assert 1==2
+
 
         return modelout.loss
     
@@ -328,16 +364,41 @@ class OpenVLN(PrismaticVLM):
         # label indicator
         interleaved_labels = None
         if input_mask != None:
+
+            input_labels = torch.full(
+                    (input_ids.shape[0], input_ids.shape[1] - 1), # -1 remove <BOS> label since the model wondnt predict it
+                    IGNORE_INDEX,
+                    dtype=labels.dtype,
+                    device=labels.device,
+                )
+
             img_labels = torch.full(
                     (tokenlized_labels.shape[0], tokenlized_labels.shape[1]),
                     IGNORE_INDEX,
                     dtype=labels.dtype,
                     device=labels.device,
                 )
+
             interleaved_labels = torch.stack((img_labels, tokenlized_labels), dim=2).view(tokenlized_labels.shape[0], tokenlized_labels.shape[1] * 2)
 
-       
-        return multimodal_embeddings, multimodal_attention_mask, interleaved_labels
+            eos_label = torch.full(
+                    (tokenlized_labels.shape[0], 1),
+                    IGNORE_INDEX,
+                    dtype=labels.dtype,
+                    device=labels.device,
+                )
+
+            multimodal_labels = torch.cat(
+                    [
+                        input_labels,
+                        interleaved_labels,
+                        eos_label
+                    ],
+                    dim=1,
+            )
+
+
+        return multimodal_embeddings, multimodal_attention_mask, multimodal_labels
         
     
     def inference_action(self,input_ids, prev_actions, pixel_values,img_ori_shape,sample_valid_len):
@@ -447,36 +508,9 @@ class OpenVLN(PrismaticVLM):
 
         
         # ==== INPUT & MASK ====
-        multimodal_embeddings, multimodal_attention_mask, interleaved_labels = self.get_input(input_ids=input_ids,img_features=img_pat_feature, input_mask=attention_mask, img_mask=img_pat_mask, labels=labels, label_mask=img_pat_mask)
-
-
-
-        # ==== LABEL ====
         # [Contract] We assume the first token of `labels` (associated with <BOS>) is already marked as "IGNORE"
         #   => We'll ignore the per-token outputs for each of the patch embeddings as well!
-
-
-        multimodal_labels = None
-        if labels is not None:
-
-            # projected_patch_labels = torch.full(
-            #     (projected_patch_embeddings.shape[0], projected_patch_embeddings.shape[1]),
-            #     IGNORE_INDEX,
-            #     dtype=labels.dtype,
-            #     device=labels.device,
-            # )
-
-
-            input_labels = torch.full(
-                (input_ids.shape[0], input_ids.shape[1]),
-                IGNORE_INDEX,
-                dtype=labels.dtype,
-                device=labels.device,
-            )
-
-            multimodal_labels = torch.cat(
-                [input_labels, interleaved_labels], dim=1
-            )
+        multimodal_embeddings, multimodal_attention_mask, multimodal_labels = self.get_input(input_ids=input_ids,img_features=img_pat_feature, input_mask=attention_mask, img_mask=img_pat_mask, labels=labels, label_mask=img_pat_mask)
 
 
         # === Add Unimodal Handling ===
@@ -528,6 +562,7 @@ class OpenVLN(PrismaticVLM):
 
         # Run LLM Forward --> returns CausalLMOutputWithPast!
 
+        print(fused_embeddings.shape,fused_attention_mask.shape,fused_labels.shape)
         
         return self.llm_backbone(
             input_ids=None,

@@ -16,15 +16,15 @@ dagger: True
 
 EVAL:
   USE_CKPT_CONFIG: False
-  SPLIT: val_seen # for testing overfitting only
+  SPLIT: train # for testing overfitting only
   EPISODE_COUNT: -1
   ACTION_POP: True
 
 IL:
-  ckpt_to_load: data/checkpoints/pure_da/ckpt.24.pth
+  ckpt_to_load: data/checkpoints/openvln/ckpt.16.pth
   load_from_ckpt: False # for testing overfitting only 
   epochs: 16
-  batch_size: 6
+  batch_size: 4
   is_requeue: False # continuo training
   
 
@@ -54,7 +54,7 @@ OPENVLN:
 MODEL:
   policy_name: OpenVLNPolicy
 
-TYPE: VLN-CE-v1
-SPLIT: joint_train_envdrop
-DATA_PATH: data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}.json.gz
-SCENES_DIR: data/scene_datasets/
+# TYPE: VLN-CE-v1
+# SPLIT: joint_train_envdrop
+# DATA_PATH: data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}.json.gz
+# SCENES_DIR: data/scene_datasets/
