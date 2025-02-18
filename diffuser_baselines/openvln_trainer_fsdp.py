@@ -986,19 +986,20 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
                                 step_id += 1  # noqa: SIM113
                                 num_epoch_batch += 1
 
-                        if self.world_rank == 0: #ddp
-                            if (dagger_it * self.config.IL.epochs + epoch + 1) % self.config.OPENVLN.saving_frequency == 0:
-                                self.save_checkpoint(
-                                    f"ckpt.{dagger_it * self.config.IL.epochs + epoch + 1}.pth"
-                                )
-                            else:
-                                print("Not to save.")
-
+                        if self.world_rank == 0: # fsdp save 
                             epoch_loss /= num_epoch_batch
                             logger.info(f"epoch loss: {epoch_loss}  | steps {num_epoch_batch} | On Diffuser iter {dagger_it}, Epoch {epoch}.")
                             wandb.log({"epoch loss": epoch_loss, "steps": num_epoch_batch, "Epoch": epoch})
                             epoch_loss = 0
                             num_epoch_batch = 0
+
+                        # fsdp save logic
+                        if (dagger_it * self.config.IL.epochs + epoch + 1) % self.config.OPENVLN.saving_frequency == 0:
+                            self.save_checkpoint(
+                                f"ckpt.{dagger_it * self.config.IL.epochs + epoch + 1}.pth"
+                            )
+                        else:
+                            print("Not to save.")
                             
 
                         dist.barrier() #ddp
@@ -1173,9 +1174,10 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
                 "config": self.config,
             }
 
-            torch.save(
-            checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name)
-            )
+            if self.world_rank == 0:
+                torch.save(
+                checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name)
+                )
 
 
 

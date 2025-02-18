@@ -120,6 +120,11 @@ class OpenVLNPolicy(NetPolicy):
         # == add <SPC> & tokenlization instructions & labels ==
         for i in range(len(collected_data['ins_text'])):
             collected_data['ins_text'][i] += "<SPC>" 
+
+            self.prompt_builder = self.vlm.get_prompt_builder()
+            self.prompt_builder.add_turn(role="human", message=f"What sequence of actions should the robot take to {collected_data['ins_text'][i]}?")
+            prompt_text = self.prompt_builder.get_prompt()
+
             collected_data['ins_text'][i] = self.tokenlizer(collected_data['ins_text'][i], truncation=False, return_tensors="pt").input_ids[0] # auto added BOS
 
         collected_data['ins_text'] = torch.stack(collected_data['ins_text']).to(observations['rgb'].device)
@@ -209,17 +214,21 @@ class OpenVLNPolicy(NetPolicy):
 
         # == build model input (prompt + label) ==
 
-
+        
         # == add <SPC> & tokenlization instructions & labels ==
         for i in range(len(collected_data['ins_text'])):
+
+            # build prompt
             collected_data['ins_text'][i] += "<SPC>" 
-            collected_data['ins_text'][i] = self.tokenlizer(collected_data['ins_text'][i], truncation=False, return_tensors="pt").input_ids[0] # auto added BOS
+            self.prompt_builder = self.vlm.get_prompt_builder()
+            self.prompt_builder.add_turn(role="human", message=f"What sequence of actions should the robot take to {collected_data['ins_text'][i]}?")
+            prompt_text = self.prompt_builder.get_prompt()
+
+            collected_data['ins_text'][i] = self.tokenlizer(prompt_text, truncation=False, return_tensors="pt").input_ids[0] # auto added BOS
 
         inputids = pad_sequence(collected_data['ins_text'], batch_first=True, padding_value=self.tokenlizer.pad_token_id).to(observations['instruction'].device)
         attention_mask = inputids.ne(self.tokenlizer.pad_token_id)
-
         
-
 
         # == formulating images ==
         # reshape and format

@@ -70,4 +70,5 @@ class PurePromptBuilder(PromptBuilder):
 
     def get_prompt(self) -> str:
         # Remove prefix <bos> (if exists) because it gets auto-inserted by tokenizer!
-        return self.prompt.removeprefix(self.bos).rstrip()
+        # return self.prompt.removeprefix(self.bos).rstrip()
+        return self.prompt.rstrip()

@@ -14,11 +14,10 @@
 
 #SBATCH -N 1
 #SBATCH --gres=gpu:2
-#SBATCH --nodelist=gpu15
 
 
 # CPU Core
-#SBATCH -n 48 
+#SBATCH -n 6
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk

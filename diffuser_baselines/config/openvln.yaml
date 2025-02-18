@@ -23,8 +23,8 @@ EVAL:
 IL:
   ckpt_to_load: data/checkpoints/openvln/ckpt.16.pth
   load_from_ckpt: False # for testing overfitting only 
-  epochs: 16
-  batch_size: 8
+  epochs: 24
+  batch_size: 2
   is_requeue: False # continuo training
   
 
