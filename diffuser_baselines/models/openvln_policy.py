@@ -571,7 +571,7 @@ class OpenVLN(PrismaticVLM):
 
         # Run LLM Forward --> returns CausalLMOutputWithPast!
 
-        print(fused_embeddings.shape,fused_attention_mask.shape,fused_labels.shape)
+        # print(fused_embeddings.shape,fused_attention_mask.shape,fused_labels.shape)
         
         return self.llm_backbone(
             input_ids=None,

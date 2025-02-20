@@ -17,7 +17,7 @@
 
 
 # CPU Core
-#SBATCH -n 6
+#SBATCH -n 48
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk

@@ -1022,8 +1022,11 @@ class OpenVLNTrainer(BaseVLNCETrainer):
     ):
         
 
+
         loss = self.policy.module.build_loss(observations)  # Access the underlying module
         
+        
+
         with torch.no_grad():
             loss_tensor = loss.clone()
             dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)

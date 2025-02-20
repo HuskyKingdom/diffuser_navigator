@@ -975,7 +975,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
                                     batch
                                 )
 
-                    
+                                print(f"loss {loss}")
 
                                 epoch_loss += loss
 
@@ -1008,17 +1008,10 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         wandb.finish()
                     
 
-    def grad_clipping(self, net, theta):  # @save
-        """Clip the gradient."""
-        if isinstance(net, nn.Module):
-            params = [p for p in net.parameters() if p.requires_grad and p.grad is not None]
-        else:
-            params = [p for p in net.params if p.grad is not None]
-            
-        norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
-        if norm > theta:
-            for param in params:
-                param.grad[:] *= theta / norm
+    def grad_clipping(self):  # @save
+
+        self.policy.vlm.clip_grad_norm_(max_norm=1.0)
+        
 
     def _update_agent(
         self,
@@ -1032,36 +1025,23 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         loss = self.policy.build_loss(observations)  # Access the underlying module
 
         
+
+        
         with torch.no_grad():
             loss_tensor = loss.clone()
             dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
             loss_tensor = loss_tensor / self.world_size
 
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache() 
-            gc.collect() 
-
-
 
         
         self.scaler.scale(loss).backward()
+
+        self.grad_clipping()
+
         self.scaler.step(self.optimizer)
         self.scaler.update()
         self.optimizer.zero_grad()
 
-        # loss = loss / loss_accumulation_scalar
-        # loss.backward()
-
-        # if torch.cuda.is_available():
-        #     torch.cuda.empty_cache() 
-        #     gc.collect() 
-
-
-        # if step_grad:
-        #     self.optimizer.step()
-        #     self.optimizer.zero_grad()
-        #     if self.config.lr_Schedule:
-        #         self.scheduler.step()
 
         if torch.cuda.is_available():
             torch.cuda.empty_cache() 
