@@ -975,8 +975,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
                                     batch
                                 )
 
-                                print(f"loss {loss}")
-
+                                wandb.log({"loss": loss})
                                 epoch_loss += loss
 
                                 if self.world_rank == 0: #ddp
