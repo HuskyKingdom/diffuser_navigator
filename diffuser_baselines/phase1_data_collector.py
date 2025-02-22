@@ -584,7 +584,7 @@ class Phase1DataCollector(BaseVLNCETrainer):
 
                     if dones[i] and not skips[i]:
                         
-                        timesteps[i] = 0 # reset ts count
+                        self.timesteps[i] = 0 # reset ts count
         
                         ep = episodes[i]
                         traj_obs = batch_obs(
