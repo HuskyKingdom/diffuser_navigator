@@ -4,13 +4,13 @@
 #SBATCH -J openvln
 
 # output file name
-#SBATCH -o out/openvln_phase2_collect.out
+#SBATCH -o out/openvln_phase1_collect.out
 
 # running time
 #SBATCH -t 12:00:00  
 
 # partition
-#SBATCH -p gpu
+#SBATCH -p gp1d
 
 #SBATCH -N 1
 #SBATCH --gres=gpu:4
