@@ -639,8 +639,6 @@ class Phase1DataCollector(BaseVLNCETrainer):
 
                     if dones[i]:
                         episodes[i] = []
-                        # reset
-                        self.policy.module.clear_his()
                         prev_actions = torch.zeros(
                                 self.config.NUM_PROCESSES,
                                 1,
@@ -752,9 +750,6 @@ class Phase1DataCollector(BaseVLNCETrainer):
             rgb_hook.remove()
         if depth_hook is not None:
             depth_hook.remove()
-        
-        # reset
-        self.policy.module.clear_his()
 
 
 
