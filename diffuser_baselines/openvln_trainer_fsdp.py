@@ -1089,9 +1089,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             ckpt_path = config.IL.ckpt_to_load
             ckpt_dict = self.load_checkpoint(ckpt_path, map_location="cpu")
 
-
             self.policy.vlm.load_state_dict(ckpt_dict["state_dict"])
-
             logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
 
 

@@ -600,7 +600,7 @@ class BaseVLNCETrainer(BaseILTrainer):
 
             # print info for anylyze
             ins_text = current_episodes[i].instruction.instruction_text
-            # ins_text += "If you deviate from the correct path or do not see the clues above, try to explore and get back on track."
+            ins_text += "If you deviate from the correct path or do not see the clues above, try to explore and get back on track."
 
             if torch.cuda.is_available():
                 torch.cuda.empty_cache() 

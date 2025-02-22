@@ -7,17 +7,16 @@
 #SBATCH -o out/openvln_eval_val.out
 
 # running time
-#SBATCH -t 24:00:00  
+#SBATCH -t 12:00:00  
 
 # partition
 #SBATCH -p gpulowsmall
 
 #SBATCH -N 1
 #SBATCH --gres=gpu:1
-#SBATCH --nodelist=gpu11
 
 # CPU Core
-#SBATCH -n 48
+#SBATCH -n 24
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk
@@ -59,4 +58,4 @@ export TOKENIZERS_PARALLELISM=true
 export NCCL_P2P_DISABLE=1
 
 # job run
-export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.launch --nproc_per_node=1 run.py   --exp-config diffuser_baselines/config/openvln.yaml   --run-type eval
+export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.launch --nproc_per_node=1 run.py   --exp-config diffuser_baselines/config/openvln_fsdp.yaml   --run-type train

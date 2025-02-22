@@ -3,7 +3,8 @@ from diffuser_baselines import (
     d3diffuser_trainer,
     d3ddp_trainer,
     openvln_trainer,
-    openvln_trainer_fsdp
+    openvln_trainer_fsdp,
+    phase2_data_collector
 )
 from vlnce_baselines.common import environments
 from diffuser_baselines.models import d3diffuser_navigator,openvln_policy

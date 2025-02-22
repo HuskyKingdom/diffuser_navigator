@@ -13,11 +13,11 @@
 #SBATCH -p gpulowsmall
 
 #SBATCH -N 1
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:1
 
 
 # CPU Core
-#SBATCH -n 48
+#SBATCH -n 24
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk
@@ -54,4 +54,4 @@ export TOKENIZERS_PARALLELISM=true
 export NCCL_P2P_DISABLE=1
 
 # job run
-export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 run.py   --exp-config diffuser_baselines/config/openvln_fsdp_barkla.yaml   --run-type train
+export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.launch --nproc_per_node=1 run.py   --exp-config diffuser_baselines/config/openvln_fsdp_barkla.yaml   --run-type train
