@@ -4,6 +4,7 @@ from diffuser_baselines import (
     d3ddp_trainer,
     openvln_trainer,
     openvln_trainer_fsdp,
+    phase1_data_collector,
     phase2_data_collector
 )
 from vlnce_baselines.common import environments
