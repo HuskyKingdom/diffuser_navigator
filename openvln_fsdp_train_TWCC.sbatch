@@ -12,10 +12,9 @@
 # partition
 #SBATCH -p gp4d
 
+#SBATCH -N 2
 #SBATCH --gres=gpu:8
 
-# nodes
-#SBATCH --nodes=2 
 
 # cpu core / nodes
 #SBATCH -n 64
