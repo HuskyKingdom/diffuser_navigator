@@ -57,7 +57,8 @@ export NCCL_P2P_DISABLE=1
 
 # multi-node
 export MASTER_ADDR=$(scontrol show hostnames $SLURM_NODELIST | head -n 1)
-export MASTER_PORT=29500
+export MASTER_PORT=$((29500 + RANDOM % 1000))
+
 
 
 # net
