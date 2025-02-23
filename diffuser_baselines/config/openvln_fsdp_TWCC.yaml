@@ -24,7 +24,7 @@ IL:
   ckpt_to_load: data/checkpoints/openvln_fsdp/ckpt.4.pth
   load_from_ckpt: False # for testing overfitting only 
   epochs: 4
-  batch_size: 16
+  batch_size: 24
   is_requeue: False # continuo training
   
 
