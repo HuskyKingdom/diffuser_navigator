@@ -10,7 +10,7 @@
 #SBATCH -t 48:00:00  
 
 # partition
-#SBATCH -p gpu4d
+#SBATCH -p gp4d
 
 #SBATCH -N 1
 #SBATCH --gres=gpu:8
