@@ -65,5 +65,5 @@ export UCX_IB_GPU_DIRECT_RDMA=1
 
 # job run
 export HF_HOME=./ && srun \
-  run.py --exp-config diffuser_baselines/config/openvln_fsdp_TWCC.yaml --run-type train
+  python run.py --exp-config diffuser_baselines/config/openvln_fsdp_TWCC.yaml --run-type train
 
