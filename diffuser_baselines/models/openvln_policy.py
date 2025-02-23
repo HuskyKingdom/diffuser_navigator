@@ -55,7 +55,7 @@ class OpenVLNPolicy(NetPolicy):
 
         # load backbones
         hf_token = Path(".hf_token").read_text().strip()
-        self.vlm = load(base_vlm, hf_token=hf_token, load_for_training=True, flash_atten = config.OPENVLN.flash-atten)
+        self.vlm = load(base_vlm, hf_token=hf_token, load_for_training=True, flash_atten = config.OPENVLN.flash_atten)
         self.tokenlizer = self.vlm.llm_backbone.get_tokenizer()
         self.image_transform = self.vlm.vision_backbone.get_image_transform()
 
