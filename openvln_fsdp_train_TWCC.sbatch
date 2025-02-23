@@ -64,11 +64,6 @@ export UCX_NET_DEVICES=mlx5_0:1
 export UCX_IB_GPU_DIRECT_RDMA=1
 
 # job run
-export HF_HOME=./ && torchrun \
-  --nproc_per_node=8 \
-  --nnodes=2 \
-  --node_rank=$SLURM_NODEID \
-  --master_addr=$MASTER_ADDR \
-  --master_port=$MASTER_PORT \
+export HF_HOME=./ && srun \
   run.py --exp-config diffuser_baselines/config/openvln_fsdp_TWCC.yaml --run-type train
 
