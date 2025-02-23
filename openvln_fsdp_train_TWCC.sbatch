@@ -55,7 +55,7 @@ export TOKENIZERS_PARALLELISM=true
 
 # multi-node
 export MASTER_ADDR=$(scontrol show hostnames $SLURM_NODELIST | head -n 1)
-export MASTER_PORT=29500
+export MASTER_PORT=29516
 
 # net
 export UCX_NET_DEVICES=mlx5_0:1
