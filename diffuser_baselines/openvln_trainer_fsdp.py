@@ -1107,7 +1107,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             self.policy.vlm,
             auto_wrap_policy=self.policy.vlm.get_fsdp_wrapping_policy(),
             mixed_precision=fsdp_precision_policy,
-            sharding_strategy=ShardingStrategy.SHARD_GRAD_OP,
+            sharding_strategy=ShardingStrategy.FULL_SHARD,
             device_id=torch.cuda.current_device(),
             limit_all_gathers=True,
             use_orig_params=True,
