@@ -14,7 +14,7 @@
 
 #SBATCH -N 2
 #SBATCH --gres=gpu:8
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=4 
 
 
@@ -64,11 +64,12 @@ export UCX_NET_DEVICES=mlx5_0:1
 export UCX_IB_GPU_DIRECT_RDMA=1
 
 # job run
-export HF_HOME=./ && srun torchrun \
+export HF_HOME=./ && torchrun \
   --nproc_per_node=8 \
   --nnodes=2 \
   --node_rank=$SLURM_NODEID \
-  --master_addr=$MASTER_ADDR \
-  --master_port=$MASTER_PORT \
+  --rdzv_backend c10d \
+  --rdzv_endpoint $MASTER_ADDR:$MASTER_PORT \
+  --rdzv_id $SLURM_JOB_ID \
   run.py --exp-config diffuser_baselines/config/openvln_fsdp_TWCC.yaml --run-type train
 
