@@ -66,7 +66,7 @@ export UCX_IB_GPU_DIRECT_RDMA=1
 # job run
 export HF_HOME=./
 
-
+echo "hahaha"
 torchrun \
   --nproc_per_node=8 \
   --nnodes=2 \
