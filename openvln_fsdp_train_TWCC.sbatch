@@ -25,8 +25,8 @@
 
 
 module purge
-module cuda/12.2
-
+module load cuda/12.3
+module load gcc10/10.2.1
 
 # conda
 # >>> conda initialize >>>
