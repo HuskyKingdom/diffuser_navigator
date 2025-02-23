@@ -827,6 +827,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
     def train(self) -> None:
             
         if not dist.is_initialized():
+            print("hahaha!!!")
             self.local_rank, tcp_store = init_distrib_slurm("NCCL")
             print("NCCL INITIALIZED.")
         else:
