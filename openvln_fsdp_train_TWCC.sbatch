@@ -14,7 +14,7 @@
 
 #SBATCH -N 2
 #SBATCH --gres=gpu:8
-#SBATCH --ntasks-per-node=8 
+#SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4 
 
 
@@ -57,7 +57,7 @@ export NCCL_P2P_DISABLE=1
 
 # multi-node
 export MASTER_ADDR=$(scontrol show hostnames $SLURM_NODELIST | head -n 1)
-export MASTER_PORT=$((15575 + RANDOM % 10000))
+export MASTER_PORT=29500
 
 
 
