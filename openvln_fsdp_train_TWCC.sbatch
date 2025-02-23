@@ -14,12 +14,12 @@
 
 #SBATCH -N 2
 #SBATCH --gres=gpu:8
-#SBATCH --ntasks-per-node=8
-#SBATCH --cpus-per-task=4 
+#SBATCH --ntasks-per-node=1
+// #SBATCH --cpus-per-task=4 
 
 
 // # cpu core / nodes
-// #SBATCH -n 64
+#SBATCH -n 64
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk
@@ -71,7 +71,7 @@ export UCX_IB_GPU_DIRECT_RDMA=1
 # job run
 export HF_HOME=./
 
-torchrun \
+srun torchrun \
   --nproc_per_node=8 \
   --nnodes=2 \
   --node_rank=$SLURM_NODEID \
