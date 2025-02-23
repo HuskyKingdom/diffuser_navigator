@@ -746,11 +746,6 @@ class Phase1DataCollector(BaseVLNCETrainer):
         self.envs.close()
         self.envs = None
 
-        if rgb_hook is not None:
-            rgb_hook.remove()
-        if depth_hook is not None:
-            depth_hook.remove()
-
 
 
     def train(self) -> None:
