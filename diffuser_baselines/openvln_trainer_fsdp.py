@@ -826,7 +826,6 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
     def train(self) -> None:
             
-        # ddp
         if not dist.is_initialized():
             self.local_rank, tcp_store = init_distrib_slurm("NCCL")
             print("NCCL INITIALIZED.")
@@ -834,6 +833,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             self.local_rank = int(os.environ.get("LOCAL_RANK", 0))
             tcp_store = torch.distributed.distributed_c10d._get_default_store()
 
+        torch.cuda.set_device(self.local_rank)
         add_signal_handlers()
     
         self.world_rank = dist.get_rank()
