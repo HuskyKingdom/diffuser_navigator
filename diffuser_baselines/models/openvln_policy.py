@@ -55,7 +55,7 @@ class OpenVLNPolicy(NetPolicy):
 
         # load backbones
         hf_token = Path(".hf_token").read_text().strip()
-        self.vlm = load(base_vlm, hf_token=hf_token, load_for_training=True)
+        self.vlm = load(base_vlm, hf_token=hf_token, load_for_training=True, flash_atten = config.OPENVLN.flash_atten)
         self.tokenlizer = self.vlm.llm_backbone.get_tokenizer()
         self.image_transform = self.vlm.vision_backbone.get_image_transform()
 
@@ -565,7 +565,7 @@ class OpenVLN(PrismaticVLM):
 
         # Run LLM Forward --> returns CausalLMOutputWithPast!
 
-        # print(fused_embeddings.shape,fused_attention_mask.shape,fused_labels.shape)
+        print(fused_embeddings.shape,fused_attention_mask.shape,fused_labels.shape)
         
         return self.llm_backbone(
             input_ids=None,

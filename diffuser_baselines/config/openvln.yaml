@@ -50,6 +50,7 @@ OPENVLN:
   # stage: training stage in < "align" | "finetune" | "full-finetune" >
   forward_type: "pre-train"
   # forward_type: in < "action_only" | "pre-train"  >
+  flash-atten: True
 
 MODEL:
   policy_name: OpenVLNPolicy
