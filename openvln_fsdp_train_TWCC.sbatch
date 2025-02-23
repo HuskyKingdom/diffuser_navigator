@@ -56,12 +56,12 @@ export TOKENIZERS_PARALLELISM=true
 # export NCCL_P2P_DISABLE=1
 
 # multi-node
-export MASTER_ADDR=$(scontrol show node $MASTER_ADDR | grep -oP 'NodeAddr=\K\S+')
-export MASTER_IP=$(scontrol show node $MASTER_ADDR | grep -oP 'NodeAddr=\K\S+')
+export NODES=$(scontrol show hostnames $SLURM_NODELIST | head -n1)
+export MASTER_ADDR=$(scontrol show node $NODES | grep -oP 'NodeAddr=\K\S+')
 export MASTER_PORT=29500
 
 
-echo $MASTER_IP 
+echo $MASTER_ADDR 
 echo $SLURM_NODEID
 
 # net
