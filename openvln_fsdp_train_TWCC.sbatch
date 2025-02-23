@@ -53,9 +53,6 @@ export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:64
 export TOKENIZERS_PARALLELISM=true
 # export NCCL_P2P_DISABLE=1
 
-# multi-node
-export MASTER_ADDR=$(scontrol show hostnames $SLURM_NODELIST | head -n 1)
-export MASTER_PORT=29516
 
 # net
 export UCX_NET_DEVICES=mlx5_0:1
