@@ -78,5 +78,5 @@ srun torchrun \
   --rdzv_backend c10d \
   --rdzv_endpoint $MASTER_ADDR:$MASTER_PORT \
   --rdzv_id $SLURM_JOB_ID \
-  rusdn.py --exp-config diffuser_baselines/config/openvln_fsdp_TWCC.yaml --run-type train
+  run.py --exp-config diffuser_baselines/config/openvln_fsdp_TWCC.yaml --run-type train
 
