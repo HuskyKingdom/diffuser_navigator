@@ -14,10 +14,12 @@
 
 #SBATCH -N 2
 #SBATCH --gres=gpu:8
+#SBATCH --ntasks-per-node=8 
+#SBATCH --cpus-per-task=4 
 
 
-# cpu core / nodes
-#SBATCH -n 64
+// # cpu core / nodes
+// #SBATCH -n 64
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk
@@ -51,7 +53,11 @@ export NCCL_DEBUG=INFO
 export PYTHONUNBUFFERED=1
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:64
 export TOKENIZERS_PARALLELISM=true
-# export NCCL_P2P_DISABLE=1
+export NCCL_P2P_DISABLE=1
+
+# multi-node
+export MASTER_ADDR=$(scontrol show hostnames $SLURM_NODELIST | head -n 1)
+export MASTER_PORT=$((29500 + RANDOM % 1000))
 
 
 # net
