@@ -12,10 +12,14 @@
 # partition
 #SBATCH -p gp4d
 
-#SBATCH -N 2
 #SBATCH --gres=gpu:8
 
-# CPU Core
+# nodes
+#SBATCH --nodes=2 
+
+#SBATCH --ntasks-per-node=8
+
+# cpu core / nodes
 #SBATCH -n 64
 
 # mail notice
@@ -50,12 +54,22 @@ export NCCL_DEBUG=INFO
 export PYTHONUNBUFFERED=1
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:64
 export TOKENIZERS_PARALLELISM=true
-export NCCL_P2P_DISABLE=1
+# export NCCL_P2P_DISABLE=1
 
 # multi-node
 export MASTER_ADDR=$(scontrol show hostnames $SLURM_NODELIST | head -n 1)
 export MASTER_PORT=29500
 
+# net
+export UCX_NET_DEVICES=mlx5_0:1
+export UCX_IB_GPU_DIRECT_RDMA=1
+
 # job run
-export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python -m torch.distributed.launch --nproc_per_node=8 --nnodes=2 --node_rank=$SLURM_NODEID run.py --exp-config diffuser_baselines/config/openvln_fsdp_TWCC.yaml --run-type train
+export HF_HOME=./ && torchrun \
+  --nproc_per_node=8 \
+  --nnodes=2 \
+  --node_rank=$SLURM_NODEID \
+  --master_addr=$MASTER_ADDR \
+  --master_port=$MASTER_PORT \
+  run.py --exp-config diffuser_baselines/config/openvln_fsdp_TWCC.yaml --run-type train
 
