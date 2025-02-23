@@ -56,7 +56,7 @@ export TOKENIZERS_PARALLELISM=true
 # export NCCL_P2P_DISABLE=1
 
 # multi-node
-export MASTER_ADDR=$(scontrol show hostnames $SLURM_NODELIST | head -n 1)
+export MASTER_ADDR=$(scontrol show hostname $SLURM_NODELIST | head -n1 | xargs hostname -i)
 export MASTER_PORT=29500
 
 
