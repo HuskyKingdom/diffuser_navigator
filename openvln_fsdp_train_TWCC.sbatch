@@ -17,8 +17,6 @@
 # nodes
 #SBATCH --nodes=2 
 
-#SBATCH --ntasks-per-node=8
-
 # cpu core / nodes
 #SBATCH -n 64
 
