@@ -29,7 +29,7 @@ from PIL import Image
 from prismatic.util.nn_utils import FusedMLPProjector
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule
 from diffuser_baselines.models.common.position_encodings import PositionalEncoding
-from diffuser_baselines.models.common.utils import MemoryLlamaDecoderLayer
+from diffuser_baselines.models.utils import MemoryLlamaDecoderLayer
 
 
 IGNORE_INDEX = -100
