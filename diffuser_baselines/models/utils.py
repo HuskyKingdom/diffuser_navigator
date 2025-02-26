@@ -397,12 +397,12 @@ def batch_obs(
     return batch_t.map(lambda v: v.to(device))
 
 
-from transformers import LlamaForCausalLM
-
+from transformers import LlamaDecoderLayer
+from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule
 
 # class MemoryLlamaDecoderLayer()
 
-class MomoryLlamaForCausalLM(LlamaForCausalLM):
+class MemoryLlamaDecoderLayer(LlamaDecoderLayer):
 
     def __init__(self,
         *args,
