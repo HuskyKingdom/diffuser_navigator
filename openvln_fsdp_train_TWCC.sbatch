@@ -72,8 +72,8 @@ export UCX_IB_GPU_DIRECT_RDMA=1
 export HF_HOME=./
 
 srun torchrun \
-  --nproc_per_node=1 \
-  --nnodes=2 \
+  --nproc_per_node=2 \
+  --nnodes=1 \
   --node_rank=$SLURM_NODEID \
   --rdzv_backend c10d \
   --rdzv_endpoint $MASTER_ADDR:$MASTER_PORT \
