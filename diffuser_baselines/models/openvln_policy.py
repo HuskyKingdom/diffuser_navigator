@@ -306,7 +306,7 @@ class OpenVLN(PrismaticVLM):
         self.M_init = self.menmory_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
 
         self.history_projectory = FusedMLPProjector(self.vision_backbone.embed_dim,self.llm_backbone.embed_dim)
-        self.menmory_fuser_attention = FFWRelativeCrossAttentionModule(4096,4,1)
+        self.memory_fuser_attention = FFWRelativeCrossAttentionModule(4096,4,1)
 
 
     
@@ -513,13 +513,19 @@ class OpenVLN(PrismaticVLM):
         # resulting memory in (bs*T,C,d)
         expanded_memory = self.M_init.unsqueeze(0).expand(multimodal_embeddings.shape[0],-1,-1)
 
-        # memory masking
+        # memory masking (bs*T,T)
         bs = img_ori_shape[0]
         T = img_ori_shape[1]
-        mask_single = torch.triu(torch.ones(T,T),dtype=torch.bool).to(expanded_memory.device)
+        mask_single = torch.triu(torch.ones(T,T,dtype=torch.bool)).to(expanded_memory.device)
         batch_mask = mask_single.repeat(bs,1)
 
 
+        compressed_memory = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
+            value=cls_embeeding_kv.transpose(0, 1),
+            query_pos=None,
+            value_pos=None,
+            diff_ts=time_embeddings,pad_mask=batch_mask)[-1].transpose(0,1)
+            
 
         print(batch_mask,batch_mask.shape)
         assert 1==2 # ()
