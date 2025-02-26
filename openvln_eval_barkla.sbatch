@@ -58,4 +58,4 @@ export TOKENIZERS_PARALLELISM=true
 export NCCL_P2P_DISABLE=1
 
 # job run
-export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.launch --nproc_per_node=1 run.py   --exp-config diffuser_baselines/config/openvln_fsdp.yaml   --run-type train
+export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.launch --nproc_per_node=1 run.py   --exp-config diffuser_baselines/config/openvln_fsdp.yaml   --run-type eval

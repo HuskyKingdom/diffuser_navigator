@@ -26,7 +26,7 @@ from prismatic.models import load
 from transformers.modeling_outputs import CausalLMOutputWithPast
 from torch.nn.utils.rnn import pad_sequence
 from PIL import Image
-
+from prismatic.util.nn_utils import FusedMLPProjector
 
 
 IGNORE_INDEX = -100
@@ -63,16 +63,6 @@ class OpenVLNPolicy(NetPolicy):
         # stage: Pretraining stage in < "align" | "finetune" | "full-finetune" | "vla-train" | "vla-full-train" >
         self.vlm.freeze_backbones(self.config.OPENVLN.stage)
 
-        # initializing special tokens        # if decoded_text == "<LEFT>":
-        #     action = [[2]]
-        # elif decoded_text == "<RIGHT>":
-        #     action = [[3]]
-        # elif decoded_text == "<FORWARD>":
-        #     action = [[1]]
-        # elif decoded_text == "<STOP>":
-        #     action = [[0]]
-        # else:
-        #     action = [[1]]
 
         if config.OPENVLN.forward_type == "pre-train":
             # <SPC>
@@ -103,8 +93,8 @@ class OpenVLNPolicy(NetPolicy):
             self.pre_actions = self.addti_action_token # [0]
             final_actions = self.addti_action_token
         else:
-            self.pre_actions = torch.cat((self.pre_actions,prev_actions),dim=1) # [0,1,...]
-            final_actions = torch.cat((self.pre_actions[:,1:],self.addti_action_token),dim=1) # [1,2 ...+... 0]
+            self.pre_actions = torch.cat((self.pre_actions,prev_actions),dim=1) # [0,1,2,...]
+            final_actions = torch.cat((self.pre_actions[:,1:],self.addti_action_token),dim=1) # [1,2 ...+ 0]
 
 
     
@@ -113,7 +103,7 @@ class OpenVLNPolicy(NetPolicy):
         rgbs = torch.stack(self.rgb_his, dim=1) # (1,seq,224,224,3)
 
 
-    
+        # print(ins_text)
        
         # format batch data
         collected_data = {
@@ -124,13 +114,14 @@ class OpenVLNPolicy(NetPolicy):
         }
 
 
+
         # == add <SPC> & tokenlization instructions & labels ==
         for i in range(len(collected_data['ins_text'])):
             collected_data['ins_text'][i] += "<SPC>" 
             self.prompt_builder = self.vlm.get_prompt_builder()
             self.prompt_builder.add_turn(role="human", message=f"What sequence of actions should the robot take to {collected_data['ins_text'][i]}?")
             prompt_text = self.prompt_builder.get_prompt()
-            collected_data['ins_text'][i] = self.tokenlizer(collected_data['ins_text'][i], truncation=False, return_tensors="pt").input_ids[0] # auto added BOS
+            collected_data['ins_text'][i] = self.tokenlizer(prompt_text, truncation=False, return_tensors="pt").input_ids[0] # auto added BOS
 
         collected_data['ins_text'] = torch.stack(collected_data['ins_text']).to(observations['rgb'].device)
 
@@ -160,16 +151,11 @@ class OpenVLNPolicy(NetPolicy):
         # retrive last action logits
         predicted_token_id = torch.argmax(modelout.logits, dim=-1)
         predicted_token_id_list = predicted_token_id.cpu().tolist()
-        decoded_text = self.tokenlizer.decode(predicted_token_id_list[0], skip_special_tokens=False)
-
-        print(decoded_text,modelout.logits.shape,collected_data['ins_text'].shape)
-
-
-        pattern = r"(<FORWARD>|<LEFT>|<STOP>|<RIGHT>)"
-        tokens = re.findall(pattern, decoded_text)
+        decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[0])
+        # decoded_text = self.tokenlizer.decode(predicted_token_id_list[0], skip_special_tokens=False)
 
 
-        action_token = tokens[-2]
+        action_token = decoded_tokens[-2]
 
         if action_token == "<LEFT>":
             action = [[2]]
@@ -182,10 +168,16 @@ class OpenVLNPolicy(NetPolicy):
         else:
             action = [[0]]
 
+        # past long episodes
+        if len(self.rgb_his) >= 300:
+            action = [[0]]
+
         action = torch.tensor(action).to(modelout.logits.device)
 
         if print_info:
-            print(f"Action inferenced : {action[0][0]}, with history length {len(self.rgb_his)}; tokens len {len(tokens)}")
+            print(f"Action inferenced : {action[0][0]}, with history length {len(self.rgb_his)}; tokens len {len(decoded_tokens)}")
+            # inst_len = collected_data['ins_text'].shape[1]
+            # print(decoded_tokens)
 
 
         return action
@@ -210,31 +202,32 @@ class OpenVLNPolicy(NetPolicy):
         'labels': observations["labels"],
         }
 
+       
 
         # == build model input (prompt + label) ==
 
-        
         # == add <SPC> & tokenlization instructions & labels ==
-        for i in range(len(collected_data['ins_text'])):
-
-            # build prompt
-            collected_data['ins_text'][i] += "<SPC>" 
-            self.prompt_builder = self.vlm.get_prompt_builder()
-            self.prompt_builder.add_turn(role="human", message=f"What sequence of actions should the robot take to {collected_data['ins_text'][i]}?")
-            prompt_text = self.prompt_builder.get_prompt()
-
-            collected_data['ins_text'][i] = self.tokenlizer(prompt_text, truncation=False, return_tensors="pt").input_ids[0] # auto added BOS
-
-        inputids = pad_sequence(collected_data['ins_text'], batch_first=True, padding_value=self.tokenlizer.pad_token_id).to(observations['instruction'].device)
-        attention_mask = inputids.ne(self.tokenlizer.pad_token_id)
+        for sample in range(len(collected_data['ins_text'])):
+            for ts in range(len(collected_data['ins_text'][sample])):
+                # build prompt
+                self.prompt_builder = self.vlm.get_prompt_builder()
+                self.prompt_builder.add_turn(role="human", message=f"Which action should the robot take now to {collected_data['ins_text'][sample][ts]}?")
+                prompt_text = self.prompt_builder.get_prompt()
+                prompt_text += collected_data["labels"][sample][ts]
+                collected_data['ins_text'][sample][ts] = self.tokenlizer(prompt_text, truncation=False, return_tensors="pt").input_ids[0] # auto added BOS , in shape (T)
         
+        inputids = [item for sublist in collected_data['ins_text'] for item in sublist]
+        inputids = pad_sequence(inputids, batch_first=True, padding_value=self.tokenlizer.pad_token_id).to(observations['instruction'].device)
+
+        attention_mask = inputids.ne(self.tokenlizer.pad_token_id)
+
+       
 
         # == formulating images ==
         # reshape and format
         B,T,H,W,C = collected_data['rgb'].shape
         collected_data['rgb'] = collected_data['rgb'].view(-1,H,W,C).cpu().numpy().astype(np.uint8)
 
-        
 
         # to PIL image for transform
         pil_images = [Image.fromarray(img) for img in collected_data['rgb']]
@@ -246,22 +239,26 @@ class OpenVLNPolicy(NetPolicy):
         for k in transformed_images[0].keys()
         } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
 
-        
-        with torch.cuda.amp.autocast(dtype=torch.float16):
-            modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = collected_data['gt_actions'].long(), img_ori_shape = (B,T), sample_valid_len = observations['lengths'])
-        
 
-        # print(modelout.logits.shape,inputids.shape,T)
+        input_labels = inputids.detach().clone() # create labels
+
+        # with torch.cuda.amp.autocast(dtype=torch.float16):
+        #     modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = collected_data['gt_actions'].long(), img_ori_shape = (B,T), sample_valid_len = observations['lengths'])
+        
+        # change if finished !
+
+        with torch.cuda.amp.autocast(dtype=torch.float16):
+            with torch.no_grad():
+                modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'])
+        
 
         # pred = modelout.logits.argmax(dim=-1)
         # predicted_token_id_list = pred.cpu().tolist()
-        # decoded_text = self.tokenlizer.decode(predicted_token_id_list[0], skip_special_tokens=False)
+        # decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[0])
 
-        # pattern = r"(<FORWARD>|<LEFT>|<STOP>|<RIGHT>)"
-        # tokens = re.findall(pattern, decoded_text)
-
-        # print(collected_data['gt_actions'].long(),decoded_text)
-        # print(tokens,len(tokens))
+        # print(modelout.logits.shape,inputids.shape,T)
+        # print(collected_data['gt_actions'].long(),decoded_tokens,len(decoded_tokens))
+        # print(observations["ins_text"], self.tokenlizer.convert_ids_to_tokens(observations["ins_text"][0].cpu().tolist()))
 
         # assert 1==2
 
@@ -303,11 +300,13 @@ class OpenVLN(PrismaticVLM):
         **kwargs):
 
         super().__init__(*args, **kwargs)
-        
-        # linear transform vit tokens
-        # self.vit_linear = nn.Linear(256,1)
 
-    
+        # initialize memory bank
+        self.menmory_embedding = nn.Embedding(52,768)
+        self.M_init = self.menmory_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
+
+        self.history_projectory = FusedMLPProjector(self.vision_backbone.embed_dim,self.llm_backbone.embed_dim)
+
 
     
 
@@ -317,9 +316,9 @@ class OpenVLN(PrismaticVLM):
         feature_dim = projected_patch_embeddings.shape[2]
         projected_patch_embeddings = projected_patch_embeddings.view(img_ori_shape[0], img_ori_shape[1], pat_dim, feature_dim) # (B,T,256,4096)
 
-        # projected_patch_embeddings = self.vit_linear(projected_patch_embeddings)
-        projected_patch_embeddings = projected_patch_embeddings.mean(dim=2) # reduce dimension -> (B,T,4096)
-        projected_patch_embeddings = projected_patch_embeddings.squeeze(2)
+        # # projected_patch_embeddings = self.vit_linear(projected_patch_embeddings)
+        # projected_patch_embeddings = projected_patch_embeddings.mean(dim=2) # reduce dimension -> (B,T,4096)
+        # projected_patch_embeddings = projected_patch_embeddings.squeeze(2)
 
         return projected_patch_embeddings
 
@@ -327,79 +326,70 @@ class OpenVLN(PrismaticVLM):
 
 
 
-    def get_input(self, input_ids, img_features, input_mask, img_mask, labels, label_mask):
-
-        multimodal_indices = torch.arange(len(input_ids), dtype=torch.long, device=img_features.device)
-
-        # Get Input Embeddings from LLM Backbone :: [bsz, input_seq_len, llm_embed_dim]
-        input_embeddings = self.llm_backbone.embed_input_ids(input_ids)
-
-        # prepare interleaved embedding input =====
-        # tokenlize action labels
-        token_mapping = torch.tensor([32005, 32002, 32003, 32004]).to(img_features.device)
-        tokenlized_labels = token_mapping[labels]
-        action_input_embeddings = self.llm_backbone.embed_input_ids(tokenlized_labels)
-
+    def get_input(self, input_ids, img_features, input_mask, labels):
+        
+        traj_len = labels.shape[1]
         
 
-        # interleave actions and observations
-        interleaved_tokens = torch.stack((img_features, action_input_embeddings), dim=2).view(img_features.shape[0], img_features.shape[1] * 2, img_features.shape[2])
-
+        # ====== Encode InputIDS ======
+        # Get Input Embeddings from LLM Backbone :: [bsz, input_seq_len, llm_embed_dim]
+        input_embeddings = self.llm_backbone.embed_input_ids(input_ids)
     
 
+        # ====== Generate InputEmbeddings ======
+        # input embeddings in shape <bos> + img_pathes + input + label
         multimodal_embeddings = torch.cat(
             [
-                input_embeddings[multimodal_indices, :, :],
-                interleaved_tokens,
+                input_embeddings[:, :1, :],
+                img_features,
+                input_embeddings[:, 1:, :]
             ],
             dim=1,
         )
 
-
+        
         # interleaved mask
         multimodal_attention_mask = None
         if input_mask != None:
-            interleaved_mask = label_mask.unsqueeze(2).expand(img_features.shape[0], img_features.shape[1], 2).reshape(img_features.shape[0], img_features.shape[1] * 2)
+            projectoed_patch_attention_mask = torch.full(
+                    (img_features.shape[0], img_features.shape[1]),
+                    True,
+                    dtype=labels.dtype,
+                    device=labels.device,
+                )
             multimodal_attention_mask = torch.cat(
                     [
-                        input_mask[multimodal_indices, :],
-                        interleaved_mask,
+                        input_mask[:, :1],
+                        projectoed_patch_attention_mask,
+                        input_mask[:, 1:]
                     ],
                     dim=1,
             )
 
 
+
+        
         # label indicator
-        interleaved_labels = None
         multimodal_labels = None
+        labels[:,:-1] = IGNORE_INDEX
         if input_mask != None:
 
-            input_labels = torch.full(
-                    (input_ids.shape[0], input_ids.shape[1]),
+            projectoed_patch_labels = torch.full(
+                    (img_features.shape[0], img_features.shape[1]),
                     IGNORE_INDEX,
                     dtype=labels.dtype,
                     device=labels.device,
                 )
-
-            img_labels = torch.full(
-                    (tokenlized_labels.shape[0], tokenlized_labels.shape[1]),
-                    IGNORE_INDEX,
-                    dtype=labels.dtype,
-                    device=labels.device,
-                )
-
-
-            interleaved_labels = torch.stack((img_labels, tokenlized_labels), dim=2).view(tokenlized_labels.shape[0], tokenlized_labels.shape[1] * 2)
-            # ign paddings
-            interleaved_labels[~interleaved_mask] = IGNORE_INDEX
 
             multimodal_labels = torch.cat(
                     [
-                        input_labels,
-                        interleaved_labels
+                        labels[:,:1],
+                        projectoed_patch_labels,
+                        labels[:,1:],
                     ],
                     dim=1,
             )
+
 
         return multimodal_embeddings, multimodal_attention_mask, multimodal_labels
         
@@ -422,7 +412,7 @@ class OpenVLN(PrismaticVLM):
         
 
         # ==== INPUT & MASK ====
-        multimodal_embeddings, _ , _ = self.get_input(input_ids=input_ids,img_features=img_pat_feature, input_mask=None, img_mask=None, labels=prev_actions, label_mask=None)
+        multimodal_embeddings, _ , _ = self.get_input(input_ids=input_ids,img_features=img_pat_feature, input_mask=None, labels=prev_actions)
 
 
         inference_result = self.llm_backbone(
@@ -490,34 +480,32 @@ class OpenVLN(PrismaticVLM):
         with torch.set_grad_enabled(self.vision_backbone_requires_grad):
             if isinstance(pixel_values, dict):
                 # patch_features = self.vision_backbone({k: pixel_values[k][multimodal_indices] for k in pixel_values})
-                patch_features = self.vision_backbone({k: pixel_values[k] for k in pixel_values})
+                patch_features,cls_features = self.vision_backbone({k: pixel_values[k] for k in pixel_values})
             else:
-                patch_features = self.vision_backbone(pixel_values[multimodal_indices])
+                patch_features,cls_features = self.vision_backbone(pixel_values[multimodal_indices])
+        
+        
         # Projection Logic :: [bsz, num_patches, llm_embed_dim] =>> num_patches = (2 *) (256 + 1) for ViT-L + CLS
         projected_patch_embeddings = self.projector(patch_features)
 
+        projected_cls_embeddings = self.history_projectory(cls_features)
+        
+
         # ==== FORMULATE IMG FEATURES ====
         # openvln: reshape the resulting features into seq shape & generate img attention mask
-        img_pat_feature = self.reshape_vision_features(projected_patch_embeddings, img_ori_shape) # (bs,T,4096)
+        img_formulated = self.reshape_vision_features(projected_patch_embeddings, img_ori_shape) # (bs,T,256,4096)
         
-        # ==== IMG PATCH MASK ====
-        img_pat_mask = torch.arange(img_ori_shape[1]).unsqueeze(0).to(img_pat_feature.device) < sample_valid_len.unsqueeze(1) # (B,T)
 
-        img_pat_mask = img_pat_mask.to(
-            dtype=attention_mask.dtype,
-            device=attention_mask.device,
-            )
-
-
-        
         # ==== INPUT & MASK ====
         # [Contract] We assume the first token of `labels` (associated with <BOS>) is already marked as "IGNORE"
         #   => We'll ignore the per-token outputs for each of the patch embeddings as well!
-        multimodal_embeddings, multimodal_attention_mask, multimodal_labels = self.get_input(input_ids=input_ids,img_features=img_pat_feature, input_mask=attention_mask, img_mask=img_pat_mask, labels=labels, label_mask=img_pat_mask)
+        multimodal_embeddings, multimodal_attention_mask, multimodal_labels = self.get_input(input_ids=input_ids,img_features=projected_patch_embeddings, input_mask=attention_mask, labels=labels)
 
+
+        print(projected_cls_embeddings.is_contiguous())
+        assert 1==2 # ()
 
         # === Add Unimodal Handling ===
-
         # Create Fused Embeddings, Attention Mask, and Labels by Merging with "unimodal" Inputs (if applicable)
         unimodal_indices = torch.tensor(
             [idx for idx in range(len(input_ids)) if idx not in multimodal_indices],
@@ -565,7 +553,7 @@ class OpenVLN(PrismaticVLM):
 
         # Run LLM Forward --> returns CausalLMOutputWithPast!
 
-        print(fused_embeddings.shape,fused_attention_mask.shape,fused_labels.shape)
+        # print(fused_embeddings.shape,fused_attention_mask.shape,fused_labels.shape)
         
         return self.llm_backbone(
             input_ids=None,

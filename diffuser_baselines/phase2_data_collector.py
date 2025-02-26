@@ -706,6 +706,7 @@ class Phase2DataCollector(BaseVLNCETrainer):
                     raw_img = Image.fromarray(raw_img)
                     inputs = self.processor(raw_img, self.prompt, return_tensors="pt").to("cuda")
                     out = self.img_model.generate(**inputs)
+                    cot_text = self.processor.decode(out[0], skip_special_tokens=True)
 
 
                     # saving and view (code testing only)
@@ -733,7 +734,7 @@ class Phase2DataCollector(BaseVLNCETrainer):
                             prev_actions[i].item(),
                             batch[expert_uuid][i].item(),
                             pos,
-                            out
+                            cot_text
                         )
                     )
 

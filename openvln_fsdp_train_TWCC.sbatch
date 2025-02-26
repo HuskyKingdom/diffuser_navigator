@@ -12,14 +12,14 @@
 # partition
 #SBATCH -p gp4d
 
-#SBATCH -N 2
-#SBATCH --gres=gpu:8
+#SBATCH -N 1
+#SBATCH --gres=gpu:3
 #SBATCH --ntasks-per-node=1
 // #SBATCH --cpus-per-task=4 
 
 
 // # cpu core / nodes
-#SBATCH -n 64
+#SBATCH -n 24
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk
@@ -72,8 +72,8 @@ export UCX_IB_GPU_DIRECT_RDMA=1
 export HF_HOME=./
 
 srun torchrun \
-  --nproc_per_node=8 \
-  --nnodes=2 \
+  --nproc_per_node=3 \
+  --nnodes=1 \
   --node_rank=$SLURM_NODEID \
   --rdzv_backend c10d \
   --rdzv_endpoint $MASTER_ADDR:$MASTER_PORT \

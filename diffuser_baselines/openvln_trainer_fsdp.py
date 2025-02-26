@@ -180,11 +180,13 @@ def collate_fn(batch):
     max_len = max(lengths)
 
     for sample in batch:
+
+        collected_data["ins_text"].append([])
+        collected_data["labels"].append([])
+
         # Extract data from the sample
         sample_dict = sample[0]
         instr = torch.tensor(sample_dict['instruction'][0])  # (len_seq, 200) only take one instruction
-        # rgb_feat = torch.tensor(sample_dict['rgb_features'])  # (len_seq, 2048, 4, 4)
-        # depth_feat = torch.tensor(sample_dict['depth_features'])  # (len_seq, 128, 4, 4)
 
         rgb = torch.tensor(sample_dict['rgb']) # (len_seq, 224, 224, 3)
      
@@ -193,7 +195,8 @@ def collate_fn(batch):
         prev_actions = torch.tensor(sample[1]) 
         progress = torch.tensor(sample_dict['progress'])
 
-        collected_data["ins_text"].append(sample[4][0]) # instruction text
+
+        
 
         
 
@@ -207,7 +210,7 @@ def collate_fn(batch):
         )
         weights = inflection_weights[inflections]
 
-        seq_len = gt_actions.shape[0]
+        
 
         # Pad sequences to the maximum length
         # pad_rgb_feat = _pad_helper(rgb_feat, max_len)
@@ -221,6 +224,14 @@ def collate_fn(batch):
 
 
 
+        seq_len = gt_actions.shape[0]
+        for ts in range(pad_gt_actions.shape[0]): # cp instructions and construct input for decoder-only model
+            mappings = ["<STOP>","<FORWARD>","<LEFT>","<RIGHT>"]
+            collected_data["ins_text"][-1].append(sample[4][0]) # instruction text
+            collected_data['labels'][-1].append(mappings[pad_gt_actions[ts]])
+
+
+
         # Create padding_mask for this sample
         mask = torch.ones(max_len, dtype=torch.bool)
         mask[:seq_len] = False  # False represents real data
@@ -228,12 +239,9 @@ def collate_fn(batch):
         # Append padded data to collected_data
         collected_data['instruction'].append(instr)
 
-        # collected_data['rgb_features'].append(pad_rgb_feat)
-        # collected_data['depth_features'].append(pad_depth_feat)
+
 
         collected_data['rgb'].append(pad_rgb)
-
-
         collected_data['gt_actions'].append(pad_gt_actions)
         collected_data["prev_actions"].append(pad_prev_actions)
         collected_data['trajectories'].append(pad_trajectories)
@@ -248,11 +256,6 @@ def collate_fn(batch):
             continue
         collected_data[key] = torch.stack(collected_data[key], dim=0)
 
-    # pipeline test only
-    collected_data["labels"] = [
-    "Short text",
-    "This is a slightly longer text",
-    "This is an even longer text that is used to test cases where text lengths vary",]
 
     return collected_data
 
@@ -1060,7 +1063,9 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
         torch.cuda.empty_cache()
         
-        train = True
+        train = not load_from_ckpt
+        # train = False
+
         
         policy = baseline_registry.get_policy(self.config.MODEL.policy_name)
         self.policy = policy(
@@ -1113,7 +1118,6 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             use_orig_params=True,
             )
             
-
             
 
         params = sum(param.numel() for param in self.policy.parameters())
