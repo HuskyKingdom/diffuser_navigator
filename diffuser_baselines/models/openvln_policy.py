@@ -28,6 +28,7 @@ from torch.nn.utils.rnn import pad_sequence
 from PIL import Image
 from prismatic.util.nn_utils import FusedMLPProjector
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule
+from diffuser_baselines.models.common.position_encodings import PositionalEncoding
 
 IGNORE_INDEX = -100
 
