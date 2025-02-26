@@ -320,15 +320,20 @@ class OpenVLN(PrismaticVLM):
 
         super().__init__(*args, **kwargs)
 
+        self.intergrated_his_embedding = nn.Embedding(1,4096)
+        self.histor_embeddings = self.intergrated_his_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
+        self.history_intergration_attention = FFWRelativeCrossAttentionModule(4096,4,1)
+        # self.history_projector = FusedMLPProjector(self.vision_backbone.embed_dim,self.llm_backbone.embed_dim)
+
+
         # initialize memory bank
         self.menmory_embedding = nn.Embedding(52,4096)
         self.M_init = self.menmory_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
 
-        self.history_projector = FusedMLPProjector(self.vision_backbone.embed_dim,self.llm_backbone.embed_dim)
+        
+
+        
         self.memory_fuser_attention = FFWRelativeCrossAttentionModule(4096,4,1)
-
-        self.history_intergration_attention = FFWRelativeCrossAttentionModule(4096,4,1)
-
         self.pe_layer = PositionalEncoding(4096,0.2)
 
 
@@ -513,10 +518,20 @@ class OpenVLN(PrismaticVLM):
         # Projection Logic :: [bsz, num_patches, llm_embed_dim] =>> num_patches = (2 *) (256 + 1) for ViT-L + CLS
         projected_patch_embeddings = self.projector(patch_features)
 
+        
 
+        expanded_histories = self.intergrated_his_embedding.unsqueeze(0).expand(projected_patch_embeddings.shape[0],-1,-1)
 
-        print(projected_patch_embeddings.shape)
-        assert 1==2
+        # intergrate histories [bsz, num_patches, llm_embed_dim] -> [bsz, 1, llm_embed_dim]
+        integrated_his,_ = self.history_intergration_attention(query=expanded_histories.transpose(0, 1),
+            value=projected_patch_embeddings.transpose(0, 1),
+            query_pos=None,
+            value_pos=None,
+            diff_ts=None,pad_mask=batch_mask)
+        integrated_his = integrated_his[-1].transpose(0,1) # (bs*T,C,d)
+        
+        projected_cls_embeddings = integrated_his
+        
 
 
         # ==== INPUT & LABEL & MASK ====
@@ -541,6 +556,8 @@ class OpenVLN(PrismaticVLM):
         # format init memory
         # resulting memory in (bs*T,C,d)
         expanded_memory = self.M_init.unsqueeze(0).expand(multimodal_embeddings.shape[0],-1,-1)
+
+        
 
         # format masking
         # memory masking (bs*T,T)
