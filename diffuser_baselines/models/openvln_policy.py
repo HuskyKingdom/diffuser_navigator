@@ -529,12 +529,13 @@ class OpenVLN(PrismaticVLM):
         
         print(expanded_memory.shape)
         # compressing
-        compressed_memory = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
+        compressed_memory,_ = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
             value=his_pos.transpose(0, 1),
             query_pos=None,
             value_pos=his_pos,
             diff_ts=None,pad_mask=batch_mask)
-            
+        
+        compressed_memory = compressed_memory[-1].transpose(0,1)
 
         print(batch_mask,batch_mask.shape,compressed_memory.shape)
         assert 1==2 # ()
