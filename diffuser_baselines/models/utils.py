@@ -409,6 +409,7 @@ class MemoryLlamaDecoderLayer(LlamaDecoderLayer):
         **kwargs):
 
         super().__init__(*args, **kwargs)
+        self.memory_layer_intergration_attention = FFWRelativeCrossAttentionModule(4096,4,1)
 
     
     def forward(
@@ -468,6 +469,16 @@ class MemoryLlamaDecoderLayer(LlamaDecoderLayer):
         hidden_states = self.post_attention_layernorm(hidden_states)
         hidden_states = self.mlp(hidden_states)
         hidden_states = residual + hidden_states
+
+        # integrating memory
+        x_context,_ = self.memory_layer_intergration_attention(query=hidden_states.transpose(0, 1),
+            value=his_pos.transpose(0, 1),
+            query_pos=None,
+            value_pos=None,
+            diff_ts=None,pad_mask=None)
+        x_context = x_context[-1].transpose(0,1)
+
+        hidden_states += 0.2 * x_context
 
         outputs = (hidden_states,)
 

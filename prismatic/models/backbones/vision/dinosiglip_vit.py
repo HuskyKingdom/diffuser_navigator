@@ -61,7 +61,7 @@ class DinoSigLIPViTBackbone(VisionBackbone):
         #   => Note: By default set `get_intermediate_layers` to return the *SECOND-TO-LAST* layer patches!
         #   => TODO (siddk) Remove after resolution of https://github.com/pytorch/pytorch/issues/109385
         self.dino_featurizer.forward = unpack_tuple(
-            partial(self.dino_featurizer.get_intermediate_layers, n={len(self.dino_featurizer.blocks)- 1})
+            partial(self.dino_featurizer.get_intermediate_layers, n={len(self.dino_featurizer.blocks)- 2})
         )
         self.siglip_featurizer.forward = unpack_tuple(
             partial(self.siglip_featurizer.get_intermediate_layers, n={len(self.siglip_featurizer.blocks) - 2})
@@ -145,9 +145,7 @@ class DinoSigLIPViTBackbone(VisionBackbone):
         dino_patches = self.dino_featurizer(pixel_values["dino"])
         siglip_patches = self.siglip_featurizer(pixel_values["siglip"])
 
-        print(dino_patches.shape)
-        assert 1==2
-
+        
         # todo not suitable for fsdp
         dino_cls = self.dino_featurizer.forward_features(pixel_values["dino"])[:,:1,:]
         siglip_cls = self.siglip_featurizer.forward_features(pixel_values["siglip"])[:,:1,:]

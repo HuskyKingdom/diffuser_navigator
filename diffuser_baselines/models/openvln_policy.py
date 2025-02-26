@@ -76,6 +76,13 @@ class OpenVLNPolicy(NetPolicy):
             self.vlm.llm_backbone.llm.resize_token_embeddings(len(self.tokenlizer), pad_to_multiple_of=64)
 
 
+        # replace layers
+        # replace llama decoder layers
+        layers = self.vlm.llm_backbone.model.layers
+        print(layers)
+        assert 1==2
+
+
         
 
     def act(self,observations, prev_actions, encode_only=False,print_info = False,ins_text=None): 
@@ -310,6 +317,7 @@ class OpenVLN(PrismaticVLM):
         self.memory_fuser_attention = FFWRelativeCrossAttentionModule(4096,4,1)
 
         self.pe_layer = PositionalEncoding(4096,0.2)
+
 
 
     
