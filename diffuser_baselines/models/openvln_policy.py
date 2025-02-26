@@ -308,6 +308,8 @@ class OpenVLN(PrismaticVLM):
         self.history_projectory = FusedMLPProjector(self.vision_backbone.embed_dim,self.llm_backbone.embed_dim)
         self.memory_fuser_attention = FFWRelativeCrossAttentionModule(4096,4,1)
 
+        self.pe_layer = PositionalEncoding(4096,0.2)
+
 
     
 
@@ -505,26 +507,31 @@ class OpenVLN(PrismaticVLM):
         if not projected_cls_embeddings.is_contiguous():
             projected_cls_embeddings = projected_cls_embeddings.contiguous() # (bs*T,1,dim)
 
+        # format encoded histories
         # (bs,T,1,dim) -> (bs,T,dim)
         projected_cls_embeddings_with_T = projected_cls_embeddings.view(img_ori_shape[0],img_ori_shape[1],projected_cls_embeddings.shape[1],projected_cls_embeddings.shape[2]).squeeze(2) 
         cls_embeeding_kv = projected_cls_embeddings_with_T.unsqueeze(1).expand(-1,projected_cls_embeddings_with_T.shape[1],-1,-1)  # (bs,T,dim) -> (bs,T,T,dim)
         cls_embeeding_kv = cls_embeeding_kv.reshape(-1,cls_embeeding_kv.shape[2],cls_embeeding_kv.shape[3]) # (bs*T,T,dim)
+        his_pos = self.pe_layer(cls_embeeding_kv)
 
+        # format init memory
         # resulting memory in (bs*T,C,d)
         expanded_memory = self.M_init.unsqueeze(0).expand(multimodal_embeddings.shape[0],-1,-1)
 
+        # format masking
         # memory masking (bs*T,T)
         bs = img_ori_shape[0]
         T = img_ori_shape[1]
         mask_single = torch.triu(torch.ones(T,T,dtype=torch.bool)).to(expanded_memory.device)
         batch_mask = mask_single.repeat(bs,1)
 
-
+        
+        # compressing
         compressed_memory = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
-            value=cls_embeeding_kv.transpose(0, 1),
+            value=his_pos.transpose(0, 1),
             query_pos=None,
-            value_pos=None,
-            diff_ts=time_embeddings,pad_mask=batch_mask)[-1].transpose(0,1)
+            value_pos=his_pos,
+            diff_ts=None,pad_mask=batch_mask)[-1].transpose(0,1)
             
 
         print(batch_mask,batch_mask.shape)
