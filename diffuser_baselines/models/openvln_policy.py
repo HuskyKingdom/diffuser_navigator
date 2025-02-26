@@ -27,7 +27,7 @@ from transformers.modeling_outputs import CausalLMOutputWithPast
 from torch.nn.utils.rnn import pad_sequence
 from PIL import Image
 from prismatic.util.nn_utils import FusedMLPProjector
-
+from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule
 
 IGNORE_INDEX = -100
 
@@ -302,10 +302,11 @@ class OpenVLN(PrismaticVLM):
         super().__init__(*args, **kwargs)
 
         # initialize memory bank
-        self.menmory_embedding = nn.Embedding(52,768)
+        self.menmory_embedding = nn.Embedding(52,4096)
         self.M_init = self.menmory_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
 
         self.history_projectory = FusedMLPProjector(self.vision_backbone.embed_dim,self.llm_backbone.embed_dim)
+        self.menmory_fuser_attention = FFWRelativeCrossAttentionModule(4096,4,1)
 
 
     
@@ -501,55 +502,13 @@ class OpenVLN(PrismaticVLM):
         #   => We'll ignore the per-token outputs for each of the patch embeddings as well!
         multimodal_embeddings, multimodal_attention_mask, multimodal_labels = self.get_input(input_ids=input_ids,img_features=projected_patch_embeddings, input_mask=attention_mask, labels=labels)
 
+        if not projected_cls_embeddings.is_contiguous():
+            projected_cls_embeddings = projected_cls_embeddings.contiguous()
 
         print(projected_cls_embeddings.is_contiguous())
         assert 1==2 # ()
 
-        # === Add Unimodal Handling ===
-        # Create Fused Embeddings, Attention Mask, and Labels by Merging with "unimodal" Inputs (if applicable)
-        unimodal_indices = torch.tensor(
-            [idx for idx in range(len(input_ids)) if idx not in multimodal_indices],
-            dtype=torch.long,
-            device=multimodal_indices.device,
-        )
 
-        # No "unimodal" data --> Fused == Multimodal
-        if len(unimodal_indices) == 0:
-            fused_embeddings = multimodal_embeddings
-            fused_attention_mask = multimodal_attention_mask
-            fused_labels = multimodal_labels
-
-        else:
-            # Otherwise --> Merge w/ unimodal data
-
-            # This doesn't matter --> but in the "normal" case this is the embedding of the <PAD> token
-            #   => NOTE :: Verified that `zeros/randn/empty/<PAD> embedding` all return the same result!
-            unimodal_embeddings_pad = torch.zeros(
-                (len(unimodal_indices), projected_patch_embeddings.shape[1], input_embeddings.shape[2]),
-                dtype=input_embeddings.dtype,
-                device=input_embeddings.device,
-            )
-            unimodal_attention_pad = torch.full(
-                (len(unimodal_indices), projected_patch_embeddings.shape[1]),
-                False,
-                dtype=attention_mask.dtype,
-                device=attention_mask.device,
-            )
-            unimodal_labels_pad = torch.full(
-                (len(unimodal_indices), projected_patch_embeddings.shape[1]),
-                IGNORE_INDEX,
-                dtype=labels.dtype,
-                device=labels.device,
-            )
-
-            unimodal_embeddings = torch.cat([input_embeddings[unimodal_indices], unimodal_embeddings_pad], dim=1)
-            unimodal_attention_mask = torch.cat([attention_mask[unimodal_indices], unimodal_attention_pad], dim=1)
-            unimodal_labels = torch.cat([labels[unimodal_indices], unimodal_labels_pad], dim=1)
-
-            # Create "Fused" Tensors by Stacking Multimodal & Unimodal
-            fused_embeddings = torch.vstack([multimodal_embeddings, unimodal_embeddings])
-            fused_attention_mask = torch.vstack([multimodal_attention_mask, unimodal_attention_mask])
-            fused_labels = torch.vstack([multimodal_labels, unimodal_labels])
 
         # Run LLM Forward --> returns CausalLMOutputWithPast!
 
