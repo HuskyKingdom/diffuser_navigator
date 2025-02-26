@@ -67,6 +67,7 @@ class DinoSigLIPViTBackbone(VisionBackbone):
             partial(self.siglip_featurizer.get_intermediate_layers, n={len(self.siglip_featurizer.blocks) - 2})
         )
 
+
         # Get Configs for _both_ Featurizers =>> Note :: Override default image size for larger resolution models
         self.dino_data_cfg = timm.data.resolve_model_data_config(self.dino_featurizer)
         self.dino_data_cfg["input_size"] = (3, self.default_image_size, self.default_image_size)

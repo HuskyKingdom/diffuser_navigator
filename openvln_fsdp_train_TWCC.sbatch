@@ -13,7 +13,7 @@
 #SBATCH -p gp4d
 
 #SBATCH -N 1
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:1
 #SBATCH --ntasks-per-node=1
 // #SBATCH --cpus-per-task=4 
 
@@ -72,7 +72,7 @@ export UCX_IB_GPU_DIRECT_RDMA=1
 export HF_HOME=./
 
 srun torchrun \
-  --nproc_per_node=4 \
+  --nproc_per_node=1 \
   --nnodes=1 \
   --node_rank=$SLURM_NODEID \
   --rdzv_backend c10d \
