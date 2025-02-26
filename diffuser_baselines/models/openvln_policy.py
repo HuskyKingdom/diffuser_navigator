@@ -324,8 +324,10 @@ class OpenVLN(PrismaticVLM):
         self.menmory_embedding = nn.Embedding(52,4096)
         self.M_init = self.menmory_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
 
-        self.history_projectory = FusedMLPProjector(self.vision_backbone.embed_dim,self.llm_backbone.embed_dim)
+        self.history_projector = FusedMLPProjector(self.vision_backbone.embed_dim,self.llm_backbone.embed_dim)
         self.memory_fuser_attention = FFWRelativeCrossAttentionModule(4096,4,1)
+
+        self.history_intergration_attention = FFWRelativeCrossAttentionModule(4096,4,1)
 
         self.pe_layer = PositionalEncoding(4096,0.2)
 
@@ -503,16 +505,18 @@ class OpenVLN(PrismaticVLM):
         with torch.set_grad_enabled(self.vision_backbone_requires_grad):
             if isinstance(pixel_values, dict):
                 # patch_features = self.vision_backbone({k: pixel_values[k][multimodal_indices] for k in pixel_values})
-                patch_features,cls_features = self.vision_backbone({k: pixel_values[k] for k in pixel_values})
+                patch_features = self.vision_backbone({k: pixel_values[k] for k in pixel_values})
             else:
-                patch_features,cls_features = self.vision_backbone(pixel_values[multimodal_indices])
+                patch_features = self.vision_backbone(pixel_values[multimodal_indices])
         
         
         # Projection Logic :: [bsz, num_patches, llm_embed_dim] =>> num_patches = (2 *) (256 + 1) for ViT-L + CLS
         projected_patch_embeddings = self.projector(patch_features)
 
-        projected_cls_embeddings = self.history_projectory(cls_features)
-        
+
+
+        print(projected_patch_embeddings.shape)
+        assert 1==2
 
 
         # ==== INPUT & LABEL & MASK ====

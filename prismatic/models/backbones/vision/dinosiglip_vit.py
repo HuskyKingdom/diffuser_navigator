@@ -145,12 +145,7 @@ class DinoSigLIPViTBackbone(VisionBackbone):
         dino_patches = self.dino_featurizer(pixel_values["dino"])
         siglip_patches = self.siglip_featurizer(pixel_values["siglip"])
 
-        
-        # todo not suitable for fsdp
-        dino_cls = self.dino_featurizer.forward_features(pixel_values["dino"])[:,:1,:]
-        siglip_cls = self.siglip_featurizer.forward_features(pixel_values["siglip"])[:,:1,:]
-        
-        return torch.cat([dino_patches, siglip_patches], dim=2),torch.cat([dino_cls, siglip_cls], dim=2)
+        return torch.cat([dino_patches, siglip_patches], dim=2)
 
     @property
     def default_image_resolution(self) -> Tuple[int, int, int]:
