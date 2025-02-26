@@ -209,6 +209,7 @@ class HFCausalLLMBackbone(LLMBackbone, ABC):
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
+        compressed_mem = None,
     ) -> CausalLMOutputWithPast:
         output: CausalLMOutputWithPast = self.llm(
             input_ids=input_ids,
@@ -221,5 +222,6 @@ class HFCausalLLMBackbone(LLMBackbone, ABC):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
+            compressed_mem = compressed_mem,
         )
         return output

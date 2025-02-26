@@ -88,7 +88,7 @@ class OpenVLNPolicy(NetPolicy):
             mem_decoer_layers.append(new_layer)
         self.vlm.llm_backbone.llm.model.layers = mem_decoer_layers
 
-        assert 1==2
+
 
 
         
@@ -568,6 +568,7 @@ class OpenVLN(PrismaticVLM):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
+            compressed_mem = compressed_memory,
         )
 
 

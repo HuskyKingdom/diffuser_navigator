@@ -422,6 +422,7 @@ class MemoryLlamaDecoderLayer(LlamaDecoderLayer):
         use_cache: Optional[bool] = False,
         cache_position: Optional[torch.LongTensor] = None,
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,  # will become mandatory in v4.46
+        compressed_mem = None,
         **kwargs,
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
         """
@@ -472,7 +473,7 @@ class MemoryLlamaDecoderLayer(LlamaDecoderLayer):
 
         # integrating memory
         x_context,_ = self.memory_layer_intergration_attention(query=hidden_states.transpose(0, 1),
-            value=his_pos.transpose(0, 1),
+            value=compressed_mem.transpose(0, 1),
             query_pos=None,
             value_pos=None,
             diff_ts=None,pad_mask=None)
