@@ -395,3 +395,17 @@ def batch_obs(
         batch_t[sensor] = torch.stack(batch[sensor], dim=0)
 
     return batch_t.map(lambda v: v.to(device))
+
+
+from transformers import LlamaForCausalLM
+
+class MomoryLlamaForCausalLM(LlamaForCausalLM):
+
+    def __init__(self,
+        *args,
+        **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        
+

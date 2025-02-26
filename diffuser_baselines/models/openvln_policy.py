@@ -501,6 +501,10 @@ class OpenVLN(PrismaticVLM):
         #   => We'll ignore the per-token outputs for each of the patch embeddings as well!
         multimodal_embeddings, multimodal_attention_mask, multimodal_labels = self.get_input(input_ids=input_ids,img_features=projected_patch_embeddings, input_mask=attention_mask, labels=labels)
 
+        multimodal_labels = multimodal_labels.view(img_ori_shape[0],img_ori_shape[1],multimodal_labels.shape[1])
+
+        print(multimodal_labels.shape)
+        assert 1==2
 
 
         # ==== Update Memories ====
@@ -527,18 +531,13 @@ class OpenVLN(PrismaticVLM):
         batch_mask = mask_single.repeat(bs,1)
 
         
-        print(expanded_memory.shape)
         # compressing
         compressed_memory,_ = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
             value=his_pos.transpose(0, 1),
             query_pos=None,
             value_pos=his_pos,
             diff_ts=None,pad_mask=batch_mask)
-        
-        compressed_memory = compressed_memory[-1].transpose(0,1)
-
-        print(batch_mask,batch_mask.shape,compressed_memory.shape)
-        assert 1==2 # ()
+        compressed_memory = compressed_memory[-1].transpose(0,1) # (bs*T,C,d)
 
 
 
