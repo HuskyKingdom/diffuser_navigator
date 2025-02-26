@@ -533,7 +533,7 @@ class OpenVLN(PrismaticVLM):
             value=his_pos.transpose(0, 1),
             query_pos=None,
             value_pos=his_pos,
-            diff_ts=None,pad_mask=batch_mask)[-1].transpose(0,1)
+            diff_ts=None,pad_mask=batch_mask)
             
 
         print(batch_mask,batch_mask.shape,compressed_memory.shape)
