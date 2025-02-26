@@ -400,7 +400,7 @@ def batch_obs(
 from transformers import LlamaForCausalLM
 
 
-class MemoryLlamaDecoderLayer()
+# class MemoryLlamaDecoderLayer()
 
 class MomoryLlamaForCausalLM(LlamaForCausalLM):
 
