@@ -78,7 +78,7 @@ class OpenVLNPolicy(NetPolicy):
 
         # replace layers
         # replace llama decoder layers
-        layers = self.vlm.llm_backbone.model.layers
+        layers = self.vlm.llm_backbone.llm.model.layers
         print(layers)
         assert 1==2
 
