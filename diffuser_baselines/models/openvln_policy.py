@@ -527,6 +527,7 @@ class OpenVLN(PrismaticVLM):
         batch_mask = mask_single.repeat(bs,1)
 
         
+        print(expanded_memory.shape)
         # compressing
         compressed_memory = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
             value=his_pos.transpose(0, 1),
