@@ -144,7 +144,7 @@ class DinoSigLIPViTBackbone(VisionBackbone):
         dino_patches = self.dino_featurizer(pixel_values["dino"])
         siglip_patches = self.siglip_featurizer(pixel_values["siglip"])
 
-        print(pixel_values["dino"])[:,:1,:].shape)
+        print(pixel_values["dino"].shape)
         dino_cls = self.dino_featurizer.forward_features(pixel_values["dino"])[:,:1,:]
         siglip_cls = self.siglip_featurizer.forward_features(pixel_values["siglip"])[:,:1,:]
         
