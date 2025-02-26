@@ -492,18 +492,18 @@ class OpenVLN(PrismaticVLM):
         projected_cls_embeddings = self.history_projectory(cls_features)
         
 
-        # ==== FORMULATE IMG FEATURES ====
-        # openvln: reshape the resulting features into seq shape & generate img attention mask
-        img_formulated = self.reshape_vision_features(projected_patch_embeddings, img_ori_shape) # (bs,T,256,4096)
-        
 
-        # ==== INPUT & MASK ====
+        # ==== INPUT & LABEL & MASK ====
         # [Contract] We assume the first token of `labels` (associated with <BOS>) is already marked as "IGNORE"
         #   => We'll ignore the per-token outputs for each of the patch embeddings as well!
         multimodal_embeddings, multimodal_attention_mask, multimodal_labels = self.get_input(input_ids=input_ids,img_features=projected_patch_embeddings, input_mask=attention_mask, labels=labels)
 
+
+
+        # ==== Update Memories ====
+
         if not projected_cls_embeddings.is_contiguous():
-            projected_cls_embeddings = projected_cls_embeddings.contiguous()
+            projected_cls_embeddings = projected_cls_embeddings.contiguous() # (bs*T,1,dim)
 
         print(projected_cls_embeddings.is_contiguous())
         assert 1==2 # ()
