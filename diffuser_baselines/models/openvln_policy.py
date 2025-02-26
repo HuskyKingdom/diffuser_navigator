@@ -29,6 +29,8 @@ from PIL import Image
 from prismatic.util.nn_utils import FusedMLPProjector
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule
 from diffuser_baselines.models.common.position_encodings import PositionalEncoding
+from diffuser_baselines.models.common.utils import MemoryLlamaDecoderLayer
+
 
 IGNORE_INDEX = -100
 
@@ -78,8 +80,14 @@ class OpenVLNPolicy(NetPolicy):
 
         # replace layers
         # replace llama decoder layers
-        layers = self.vlm.llm_backbone.llm.model.layers
-        print(layers)
+        original_layers = self.vlm.llm_backbone.llm.model.layers
+        mem_decoer_layers = nn.ModuleList()
+        for idx, old_layer in enumerate(original_layers):
+            new_layer = MemoryLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config,layer_idx=idx)
+            new_layer.load_state_dict(old_layer.state_dict(),strict=False)
+            mem_decoer_layers.append(new_layer)
+        self.vlm.llm_backbone.llm.model.layers = mem_decoer_layers
+
         assert 1==2
 
 
