@@ -505,7 +505,10 @@ class OpenVLN(PrismaticVLM):
         if not projected_cls_embeddings.is_contiguous():
             projected_cls_embeddings = projected_cls_embeddings.contiguous() # (bs*T,1,dim)
 
-        print(projected_cls_embeddings.is_contiguous())
+
+
+
+        print(projected_cls_embeddings.shape)
         assert 1==2 # ()
 
 
