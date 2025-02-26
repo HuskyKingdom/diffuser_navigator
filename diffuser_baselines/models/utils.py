@@ -399,6 +399,9 @@ def batch_obs(
 
 from transformers import LlamaForCausalLM
 
+
+class MemoryLlamaDecoderLayer()
+
 class MomoryLlamaForCausalLM(LlamaForCausalLM):
 
     def __init__(self,
@@ -407,5 +410,5 @@ class MomoryLlamaForCausalLM(LlamaForCausalLM):
 
         super().__init__(*args, **kwargs)
 
-        
+
 

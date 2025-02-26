@@ -501,11 +501,7 @@ class OpenVLN(PrismaticVLM):
         #   => We'll ignore the per-token outputs for each of the patch embeddings as well!
         multimodal_embeddings, multimodal_attention_mask, multimodal_labels = self.get_input(input_ids=input_ids,img_features=projected_patch_embeddings, input_mask=attention_mask, labels=labels)
 
-        multimodal_labels = multimodal_labels.view(img_ori_shape[0],img_ori_shape[1],multimodal_labels.shape[1])
-
-        print(multimodal_labels.shape)
-        assert 1==2
-
+      
 
         # ==== Update Memories ====
 
