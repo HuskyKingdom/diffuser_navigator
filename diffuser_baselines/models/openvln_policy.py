@@ -535,7 +535,7 @@ class OpenVLN(PrismaticVLM):
             diff_ts=None,pad_mask=batch_mask)[-1].transpose(0,1)
             
 
-        print(batch_mask,batch_mask.shape)
+        print(batch_mask,batch_mask.shape,compressed_memory.shape)
         assert 1==2 # ()
 
 
