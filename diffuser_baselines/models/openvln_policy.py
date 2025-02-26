@@ -88,6 +88,9 @@ class OpenVLNPolicy(NetPolicy):
             mem_decoer_layers.append(new_layer)
         self.vlm.llm_backbone.llm.model.layers = mem_decoer_layers
 
+        del original_layers
+        torch.cuda.empty_cache()
+
 
 
 
