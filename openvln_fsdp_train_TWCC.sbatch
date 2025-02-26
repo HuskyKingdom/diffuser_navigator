@@ -19,7 +19,7 @@
 
 
 // # cpu core / nodes
-#SBATCH -n 24
+#SBATCH -n 48
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk
