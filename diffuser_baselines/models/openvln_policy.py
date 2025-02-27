@@ -29,7 +29,7 @@ from PIL import Image
 from prismatic.util.nn_utils import FusedMLPProjector
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule
 from diffuser_baselines.models.common.position_encodings import PositionalEncoding
-from diffuser_baselines.models.utils import MemoryLlamaDecoderLayer
+from diffuser_baselines.models.utils import MemoryLlamaDecoderLayer, NormalLlamaDecoderLayer
 
 
 IGNORE_INDEX = -100
@@ -80,13 +80,27 @@ class OpenVLNPolicy(NetPolicy):
 
         # replace layers
         # replace llama decoder layers
+        # original_layers = self.vlm.llm_backbone.llm.model.layers
+        # mem_decoer_layers = nn.ModuleList()
+        # for idx, old_layer in enumerate(original_layers):
+        #     new_layer = MemoryLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config,layer_idx=idx)
+        #     new_layer.load_state_dict(old_layer.state_dict(),strict=False)
+        #     mem_decoer_layers.append(new_layer)
+        # self.vlm.llm_backbone.llm.model.layers = mem_decoer_layers
+
         original_layers = self.vlm.llm_backbone.llm.model.layers
-        mem_decoer_layers = nn.ModuleList()
+        new_decoder_layers = nn.ModuleList()
+        total_layers = len(original_layers)
+
         for idx, old_layer in enumerate(original_layers):
-            new_layer = MemoryLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config,layer_idx=idx)
-            new_layer.load_state_dict(old_layer.state_dict(),strict=False)
-            mem_decoer_layers.append(new_layer)
-        self.vlm.llm_backbone.llm.model.layers = mem_decoer_layers
+            if idx >= total_layers - 3:
+                new_layer = MemoryLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config, layer_idx=idx)
+            else:
+                new_layer = NormalLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config, layer_idx=idx)
+            new_layer.load_state_dict(old_layer.state_dict(), strict=False)
+            new_decoder_layers.append(new_layer)
+
+        self.vlm.llm_backbone.llm.model.layers = new_decoder_layers
 
         del original_layers
         torch.cuda.empty_cache()
@@ -322,16 +336,16 @@ class OpenVLN(PrismaticVLM):
 
         self.intergrated_his_embedding = nn.Embedding(1,4096)
         self.histor_embeddings = self.intergrated_his_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
-        self.history_intergration_attention = FFWRelativeCrossAttentionModule(4096,4,1)
+        self.history_intergration_attention = FFWRelativeCrossAttentionModule(4096,2,1)
         # self.history_projector = FusedMLPProjector(self.vision_backbone.embed_dim,self.llm_backbone.embed_dim)
 
 
         # initialize memory bank
-        self.menmory_embedding = nn.Embedding(52,4096)
+        self.menmory_embedding = nn.Embedding(24,4096)
         self.M_init = self.menmory_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
 
         
-        self.memory_fuser_attention = FFWRelativeCrossAttentionModule(4096,4,1)
+        self.memory_fuser_attention = FFWRelativeCrossAttentionModule(4096,2,1)
         self.pe_layer = PositionalEncoding(4096,0.2)
 
 
