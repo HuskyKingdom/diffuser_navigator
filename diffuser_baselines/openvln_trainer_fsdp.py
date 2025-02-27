@@ -1072,8 +1072,6 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             config,
         )
 
-        self.policy.to(self.device)
-
 
         trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
         self.optimizer = torch.optim.AdamW(
@@ -1117,7 +1115,8 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             limit_all_gathers=True,
             use_orig_params=True,
             )
-            
+        else:
+            self.policy.to(torch.cuda.current_device())
             
 
         params = sum(param.numel() for param in self.policy.parameters())

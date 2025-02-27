@@ -261,14 +261,14 @@ class OpenVLNPolicy(NetPolicy):
 
         input_labels = inputids.detach().clone() # create labels
 
-        # with torch.cuda.amp.autocast(dtype=torch.float16):
-        #     modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = collected_data['gt_actions'].long(), img_ori_shape = (B,T), sample_valid_len = observations['lengths'])
-        
-        # change if finished !
-
         with torch.cuda.amp.autocast(dtype=torch.float16):
-            with torch.no_grad():
-                modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'])
+            modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'])
+        
+        # # change if finished !
+
+        # with torch.cuda.amp.autocast(dtype=torch.float16):
+        #     with torch.no_grad():
+        #         modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'])
         
 
         # pred = modelout.logits.argmax(dim=-1)
@@ -516,16 +516,15 @@ class OpenVLN(PrismaticVLM):
         # Projection Logic :: [bsz, num_patches, llm_embed_dim] =>> num_patches = (2 *) (256 + 1) for ViT-L + CLS
         projected_patch_embeddings = self.projector(patch_features)
 
-        
 
-        expanded_histories = self.intergrated_his_embedding.unsqueeze(0).expand(projected_patch_embeddings.shape[0],-1,-1)
+        expanded_histories = self.histor_embeddings.unsqueeze(0).expand(projected_patch_embeddings.shape[0],-1,-1)
 
         # intergrate histories [bsz, num_patches, llm_embed_dim] -> [bsz, 1, llm_embed_dim]
         integrated_his,_ = self.history_intergration_attention(query=expanded_histories.transpose(0, 1),
             value=projected_patch_embeddings.transpose(0, 1),
             query_pos=None,
             value_pos=None,
-            diff_ts=None,pad_mask=batch_mask)
+            diff_ts=None,pad_mask=None)
         integrated_his = integrated_his[-1].transpose(0,1) # (bs*T,C,d)
         
         projected_cls_embeddings = integrated_his
@@ -581,11 +580,11 @@ class OpenVLN(PrismaticVLM):
         
         return self.llm_backbone(
             input_ids=None,
-            attention_mask=fused_attention_mask, # ([3, 128])
+            attention_mask=multimodal_attention_mask, # ([3, 128])
             position_ids=None,
             past_key_values=past_key_values,
-            inputs_embeds=fused_embeddings, # ([3, 128, 4096])
-            labels=fused_labels, # ([3, 146])
+            inputs_embeds=multimodal_embeddings, # ([3, 128, 4096])
+            labels=multimodal_labels, # ([3, 146])
             use_cache=use_cache,
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
