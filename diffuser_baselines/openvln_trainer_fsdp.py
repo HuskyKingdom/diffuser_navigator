@@ -1126,6 +1126,10 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         logger.info(f"Agent parameters: {params}. Trainable: {params_t}")
         logger.info("Finished setting up policy.")
 
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache() 
+            gc.collect() 
+
 
         # MEM LEFT 25GB
         
