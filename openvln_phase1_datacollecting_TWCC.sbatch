@@ -45,7 +45,7 @@ unset __conda_setup
 
 # activate conda
 conda activate openvln
-
+export PYTHONDONTWRITEBYTECODE=1
 export NCCL_DEBUG=INFO
 export PYTHONUNBUFFERED=1
 export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:64
