@@ -236,7 +236,7 @@ class OpenVLNPolicy(NetPolicy):
         'labels': observations["labels"],
         }
 
-        if self.config.truncation:
+        if self.config.OPENVLN.truncation:
             # truncats batch size to preventing cuda OOM
             total_ts = observations['rgb'].shape[1]
             truncation = total_ts // 2
