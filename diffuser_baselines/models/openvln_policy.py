@@ -175,10 +175,14 @@ class OpenVLNPolicy(NetPolicy):
         k: torch.stack([sample[k] for sample in transformed_images]).float().to(observations['rgb'].device)
         for k in transformed_images[0].keys()
         } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
+        
+
+    
+
 
 
         with torch.cuda.amp.autocast(dtype=torch.float16):
-            modelout = self.vlm(input_ids=input_ids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = (B,T), sample_valid_len = collected_data['lengths'], inference = True)
+            modelout = self.vlm(input_ids=input_ids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = (B,T), sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_images_tensor, sample_strat = 0)
         
         inference_logits = modelout.logits
 
@@ -239,17 +243,31 @@ class OpenVLNPolicy(NetPolicy):
         if self.config.OPENVLN.truncation:
             # truncats batch size to preventing cuda OOM
             total_ts = observations['rgb'].shape[1]
-            truncation = total_ts // 2
-            if random.random() < 0.5:
-                collected_data['rgb'] = observations['rgb'][:,:truncation,:,:,:]
-                collected_data['gt_actions'] = observations['gt_actions'][:,:truncation]
-                collected_data['ins_text'] = [row[:truncation] for row in observations['ins_text']]
-                collected_data['labels'] = [row[:truncation] for row in observations['labels']]
+            truncation_len = 10
+            if total_ts >= truncation_len:
+                start_idx = random.randint(0, total_ts - truncation_len)
+                end_idx = start_idx + truncation_len
             else:
-                collected_data['rgb'] = observations['rgb'][:,truncation:,:,:,:]
-                collected_data['gt_actions'] = observations['gt_actions'][:,truncation:]
-                collected_data['ins_text'] = [row[truncation:] for row in observations['ins_text']]
-                collected_data['labels'] = [row[truncation:] for row in observations['labels']]
+                start_idx = 0
+                end_idx = total_ts
+
+            collected_data['rgb'] = observations['rgb'][:, start_idx:end_idx, :, :, :]
+            collected_data['gt_actions'] = observations['gt_actions'][:, start_idx:end_idx]
+            collected_data['ins_text'] = [row[start_idx:end_idx] for row in observations['ins_text']]
+            collected_data['labels'] = [row[start_idx:end_idx] for row in observations['labels']]
+            full_histories = observations['rgb'].clone()
+
+        # if self.config.OPENVLN.truncation:
+        #     # truncats batch size to preventing cuda OOM
+        #     total_ts = observations['rgb'].shape[1]
+        #     truncation = 10
+ 
+        #     collected_data['rgb'] = observations['rgb'][:,:truncation,:,:,:]
+        #     collected_data['gt_actions'] = observations['gt_actions'][:,:truncation]
+        #     collected_data['ins_text'] = [row[:truncation] for row in observations['ins_text']]
+        #     collected_data['labels'] = [row[:truncation] for row in observations['labels']]
+        
+        
         
 
 
@@ -270,9 +288,9 @@ class OpenVLNPolicy(NetPolicy):
 
         attention_mask = inputids.ne(self.tokenlizer.pad_token_id)
 
-       
+        
 
-        # == formulating images ==
+        # == formulating training images ==
         # reshape and format
         B,T,H,W,C = collected_data['rgb'].shape
         collected_data['rgb'] = collected_data['rgb'].view(-1,H,W,C).cpu().numpy().astype(np.uint8)
@@ -282,17 +300,38 @@ class OpenVLNPolicy(NetPolicy):
         pil_images = [Image.fromarray(img) for img in collected_data['rgb']]
         transformed_images = [self.image_transform(img) for img in pil_images]
 
+
         # back to tensor
         transformed_images_tensor = {
         k: torch.stack([sample[k] for sample in transformed_images]).float().to(observations['instruction'].device)
         for k in transformed_images[0].keys()
         } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
+        
+
+        # == formulating histories ==
+        # reshape and format
+        B,T,H,W,C = full_histories.shape
+        full_histories = full_histories.view(-1,H,W,C).cpu().numpy().astype(np.uint8)
+
+        # to PIL image for transform
+        pil_images_his = [Image.fromarray(img) for img in full_histories]
+        transformed_his = [self.image_transform(img) for img in pil_images_his]
+
+        # back to tensor
+        transformed_his_tensor = {
+        k: torch.stack([sample[k] for sample in transformed_his]).float().to(observations['instruction'].device)
+        for k in transformed_his[0].keys()
+        } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
+        
+        
 
 
+
+        # == formulating labels ==
         input_labels = inputids.detach().clone() # create labels
 
         with torch.cuda.amp.autocast(dtype=torch.float16):
-            modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'])
+            modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'], full_his = transformed_his_tensor, sample_strat = start_idx)
         
         # # change if finished !
         # with torch.cuda.amp.autocast(dtype=torch.float16):
@@ -363,21 +402,6 @@ class OpenVLN(PrismaticVLM):
         self.memory_fuser_attention = FFWRelativeCrossAttentionModule(4096,2,1)
         self.pe_layer = PositionalEncoding(4096,0.2)
 
-
-
-    
-
-    def reshape_vision_features(self, projected_patch_embeddings, img_ori_shape):
-
-        pat_dim = projected_patch_embeddings.shape[1]
-        feature_dim = projected_patch_embeddings.shape[2]
-        projected_patch_embeddings = projected_patch_embeddings.view(img_ori_shape[0], img_ori_shape[1], pat_dim, feature_dim) # (B,T,256,4096)
-
-        # # projected_patch_embeddings = self.vit_linear(projected_patch_embeddings)
-        # projected_patch_embeddings = projected_patch_embeddings.mean(dim=2) # reduce dimension -> (B,T,4096)
-        # projected_patch_embeddings = projected_patch_embeddings.squeeze(2)
-
-        return projected_patch_embeddings
 
 
 
@@ -494,15 +518,17 @@ class OpenVLN(PrismaticVLM):
             query_pos=None,
             value_pos=None,
             diff_ts=None,pad_mask=None)
-        integrated_his = integrated_his[-1].transpose(0,1) # (bs*T,C,d)
+        integrated_his = integrated_his[-1].transpose(0,1) # (bs*T,1,d)
         projected_cls_embeddings = integrated_his
 
         return projected_cls_embeddings
 
-    def compress_memories(self,projected_cls_embeddings,img_ori_shape,multimodal_embeddings):
+    def compress_memories(self,projected_cls_embeddings,img_ori_shape,multimodal_embeddings,sample_start):
 
         if not projected_cls_embeddings.is_contiguous():
             projected_cls_embeddings = projected_cls_embeddings.contiguous() # (bs*T,1,dim)
+
+
 
         # format encoded histories
         # (bs,T,1,dim) -> (bs,T,dim)
@@ -513,23 +539,28 @@ class OpenVLN(PrismaticVLM):
 
         # format init memory
         # resulting memory in (bs*T,C,d)
-        expanded_memory = self.M_init.unsqueeze(0).expand(multimodal_embeddings.shape[0],-1,-1)
+        expanded_memory = self.M_init.unsqueeze(0).expand(cls_embeeding_kv.shape[0],-1,-1)
 
 
         # format masking
         # memory masking (bs*T,T)
         bs = img_ori_shape[0]
         T = img_ori_shape[1]
-        mask_single = torch.triu(torch.ones(T,T,dtype=torch.bool)).to(expanded_memory.device)
-        batch_mask = mask_single.repeat(bs,1)
 
-        
+        mask_all = torch.zeros(multimodal_embeddings.shape[0],T,dtype=torch.bool).to(expanded_memory.device)
+        mask_effective = torch.triu(torch.ones(multimodal_embeddings.shape[0],multimodal_embeddings.shape[0],dtype=torch.bool)).to(expanded_memory.device)
+
+
+        expanded_memory = expanded_memory[:multimodal_embeddings.shape[0],:,:]
+        mask_all[:, sample_start:sample_start+mask_effective.shape[1]] = mask_effective
+        his_pos = his_pos[:multimodal_embeddings.shape[0],:,:]
+
         # compressing
         compressed_memory,_ = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
             value=his_pos.transpose(0, 1),
             query_pos=None,
             value_pos=his_pos,
-            diff_ts=None,pad_mask=batch_mask)
+            diff_ts=None,pad_mask=mask_all)
         compressed_memory = compressed_memory[-1].transpose(0,1) # (bs*T,C,d)
 
         return compressed_memory
@@ -552,6 +583,8 @@ class OpenVLN(PrismaticVLM):
         img_ori_shape = None,
         sample_valid_len = None,
         inference: Optional[bool] = False,
+        full_his = None,
+        sample_strat = None,
     ) -> CausalLMOutputWithPast:
         """Run a forward pass through the VLN, returning a CausalLMOutputWithPast instance (contains loss)."""
 
@@ -592,12 +625,15 @@ class OpenVLN(PrismaticVLM):
                 patch_features = self.vision_backbone(pixel_values[multimodal_indices])
         
         
+
         # Projection Logic :: [bsz, num_patches, llm_embed_dim] =>> num_patches = (2 *) (256 + 1) for ViT-L + CLS
         projected_patch_embeddings = self.projector(patch_features)
 
 
-        # express histories in [cls] way
-        projected_cls_embeddings = self.extract_cls(projected_patch_embeddings)
+        
+
+
+        
         
 
 
@@ -609,8 +645,17 @@ class OpenVLN(PrismaticVLM):
     
 
         # ==== Update Memories ====
-        compressed_memory = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings)
+        # express histories in [cls] way
+        full_his_patches = self.vision_backbone({k: full_his[k] for k in full_his})
+        projected_his_embeddings = self.projector(full_his_patches)
+        projected_cls_embeddings = self.extract_cls(projected_his_embeddings)
+        compressed_memory = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,sample_strat)
 
+
+
+        torch.cuda.empty_cache() 
+
+        
 
 
         # Run LLM Forward --> returns CausalLMOutputWithPast!
@@ -619,16 +664,16 @@ class OpenVLN(PrismaticVLM):
         
         return self.llm_backbone(
             input_ids=None,
-            attention_mask=multimodal_attention_mask, # ([3, 128])
+            attention_mask=multimodal_attention_mask, # ([bs*T, token_len])
             position_ids=None,
             past_key_values=past_key_values,
-            inputs_embeds=multimodal_embeddings, # ([3, 128, 4096])
-            labels=multimodal_labels, # ([3, 146])
+            inputs_embeds=multimodal_embeddings, # ([bs*T, token_len, dim])
+            labels=multimodal_labels, # ([bs*T, token_len])
             use_cache=use_cache,
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
-            compressed_mem = compressed_memory,
+            compressed_mem = compressed_memory, # ([bs*T, C, d])
         )
 
 

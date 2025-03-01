@@ -647,6 +647,8 @@ class MemoryLlamaModel(LlamaModel):
         all_self_attns = () if output_attentions else None
         next_decoder_cache = None
 
+        index = 0
+
         for decoder_layer in self.layers:
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
@@ -664,6 +666,15 @@ class MemoryLlamaModel(LlamaModel):
                     position_embeddings,
                 )
             else:
+
+                device = hidden_states.device
+                props = torch.cuda.get_device_properties(device)
+                total_memory = props.total_memory / 1024**2  
+                allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
+                reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
+                print("IDX {} Total memory: {:.2f} MB\nMemory allocated: {:.2f} MB\nMemory reserved (cached): {:.2f} MB \n".format(index, total_memory, allocated_memory, reserved_memory))
+                index += 1
+                
                 layer_outputs = decoder_layer(
                     hidden_states,
                     attention_mask=causal_mask,
