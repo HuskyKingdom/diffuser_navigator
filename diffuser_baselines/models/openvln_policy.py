@@ -224,12 +224,6 @@ class OpenVLNPolicy(NetPolicy):
 
     def build_loss(self,observations):
 
-        device = observations['instruction'].device
-        props = torch.cuda.get_device_properties(device)
-        total_memory = props.total_memory / 1024**2  
-        allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
-        reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
-        print("Total memory: {:.2f} MB Memory allocated: {:.2f} MB Memory reserved (cached): {:.2f} MB \n".format(total_memory, allocated_memory, reserved_memory))
 
 
         # format batch data
@@ -250,7 +244,7 @@ class OpenVLNPolicy(NetPolicy):
         if self.config.OPENVLN.truncation:
             # truncats batch size to preventing cuda OOM
             total_ts = observations['rgb'].shape[1]
-            truncation_len = 10
+            truncation_len = 6
             if total_ts >= truncation_len:
                 start_idx = random.randint(0, total_ts - truncation_len)
                 end_idx = start_idx + truncation_len
@@ -521,7 +515,6 @@ class OpenVLN(PrismaticVLM):
 
         if not projected_cls_embeddings.is_contiguous():
             projected_cls_embeddings = projected_cls_embeddings.contiguous() # (bs*T,1,dim)
-
 
 
         # format encoded histories
