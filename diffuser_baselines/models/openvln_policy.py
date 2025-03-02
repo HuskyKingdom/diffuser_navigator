@@ -241,7 +241,8 @@ class OpenVLNPolicy(NetPolicy):
         'labels': observations["labels"],
         }
 
-        if self.config.OPENVLN.truncation:
+
+        if self.config.OPENVLN.truncation: # current version only supports local bs = 1
             # truncats batch size to preventing cuda OOM
             total_ts = observations['rgb'].shape[1]
             truncation_len = 6
@@ -257,8 +258,7 @@ class OpenVLNPolicy(NetPolicy):
             collected_data['ins_text'] = [row[start_idx:end_idx] for row in observations['ins_text']]
             collected_data['labels'] = [row[start_idx:end_idx] for row in observations['labels']]
             full_histories = observations['rgb'].clone()
-            observations['rgb'].detach()
-            del observations['rgb']
+            
 
         # == build model input (prompt + label) ==
 
@@ -335,8 +335,7 @@ class OpenVLNPolicy(NetPolicy):
         # print(observations["ins_text"], self.tokenlizer.convert_ids_to_tokens(observations["ins_text"][0].cpu().tolist()))
 
         # assert 1==2
-        del pil_images, transformed_images,pil_images_his,transformed_his
-        torch.cuda.empty_cache()
+
 
         return modelout.loss
     
