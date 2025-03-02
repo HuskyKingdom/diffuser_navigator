@@ -672,7 +672,7 @@ class MemoryLlamaModel(LlamaModel):
                 total_memory = props.total_memory / 1024**2  
                 allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
                 reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
-                print("IDX {} Total memory: {:.2f} MB\nMemory allocated: {:.2f} MB\nMemory reserved (cached): {:.2f} MB \n".format(index, total_memory, allocated_memory, reserved_memory))
+                print("IDX {} Total memory: {:.2f} MB\nMemory allocated: {:.2f} MB Memory reserved (cached): {:.2f} MB \n hidden_size {}".format(index, total_memory, allocated_memory, reserved_memory,hidden_states.shape))
                 index += 1
                 
                 layer_outputs = decoder_layer(
