@@ -1049,6 +1049,14 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             torch.cuda.empty_cache() 
             gc.collect() 
 
+        device = self.policy.vlm.device
+        props = torch.cuda.get_device_properties(device)
+        total_memory = props.total_memory / 1024**2  
+        allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
+        reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
+        print("Total memory: {:.2f} MB\nMemory allocated: {:.2f} MB Memory reserved (cached): {:.2f} MB \n".format(total_memory, allocated_memory, reserved_memory))
+        index += 1
+
 
         return loss_tensor.item()
 
