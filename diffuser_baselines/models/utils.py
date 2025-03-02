@@ -668,7 +668,6 @@ class MemoryLlamaModel(LlamaModel):
             else:
 
                 
-                
                 layer_outputs = decoder_layer(
                     hidden_states,
                     attention_mask=causal_mask,

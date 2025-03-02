@@ -224,6 +224,13 @@ class OpenVLNPolicy(NetPolicy):
 
     def build_loss(self,observations):
 
+        device = observations['instruction'].device
+        props = torch.cuda.get_device_properties(device)
+        total_memory = props.total_memory / 1024**2  
+        allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
+        reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
+        print("Total memory: {:.2f} MB Memory allocated: {:.2f} MB Memory reserved (cached): {:.2f} MB \n".format(total_memory, allocated_memory, reserved_memory))
+
 
         # format batch data
         collected_data = {
@@ -313,11 +320,6 @@ class OpenVLNPolicy(NetPolicy):
         
         
 
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache() 
-
-        
-
         # == formulating labels ==
         input_labels = inputids.detach().clone() # create labels
 
@@ -339,7 +341,8 @@ class OpenVLNPolicy(NetPolicy):
         # print(observations["ins_text"], self.tokenlizer.convert_ids_to_tokens(observations["ins_text"][0].cpu().tolist()))
 
         # assert 1==2
-
+        del pil_images, transformed_images,pil_images_his,transformed_his
+        torch.cuda.empty_cache()
 
         return modelout.loss
     
