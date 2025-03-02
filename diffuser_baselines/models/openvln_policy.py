@@ -251,8 +251,8 @@ class OpenVLNPolicy(NetPolicy):
                 start_idx = 0
                 end_idx = total_ts
 
-            collected_data['rgb'] = observations['rgb'][:, start_idx:end_idx, :, :, :].clone()
-            collected_data['gt_actions'] = observations['gt_actions'][:, start_idx:end_idx].clone()
+            collected_data['rgb'] = observations['rgb'][:, start_idx:end_idx, :, :, :]
+            collected_data['gt_actions'] = observations['gt_actions'][:, start_idx:end_idx]
             collected_data['ins_text'] = [row[start_idx:end_idx] for row in observations['ins_text']]
             collected_data['labels'] = [row[start_idx:end_idx] for row in observations['labels']]
             full_histories = observations['rgb'].clone()
