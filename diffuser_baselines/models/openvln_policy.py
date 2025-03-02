@@ -251,25 +251,13 @@ class OpenVLNPolicy(NetPolicy):
                 start_idx = 0
                 end_idx = total_ts
 
-            collected_data['rgb'] = observations['rgb'][:, start_idx:end_idx, :, :, :]
-            collected_data['gt_actions'] = observations['gt_actions'][:, start_idx:end_idx]
+            collected_data['rgb'] = observations['rgb'][:, start_idx:end_idx, :, :, :].clone()
+            collected_data['gt_actions'] = observations['gt_actions'][:, start_idx:end_idx].clone()
             collected_data['ins_text'] = [row[start_idx:end_idx] for row in observations['ins_text']]
             collected_data['labels'] = [row[start_idx:end_idx] for row in observations['labels']]
             full_histories = observations['rgb'].clone()
-
-        # if self.config.OPENVLN.truncation:
-        #     # truncats batch size to preventing cuda OOM
-        #     total_ts = observations['rgb'].shape[1]
-        #     truncation = 10
- 
-        #     collected_data['rgb'] = observations['rgb'][:,:truncation,:,:,:]
-        #     collected_data['gt_actions'] = observations['gt_actions'][:,:truncation]
-        #     collected_data['ins_text'] = [row[:truncation] for row in observations['ins_text']]
-        #     collected_data['labels'] = [row[:truncation] for row in observations['labels']]
-        
-        
-        
-
+            observations['rgb'].detach()
+            del observations['rgb']
 
         # == build model input (prompt + label) ==
 
@@ -325,7 +313,10 @@ class OpenVLNPolicy(NetPolicy):
         
         
 
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache() 
 
+        
 
         # == formulating labels ==
         input_labels = inputids.detach().clone() # create labels
@@ -511,7 +502,7 @@ class OpenVLN(PrismaticVLM):
 
     def extract_cls(self,projected_patch_embeddings):
         
-        expanded_histories = self.histor_embeddings.unsqueeze(0).repeat(projected_patch_embeddings.shape[0], 1, 1)
+        expanded_histories = self.histor_embeddings.unsqueeze(0).expand(projected_patch_embeddings.shape[0], -1, -1)
         # intergrate histories [bsz, num_patches, llm_embed_dim] -> [bsz, 1, llm_embed_dim]
         integrated_his,_ = self.history_intergration_attention(query=expanded_histories.transpose(0, 1),
             value=projected_patch_embeddings.transpose(0, 1),
@@ -533,13 +524,13 @@ class OpenVLN(PrismaticVLM):
         # format encoded histories
         # (bs,T,1,dim) -> (bs,T,dim)
         projected_cls_embeddings_with_T = projected_cls_embeddings.view(img_ori_shape[0],img_ori_shape[1],projected_cls_embeddings.shape[1],projected_cls_embeddings.shape[2]).squeeze(2) 
-        cls_embeeding_kv = projected_cls_embeddings_with_T.unsqueeze(1).repeat(1, projected_cls_embeddings_with_T.shape[1], 1, 1)
+        cls_embeeding_kv = projected_cls_embeddings_with_T.unsqueeze(1).expand(-1, projected_cls_embeddings_with_T.shape[1], -1, -1)
         cls_embeeding_kv = cls_embeeding_kv.reshape(-1,cls_embeeding_kv.shape[2],cls_embeeding_kv.shape[3]) # (bs*T,T,dim)
         his_pos = self.pe_layer(cls_embeeding_kv)
 
         # format init memory
         # resulting memory in (bs*T,C,d)
-        expanded_memory = self.M_init.unsqueeze(0).repeat(cls_embeeding_kv.shape[0],1,1)
+        expanded_memory = self.M_init.unsqueeze(0).expand(cls_embeeding_kv.shape[0],-1,-1)
 
 
         # format masking
