@@ -510,8 +510,8 @@ class OpenVLN(PrismaticVLM):
         return inference_result
 
     def extract_cls(self,projected_patch_embeddings):
-
-        expanded_histories = self.histor_embeddings.unsqueeze(0).expand(projected_patch_embeddings.shape[0],-1,-1)
+        
+        expanded_histories = self.histor_embeddings.unsqueeze(0).repeat(projected_patch_embeddings.shape[0], 1, 1)
         # intergrate histories [bsz, num_patches, llm_embed_dim] -> [bsz, 1, llm_embed_dim]
         integrated_his,_ = self.history_intergration_attention(query=expanded_histories.transpose(0, 1),
             value=projected_patch_embeddings.transpose(0, 1),
@@ -533,13 +533,13 @@ class OpenVLN(PrismaticVLM):
         # format encoded histories
         # (bs,T,1,dim) -> (bs,T,dim)
         projected_cls_embeddings_with_T = projected_cls_embeddings.view(img_ori_shape[0],img_ori_shape[1],projected_cls_embeddings.shape[1],projected_cls_embeddings.shape[2]).squeeze(2) 
-        cls_embeeding_kv = projected_cls_embeddings_with_T.unsqueeze(1).expand(-1,projected_cls_embeddings_with_T.shape[1],-1,-1)  # (bs,T,dim) -> (bs,T,T,dim)
+        cls_embeeding_kv = projected_cls_embeddings_with_T.unsqueeze(1).repeat(1, projected_cls_embeddings_with_T.shape[1], 1, 1)
         cls_embeeding_kv = cls_embeeding_kv.reshape(-1,cls_embeeding_kv.shape[2],cls_embeeding_kv.shape[3]) # (bs*T,T,dim)
         his_pos = self.pe_layer(cls_embeeding_kv)
 
         # format init memory
         # resulting memory in (bs*T,C,d)
-        expanded_memory = self.M_init.unsqueeze(0).expand(cls_embeeding_kv.shape[0],-1,-1)
+        expanded_memory = self.M_init.unsqueeze(0).repeat(cls_embeeding_kv.shape[0],1,1)
 
 
         # format masking
