@@ -245,7 +245,7 @@ class OpenVLNPolicy(NetPolicy):
         if self.config.OPENVLN.truncation: # current version only supports local bs = 1
             # truncats batch size to preventing cuda OOM
             total_ts = observations['rgb'].shape[1]
-            truncation_len = 5
+            truncation_len = 6
             if total_ts >= truncation_len:
                 start_idx = random.randint(0, total_ts - truncation_len)
                 end_idx = start_idx + truncation_len
