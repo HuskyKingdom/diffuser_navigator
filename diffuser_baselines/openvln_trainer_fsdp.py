@@ -1037,18 +1037,21 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
         
         self.scaler.scale(loss).backward()
-
+        self.scaler.unscale_(self.optimizer)
         self.grad_clipping()
+
+        # print gradient
+        # for name, param in self.policy.vlm.named_parameters():
+        #     if param.grad is not None:
+        #         print(f"{name}: {param.grad}")
+
+
 
         self.scaler.step(self.optimizer)
         self.scaler.update()
         self.optimizer.zero_grad()
 
-
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache() 
-            gc.collect() 
-
+        
         
         device = self.policy.vlm.device
         props = torch.cuda.get_device_properties(device)
@@ -1109,7 +1112,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         reduce_buffer_dtype = torch.bfloat16 if not self.reduce_in_full_precision else torch.float32
         fsdp_precision_policy = MixedPrecision(param_dtype=torch.bfloat16, reduce_dtype=reduce_buffer_dtype, buffer_dtype=reduce_buffer_dtype)
 
-        if config.OPENVLN.stage not in {"full-finetune", "vla-full-train", "vla-sandwich-train"}:
+        if config.OPENVLN.stage not in {"full-finetune", "vla-full-train", "vla-sandwich-train"}: # if running fsdp with frozon vision backbone
             self.policy.vlm.vision_backbone.to(dtype=self.policy.vlm.vision_backbone.half_precision_dtype)
         
 

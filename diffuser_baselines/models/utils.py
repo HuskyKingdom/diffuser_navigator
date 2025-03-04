@@ -562,7 +562,7 @@ class MemoryLlamaDecoderLayer(LlamaDecoderLayer):
             diff_ts=None,pad_mask=None)
         x_context = x_context[-1].transpose(0,1)
 
-        hidden_states += 0.2 * x_context
+        hidden_states += 0.3 * x_context
 
         outputs = (hidden_states,)
 
