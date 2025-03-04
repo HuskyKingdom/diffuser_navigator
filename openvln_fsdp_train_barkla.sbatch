@@ -10,11 +10,11 @@
 #SBATCH -t 2:00:00  
 
 # partition
-#SBATCH -p gpulowsmall
+#SBATCH -p gpulowmed
 
 #SBATCH -N 1
 #SBATCH --gres=gpu:2
-#SBATCH --nodelist=gpu13
+# SBATCH --nodelist=gpu14
 
 # CPU Core
 #SBATCH -n 48
