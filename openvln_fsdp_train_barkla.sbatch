@@ -10,14 +10,14 @@
 #SBATCH -t 2:00:00  
 
 # partition
-#SBATCH -p gpulowmed
+#SBATCH -p gpulowsmall
 
 #SBATCH -N 1
 #SBATCH --gres=gpu:2
 # SBATCH --nodelist=gpu14
 
 # CPU Core
-#SBATCH -n 48
+#SBATCH -n 32
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk

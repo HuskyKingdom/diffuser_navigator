@@ -458,8 +458,6 @@ class OpenVLN(PrismaticVLM):
                     dim=1,
             )
 
-        # torch.set_printoptions(profile="full")
-        print(multimodal_embeddings)
 
         return multimodal_embeddings, multimodal_attention_mask, multimodal_labels
         

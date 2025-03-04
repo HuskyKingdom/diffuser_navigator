@@ -1101,7 +1101,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
 
         # fsdp
-        self.reduce_in_full_precision = False
+        self.reduce_in_full_precision = True
         reduce_buffer_dtype = torch.bfloat16 if not self.reduce_in_full_precision else torch.float32
         fsdp_precision_policy = MixedPrecision(param_dtype=torch.bfloat16, reduce_dtype=reduce_buffer_dtype, buffer_dtype=reduce_buffer_dtype)
 
@@ -1122,17 +1122,16 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
             trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
 
-            # # gradient checkpointsing
-            # non_reentrant_wrapper = partial(checkpoint_wrapper, checkpoint_impl=CheckpointImpl.NO_REENTRANT)
+            # gradient checkpointsing
+            non_reentrant_wrapper = partial(checkpoint_wrapper, checkpoint_impl=CheckpointImpl.NO_REENTRANT)
+            def check_fn(submodule: nn.Module) -> bool:
+                return isinstance(submodule, self.policy.vlm.llm_backbone.transformer_layer_cls)
 
-            # def check_fn(submodule: nn.Module) -> bool:
-            #     return isinstance(submodule, self.llm_transformer_layer_cls)
+            # Note that the terms "activation checkpointing" and "gradient checkpointing" are synonymous!
+            apply_activation_checkpointing(self.policy.vlm, checkpoint_wrapper_fn=non_reentrant_wrapper, check_fn=check_fn)
 
-            # # Note that the terms "activation checkpointing" and "gradient checkpointing" are synonymous!
-            # apply_activation_checkpointing(self.policy.vlm, checkpoint_wrapper_fn=non_reentrant_wrapper, check_fn=check_fn)
-
-            # # # Barrier =>> Sharding takes a minute?
-            # # dist.barrier()
+            # # Barrier =>> Sharding takes a minute?
+            # dist.barrier()
 
 
             # optimizer & lr_scheduler (no weight decay)
