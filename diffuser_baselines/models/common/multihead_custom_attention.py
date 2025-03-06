@@ -100,7 +100,7 @@ class MultiheadCustomAttention(Module):
             xavier_normal_(self.bias_v)
 
     def forward(self, query, key, value, key_padding_mask=None, need_weights=True,
-                attn_mask=None, k_mem=None, v_mem=None, mem_mask=None, rotary_pe=None):
+                attn_mask=None, k_mem=None, v_mem=None, mem_mask=None, rotary_pe=None,print_info=False):
         r"""
     Args:
         query, key, value: map a query and a set of key-value pairs to an output.
@@ -157,7 +157,7 @@ class MultiheadCustomAttention(Module):
                 attn_mask=attn_mask, slot_competition=self.slot_competition,
                 return_kv=self.return_kv, k_mem=k_mem, v_mem=v_mem,
                 gate_attn=self.gate_attn, mem_mask=mem_mask,
-                rotary_pe=rotary_pe,reversing = self.reversing)
+                rotary_pe=rotary_pe,reversing = self.reversing, print_info=print_info)
 
 
 def multi_head_attention_forward(query,  # type: Tensor
@@ -190,7 +190,8 @@ def multi_head_attention_forward(query,  # type: Tensor
                                  v_mem=None,
                                  gate_attn=None,
                                  mem_mask=None,
-                                 reversing=False
+                                 reversing=False,
+                                 print_info=False
                                  ):
     # type: (...) -> Tuple[Tensor, Optional[Tensor]]
     r"""
@@ -238,6 +239,8 @@ def multi_head_attention_forward(query,  # type: Tensor
           L is the target sequence length, S is the source sequence length.
     """
 
+   
+
     qkv_same = torch.equal(query, key) and torch.equal(key, value)
     kv_same = torch.equal(key, value)
 
@@ -282,6 +285,8 @@ def multi_head_attention_forward(query,  # type: Tensor
                 if _b is not None:
                     _b = _b[_start:]
                 k, v = F.linear(key, _w, _b).chunk(2, dim=-1)
+
+            
 
         else:
             # This is inline in_proj function with in_proj_weight and in_proj_bias
@@ -333,6 +338,8 @@ def multi_head_attention_forward(query,  # type: Tensor
             v = F.linear(value, v_proj_weight_non_opt, in_proj_bias)
     q = q * scaling
 
+    
+
     if bias_k is not None and bias_v is not None:
         if static_k is None and static_v is None:
             k = torch.cat([k, bias_k.repeat(1, bsz, 1)])
@@ -380,6 +387,8 @@ def multi_head_attention_forward(query,  # type: Tensor
 
     src_len = k.size(1)
 
+
+
     if key_padding_mask is not None:
         assert key_padding_mask.size(0) == bsz
         assert key_padding_mask.size(1) == src_len
@@ -408,6 +417,9 @@ def multi_head_attention_forward(query,  # type: Tensor
         attn_mask = attn_mask.unsqueeze(0)
         attn_output_weights += attn_mask
 
+    
+    
+
     if key_padding_mask is not None:
         attn_output_weights = attn_output_weights.view(bsz, num_heads, tgt_len, src_len)
         attn_output_weights = attn_output_weights.masked_fill(
@@ -415,6 +427,8 @@ def multi_head_attention_forward(query,  # type: Tensor
             float('-inf'),
         )
         attn_output_weights = attn_output_weights.view(bsz * num_heads, tgt_len, src_len)
+    
+    
 
     if slot_competition:
         attn_output_weights = F.softmax(attn_output_weights, dim=-2) + 1e-8
@@ -423,10 +437,19 @@ def multi_head_attention_forward(query,  # type: Tensor
         attn_output_weights = F.softmax(
             attn_output_weights, dim=-1)
 
+    if print_info:
+        attn_output_weights_nan = torch.isnan(attn_output_weights).any() 
+        # attn_output_nan = torch.isnan(attn_output).any() 
+        # v_nan = torch.isnan(v).any() 
+        torch.set_printoptions(profile="full") 
+        print({f"attn_output_weights_nan {attn_output_weights_nan} | key_pad_mask {key_padding_mask.shape}"})
+
     attn_output_weights = F.dropout(attn_output_weights, p=dropout_p, training=training)
 
     attn_output = torch.bmm(attn_output_weights, v)
     assert list(attn_output.size()) == [bsz * num_heads, tgt_len, head_dim]
+
+    
 
     # do memorizing transformer gating
     if (gate_attn is not None) and (k_mem is not None) and (v_mem is not None):

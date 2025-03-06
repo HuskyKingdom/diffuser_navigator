@@ -343,7 +343,7 @@ class RelativeCrossAttentionLayer(nn.Module):
             self.adaln = AdaLN(embedding_dim)
 
     def forward(self, query, value, diff_ts=None,
-                query_pos=None, value_pos=None, pad_mask=None, causal_mask=None,vis=False,ins_text=None,self_atten=True):
+                query_pos=None, value_pos=None, pad_mask=None, causal_mask=None,vis=False,ins_text=None,self_atten=True,print_info=False):
         
         avg_weights = None
 
@@ -359,8 +359,11 @@ class RelativeCrossAttentionLayer(nn.Module):
             value=value,
             rotary_pe=None if query_pos is None else (query_pos, value_pos),
             key_padding_mask=pad_mask,
-            attn_mask=causal_mask
+            attn_mask=causal_mask,
+            print_info=print_info
         )
+
+        
 
         if vis:
             avg_weights = vis_attention(attn_weights,pad_mask,ins_text=ins_text,self_atten=self_atten)
@@ -459,16 +462,17 @@ class FFWRelativeCrossAttentionModule(nn.Module):
             ))
 
     def forward(self, query, value, diff_ts=None,
-                query_pos=None, value_pos=None,pad_mask=None,causal_mask=None,vis=False,ins_text=None):
+                query_pos=None, value_pos=None,pad_mask=None,causal_mask=None,vis=False,ins_text=None,print_info=False):
         output = []
         all_avg_weights = []
         for i in range(self.num_layers):
             query , _, avg_weights = self.attn_layers[i](
-                    query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask,vis=vis,ins_text=ins_text,self_atten=False
+                    query, value, diff_ts, query_pos, value_pos,pad_mask,causal_mask,vis=vis,ins_text=ins_text,self_atten=False,print_info=print_info
                 )
             query = self.ffw_layers[i](query, diff_ts)
             output.append(query)
             all_avg_weights.append(avg_weights)
+
         return output, all_avg_weights[-1]
 
 

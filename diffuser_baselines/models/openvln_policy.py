@@ -103,7 +103,6 @@ class OpenVLNPolicy(NetPolicy):
         self.vlm.llm_backbone.llm.model.layers = new_decoder_layers
 
         del original_layers
-      
 
 
 
@@ -283,7 +282,11 @@ class OpenVLNPolicy(NetPolicy):
         # == formulating training images ==
         # reshape and format
         B,T,H,W,C = collected_data['rgb'].shape
-        collected_data['rgb'] = collected_data['rgb'].view(-1,H,W,C).cpu().numpy().astype(np.uint8)
+        if not collected_data['rgb'].is_contiguous():
+            collected_data['rgb'] = collected_data['rgb'].contiguous()
+        collected_data['rgb'] = collected_data['rgb'].view(-1,H,W,C).detach().cpu().numpy().astype(np.uint8)
+
+        
 
 
         # to PIL image for transform
@@ -299,9 +302,20 @@ class OpenVLNPolicy(NetPolicy):
         
 
         # == formulating histories ==
-        # reshape and format
+       
         B,T,H,W,C = full_histories.shape
-        full_histories = full_histories.view(-1,H,W,C).cpu().numpy().astype(np.uint8)
+
+        # appfront init memory
+        init_empty_memory = torch.zeros(B,1,H,W,C).to(full_histories.device)
+        full_histories = torch.cat((init_empty_memory,full_histories), dim = 1)
+        B,T,H,W,C = full_histories.shape
+
+        # reshape and format
+        if not full_histories.is_contiguous():
+            full_histories = full_histories.contiguous()
+        full_histories = full_histories.view(-1,H,W,C).detach().cpu().numpy().astype(np.uint8)
+
+        
 
         # to PIL image for transform
         pil_images_his = [Image.fromarray(img) for img in full_histories]
@@ -318,11 +332,14 @@ class OpenVLNPolicy(NetPolicy):
         # == formulating labels ==
         input_labels = inputids.detach().clone() # create labels
 
-       
+
+        start_idx += 1 # to align with the memory padded with init memory
 
         with torch.cuda.amp.autocast(dtype=torch.bfloat16):
             modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'], full_his = transformed_his_tensor, sample_strat = start_idx)
         
+
+
         # # change if finished !
         # with torch.cuda.amp.autocast(dtype=torch.float16):
         #     with torch.no_grad():attention_mask
@@ -339,6 +356,7 @@ class OpenVLNPolicy(NetPolicy):
 
         # assert 1==2
 
+        # print(modelout.logits)
 
         return modelout.loss
     
@@ -385,7 +403,7 @@ class OpenVLN(PrismaticVLM):
 
 
         # initialize memory bank
-        self.menmory_embedding = nn.Embedding(24,4096)
+        self.menmory_embedding = nn.Embedding(32,4096)
         self.M_init = self.menmory_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
 
         
@@ -500,8 +518,10 @@ class OpenVLN(PrismaticVLM):
         return inference_result
 
     def extract_cls(self,projected_patch_embeddings):
+
         
         expanded_histories = self.histor_embeddings.unsqueeze(0).expand(projected_patch_embeddings.shape[0], -1, -1)
+
         # intergrate histories [bsz, num_patches, llm_embed_dim] -> [bsz, 1, llm_embed_dim]
         integrated_his,_ = self.history_intergration_attention(query=expanded_histories.transpose(0, 1),
             value=projected_patch_embeddings.transpose(0, 1),
@@ -539,27 +559,28 @@ class OpenVLN(PrismaticVLM):
 
 
         # format masking
-        # memory masking (bs*T,T)
+        # memory masking (token_bs,his_T)
         token_bs = his_pos.shape[0]
         his_T = his_pos.shape[1]
 
-        mask_all = torch.zeros(token_bs,his_T,dtype=torch.bool).to(expanded_memory.device) # set mask to be all ignore
+        mask_all = torch.zeros(token_bs,his_T,dtype=torch.bool).to(expanded_memory.device) # set mask to be all not masking
         mask_effective = torch.triu(torch.ones(token_bs,token_bs,dtype=torch.bool)).to(expanded_memory.device)
         mask_all[:, sample_start:sample_start+token_bs] = mask_effective # set corresponding idx to be trius
         if sample_start+token_bs < mask_all.shape[1]:
             mask_all[:, sample_start+token_bs:] = True # set future idx to be false if appliable (len remains after effective len >= 1)
 
 
+    
 
         # compressing
         compressed_memory,_ = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
             value=his_pos.transpose(0, 1),
             query_pos=None,
             value_pos=his_pos,
-            diff_ts=None,pad_mask=mask_all)
+            diff_ts=None,pad_mask=mask_all,print_info=False)
         compressed_memory = compressed_memory[-1].transpose(0,1) # (bs*T,C,d)
 
-        
+      
 
         return compressed_memory
 
@@ -646,12 +667,12 @@ class OpenVLN(PrismaticVLM):
         compressed_memory = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,sample_strat)
 
 
-
+        
 
         # Run LLM Forward --> returns CausalLMOutputWithPast!
 
         # print(fused_embeddings.shape,fused_attention_mask.shape,fused_labels.shape)
-        
+            
         return self.llm_backbone(
             input_ids=None,
             attention_mask=multimodal_attention_mask, # ([bs*T, token_len])

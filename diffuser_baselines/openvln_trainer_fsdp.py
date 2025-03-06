@@ -483,7 +483,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             }
         )
 
-        self.scaler = GradScaler()
+        self.scaler = GradScaler(backoff_factor=0.2)
 
         
 
@@ -1030,9 +1030,10 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         config = None,
     ):
         
-
+        
         loss = self.policy.build_loss(observations)  # Access the underlying module
 
+        
         
 
         
@@ -1044,28 +1045,30 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
         
         self.scaler.scale(loss).backward()
-        self.scaler.unscale_(self.optimizer)
-        self.grad_clipping()
-
         # print gradient
         # for name, param in self.policy.vlm.named_parameters():
         #     if param.grad is not None:
         #         print(f"{name}: {param.grad}")
-
-
+        self.scaler.unscale_(self.optimizer)
+        self.grad_clipping()
 
         self.scaler.step(self.optimizer)
         self.scaler.update()
         self.optimizer.zero_grad()
 
+        # loss.backward()
+        # self.grad_clipping()
+        # self.optimizer.step()
+        # self.optimizer.zero_grad()
+
         
         
-        device = self.policy.vlm.device
-        props = torch.cuda.get_device_properties(device)
-        total_memory = props.total_memory / 1024**2  
-        allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
-        reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
-        print("Total memory: {:.2f} MB Memory allocated: {:.2f} MB Memory reserved (cached): {:.2f} MB \n".format(total_memory, allocated_memory, reserved_memory))
+        # device = self.policy.vlm.device
+        # props = torch.cuda.get_device_properties(device)
+        # total_memory = props.total_memory / 1024**2  
+        # allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
+        # reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
+        # # print("Total memory: {:.2f} MB Memory allocated: {:.2f} MB Memory reserved (cached): {:.2f} MB \n".format(total_memory, allocated_memory, reserved_memory))
 
 
         return loss_tensor.item()
@@ -1122,16 +1125,15 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
             trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
 
-            # gradient checkpointsing
-            non_reentrant_wrapper = partial(checkpoint_wrapper, checkpoint_impl=CheckpointImpl.NO_REENTRANT)
-            def check_fn(submodule: nn.Module) -> bool:
-                return isinstance(submodule, self.policy.vlm.llm_backbone.transformer_layer_cls)
+        
+            # # gradient checkpointsing
+            # non_reentrant_wrapper = partial(checkpoint_wrapper, checkpoint_impl=CheckpointImpl.NO_REENTRANT)
+            # def check_fn(submodule: nn.Module) -> bool:
+            #     return isinstance(submodule, self.policy.vlm.llm_backbone.transformer_layer_cls)
 
-            # Note that the terms "activation checkpointing" and "gradient checkpointing" are synonymous!
-            apply_activation_checkpointing(self.policy.vlm, checkpoint_wrapper_fn=non_reentrant_wrapper, check_fn=check_fn)
+            # # Note that the terms "activation checkpointing" and "gradient checkpointing" are synonymous!
+            # apply_activation_checkpointing(self.policy.vlm, checkpoint_wrapper_fn=non_reentrant_wrapper, check_fn=check_fn)
 
-            # # Barrier =>> Sharding takes a minute?
-            # dist.barrier()
 
 
             # optimizer & lr_scheduler (no weight decay)

@@ -492,7 +492,7 @@ class MemoryLlamaDecoderLayer(LlamaDecoderLayer):
         **kwargs):
 
         super().__init__(*args, **kwargs)
-        self.memory_layer_intergration_attention = FFWRelativeCrossAttentionModule(4096,2,1)
+        self.memory_layer_intergration_attention = FFWRelativeCrossAttentionModule(4096,2,1,use_adaln=False)
 
     
     def forward(
@@ -554,6 +554,7 @@ class MemoryLlamaDecoderLayer(LlamaDecoderLayer):
         hidden_states = self.mlp(hidden_states)
         hidden_states = residual + hidden_states
 
+       
         # integrating memory
         x_context,_ = self.memory_layer_intergration_attention(query=hidden_states.transpose(0, 1),
             value=compressed_mem.transpose(0, 1),
@@ -561,8 +562,11 @@ class MemoryLlamaDecoderLayer(LlamaDecoderLayer):
             value_pos=None,
             diff_ts=None,pad_mask=None)
         x_context = x_context[-1].transpose(0,1)
+        
+        
+        hidden_states += x_context
 
-        hidden_states += 0.3 * x_context
+        
 
         outputs = (hidden_states,)
 
@@ -666,7 +670,6 @@ class MemoryLlamaModel(LlamaModel):
                     position_embeddings,
                 )
             else:
-
                 
                 layer_outputs = decoder_layer(
                     hidden_states,
@@ -680,6 +683,7 @@ class MemoryLlamaModel(LlamaModel):
                     compressed_mem = compressed_mem,
                 )
 
+           
             hidden_states = layer_outputs[0]
 
             if use_cache:
@@ -687,6 +691,8 @@ class MemoryLlamaModel(LlamaModel):
 
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
+        
+        
 
         hidden_states = self.norm(hidden_states)
 
@@ -784,6 +790,7 @@ class MemoryLlamaForCausalLM(LlamaForCausalLM):
             cache_position=cache_position,
             compressed_mem = compressed_mem,
         )
+
 
         hidden_states = outputs[0]
         if self.config.pretraining_tp > 1:

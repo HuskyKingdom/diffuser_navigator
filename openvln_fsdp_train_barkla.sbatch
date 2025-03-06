@@ -17,7 +17,7 @@
 # SBATCH --nodelist=gpu14
 
 # CPU Core
-#SBATCH -n 32
+#SBATCH -n 24
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk
