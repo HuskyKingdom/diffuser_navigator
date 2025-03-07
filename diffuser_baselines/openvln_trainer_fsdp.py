@@ -1095,12 +1095,12 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
 
 
-        # if load_from_ckpt:
-        #     ckpt_path = config.IL.ckpt_to_load
-        #     ckpt_dict = self.load_checkpoint(ckpt_path, map_location="cpu")
+        if load_from_ckpt:
+            ckpt_path = config.IL.ckpt_to_load
+            ckpt_dict = self.load_checkpoint(ckpt_path, map_location="cpu")
 
-        #     self.policy.vlm.load_state_dict(ckpt_dict["state_dict"])
-        #     logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
+            self.policy.vlm.load_state_dict(ckpt_dict["state_dict"])
+            logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
 
 
         # fsdp
@@ -1123,7 +1123,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             use_orig_params=True,
             )
             trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
-            
+
             # # gradient checkpointsing
             # non_reentrant_wrapper = partial(checkpoint_wrapper, checkpoint_impl=CheckpointImpl.NO_REENTRANT)
             # def check_fn(submodule: nn.Module) -> bool:
