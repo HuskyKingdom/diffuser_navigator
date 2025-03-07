@@ -14,6 +14,7 @@
 
 #SBATCH -N 1
 #SBATCH --gres=gpu:1
+#SBATCH --nodelist=gpu14
 
 # CPU Core
 #SBATCH -n 24

@@ -1095,12 +1095,12 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
 
 
-        if load_from_ckpt:
-            ckpt_path = config.IL.ckpt_to_load
-            ckpt_dict = self.load_checkpoint(ckpt_path, map_location="cpu")
+        # if load_from_ckpt:
+        #     ckpt_path = config.IL.ckpt_to_load
+        #     ckpt_dict = self.load_checkpoint(ckpt_path, map_location="cpu")
 
-            self.policy.vlm.load_state_dict(ckpt_dict["state_dict"])
-            logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
+        #     self.policy.vlm.load_state_dict(ckpt_dict["state_dict"])
+        #     logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
 
 
         # fsdp
@@ -1122,10 +1122,8 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             limit_all_gathers=True,
             use_orig_params=True,
             )
-
             trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
-
-        
+            
             # # gradient checkpointsing
             # non_reentrant_wrapper = partial(checkpoint_wrapper, checkpoint_impl=CheckpointImpl.NO_REENTRANT)
             # def check_fn(submodule: nn.Module) -> bool:
@@ -1134,14 +1132,10 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             # # Note that the terms "activation checkpointing" and "gradient checkpointing" are synonymous!
             # apply_activation_checkpointing(self.policy.vlm, checkpoint_wrapper_fn=non_reentrant_wrapper, check_fn=check_fn)
 
-
-
             # optimizer & lr_scheduler (no weight decay)
             self.optimizer = torch.optim.AdamW(
                 trainable_params, lr=self.config.OPENVLN.LR
             )
-
-
             if config.lr_Schedule: # train 250 + 500 + 750  + 1000 + 1250 + 1500 + 1750 + 2000 + 2250 + 2500 
                 if not config.dagger: # self.config.IL.DAGGER.update_size // self.config.IL.batch_size
                     self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.OPENVLN.LR, pct_start=0.35, 
@@ -1149,8 +1143,6 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
                 else:
                     self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.OPENVLN.LR, pct_start=0.35, 
                                                     total_steps = self.config.IL.DAGGER.update_size * 55 // self.config.IL.batch_size * self.config.IL.epochs)
-
-
         else:
             self.policy.to(torch.cuda.current_device())
             
