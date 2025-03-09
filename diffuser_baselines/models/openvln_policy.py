@@ -193,8 +193,8 @@ class OpenVLNPolicy(NetPolicy):
         decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[0])
         # decoded_text = self.tokenlizer.decode(predicted_token_id_list[0], skip_special_tokens=False)
 
-
-        action_token = decoded_tokens[-2]
+    
+        action_token = decoded_tokens[-1]
 
         if action_token == "<LEFT>":
             action = [[2]]
@@ -342,24 +342,24 @@ class OpenVLNPolicy(NetPolicy):
             modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'], full_his = transformed_his_tensor, sample_start = start_idx)
         
 
-
         # # change if finished !
-        # with torch.cuda.amp.autocast(dtype=torch.float16):
-        #     with torch.no_grad():attention_mask
-        #         modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'])
+        # with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+        #     with torch.no_grad():
+        #         modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'], full_his = transformed_his_tensor, sample_start = start_idx)
         
 
         # pred = modelout.logits.argmax(dim=-1)
-        # predicted_token_id_list = pred.cpu().tolist()
-        # decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[0])
+        # predicted_token_id_list = pred.cpu().tolist() # (bs,token_len)
 
-        # print(modelout.logits.shape,inputids.shape,T)
-        # print(collected_data['gt_actions'].long(),decoded_tokens,len(decoded_tokens))
-        # print(observations["ins_text"], self.tokenlizer.convert_ids_to_tokens(observations["ins_text"][0].cpu().tolist()))
+        # bs_result = []
+        # for i in range(len(predicted_token_id_list)):
+        #     decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[i])
+        #     bs_result.append(decoded_tokens[-1])
 
-        # assert 1==2
+        # print(collected_data['gt_actions'],bs_result)
 
-        # print(modelout.logits)
+ 
+
 
         return modelout.loss
     

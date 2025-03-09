@@ -1045,10 +1045,6 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
         
         self.scaler.scale(loss).backward()
-        # print gradient
-        # for name, param in self.policy.vlm.named_parameters():
-        #     if param.grad is not None:
-        #         print(f"{name}: {param.grad}")
         self.scaler.unscale_(self.optimizer)
         self.grad_clipping()
 

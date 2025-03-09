@@ -21,8 +21,8 @@ EVAL:
   ACTION_POP: True
 
 IL:
-  ckpt_to_load: data/checkpoints/pure_da/ckpt.24.pth
-  load_from_ckpt: False # for testing overfitting only 
+  ckpt_to_load: data/checkpoints/openvln_fsdp/ckpt.1.pth
+  load_from_ckpt: True # for testing overfitting only 
   epochs: 16
   batch_size: 2
   is_requeue: False # continuo training
