@@ -83,7 +83,7 @@ class OpenVLNPolicy(NetPolicy):
         total_layers = len(original_layers)
 
         for idx, old_layer in enumerate(original_layers):
-            if idx >= total_layers - 3:
+            if idx >= total_layers - 10:
                 new_layer = MemoryLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config, layer_idx=idx)
             else:
                 new_layer = NormalLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config, layer_idx=idx)
@@ -269,8 +269,20 @@ class OpenVLNPolicy(NetPolicy):
             for ts in range(len(collected_data['ins_text'][sample])):
                 # build prompt
                 self.prompt_builder = self.vlm.get_prompt_builder()
+
+                # conversation = [
+                #     {"from": "human", "value": f"Which action should the robot take now to {collected_data['ins_text'][sample][ts]}"},
+                #     {"from": "gpt", "value": collected_data["labels"][sample][ts]},
+                # ]
+                # for turn in conversation:
+                #     self.prompt_builder.add_turn(turn["from"], turn["value"])
+                # print(self.prompt_builder.get_prompt())
+                # assert 1==2
+               
+
                 self.prompt_builder.add_turn(role="human", message=f"Which action should the robot take now to {collected_data['ins_text'][sample][ts]}?")
                 prompt_text = self.prompt_builder.get_prompt()
+                
                 prompt_text += collected_data["labels"][sample][ts]
                 collected_data['ins_text'][sample][ts] = self.tokenlizer(prompt_text, truncation=False, return_tensors="pt").input_ids[0] # auto added BOS , in shape (T)
         
@@ -679,7 +691,7 @@ class OpenVLN(PrismaticVLM):
 
         # Run LLM Forward --> returns CausalLMOutputWithPast!
 
-        # print(fused_embeddings.shape,fused_attention_mask.shape,fused_labels.shape)
+        # print(self.M_init,self.histor_embeddings)
             
         return self.llm_backbone(
             input_ids=None,
