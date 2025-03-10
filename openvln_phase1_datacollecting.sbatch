@@ -7,7 +7,7 @@
 #SBATCH -o out/openvln_phase2_collect.out
 
 # running time
-#SBATCH -t 2:00:00  
+#SBATCH -t 12:00:00  
 
 # partition
 #SBATCH -p gpu

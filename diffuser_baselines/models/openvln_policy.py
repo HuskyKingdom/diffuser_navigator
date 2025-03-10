@@ -83,10 +83,11 @@ class OpenVLNPolicy(NetPolicy):
         total_layers = len(original_layers)
 
         for idx, old_layer in enumerate(original_layers):
-            if idx >= total_layers - 10:
-                new_layer = MemoryLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config, layer_idx=idx)
-            else:
-                new_layer = NormalLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config, layer_idx=idx)
+            # if idx >= total_layers - 10:
+            #     new_layer = MemoryLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config, layer_idx=idx)
+            # else:
+            #     new_layer = NormalLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config, layer_idx=idx)
+            new_layer = MemoryLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config, layer_idx=idx)
             new_layer.load_state_dict(old_layer.state_dict(), strict=False)
             new_decoder_layers.append(new_layer)
 
@@ -360,15 +361,15 @@ class OpenVLNPolicy(NetPolicy):
         #         modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'], full_his = transformed_his_tensor, sample_start = start_idx)
         
 
-        # pred = modelout.logits.argmax(dim=-1)
-        # predicted_token_id_list = pred.cpu().tolist() # (bs,token_len)
+        pred = modelout.logits.argmax(dim=-1)
+        predicted_token_id_list = pred.cpu().tolist() # (bs,token_len)
 
-        # bs_result = []
-        # for i in range(len(predicted_token_id_list)):
-        #     decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[i])
-        #     bs_result.append(decoded_tokens[-1])
+        bs_result = []
+        for i in range(len(predicted_token_id_list)):
+            decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[i])
+            bs_result.append(decoded_tokens[-1])
 
-        # print(collected_data['gt_actions'],bs_result)
+        print(collected_data['gt_actions'],bs_result)
 
  
 
@@ -411,9 +412,9 @@ class OpenVLN(PrismaticVLM):
 
         super().__init__(*args, **kwargs)
 
-        self.intergrated_his_embedding = nn.Embedding(1,4096)
-        self.histor_embeddings = self.intergrated_his_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
-        self.history_intergration_attention = FFWRelativeCrossAttentionModule(4096,2,1)
+        # self.intergrated_his_embedding = nn.Embedding(1,4096)
+        # self.histor_embeddings = self.intergrated_his_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
+        # self.history_intergration_attention = FFWRelativeCrossAttentionModule(4096,2,1)
 
 
         # initialize memory bank
@@ -531,45 +532,113 @@ class OpenVLN(PrismaticVLM):
 
         return inference_result
 
-    def extract_cls(self,projected_patch_embeddings):
+    # def extract_cls(self,projected_patch_embeddings):
 
         
-        expanded_histories = self.histor_embeddings.unsqueeze(0).expand(projected_patch_embeddings.shape[0], -1, -1)
+    #     expanded_histories = self.histor_embeddings.unsqueeze(0).expand(projected_patch_embeddings.shape[0], -1, -1)
 
-        # intergrate histories [bsz, num_patches, llm_embed_dim] -> [bsz, 1, llm_embed_dim]
-        integrated_his,_ = self.history_intergration_attention(query=expanded_histories.transpose(0, 1),
-            value=projected_patch_embeddings.transpose(0, 1),
-            query_pos=None,
-            value_pos=None,
-            diff_ts=None,pad_mask=None)
-        integrated_his = integrated_his[-1].transpose(0,1) # (bs*T,1,d)
-        projected_cls_embeddings = integrated_his
+    #     # intergrate histories [bsz, num_patches, llm_embed_dim] -> [bsz, 1, llm_embed_dim]
+    #     integrated_his,_ = self.history_intergration_attention(query=expanded_histories.transpose(0, 1),
+    #         value=projected_patch_embeddings.transpose(0, 1),
+    #         query_pos=None,
+    #         value_pos=None,
+    #         diff_ts=None,pad_mask=None)
+    #     integrated_his = integrated_his[-1].transpose(0,1) # (bs*T,1,d)
+    #     projected_cls_embeddings = integrated_his
 
-        return projected_cls_embeddings
+    #     return projected_cls_embeddings
 
-    def compress_memories(self,projected_cls_embeddings,img_ori_shape,multimodal_embeddings,sample_start):
+    # def compress_memories(self,projected_cls_embeddings,img_ori_shape,multimodal_embeddings,sample_start):
+
+    #     if not projected_cls_embeddings.is_contiguous():
+    #         projected_cls_embeddings = projected_cls_embeddings.contiguous() # (bs*T,1,dim)
+            
+    #     # # format encoded histories
+    #     # # (bs*T,1,dim) -> (bs,T,dim)
+    #     # projected_cls_embeddings_with_T = projected_cls_embeddings.view(img_ori_shape[0],img_ori_shape[1],projected_cls_embeddings.shape[1],projected_cls_embeddings.shape[2]).squeeze(2) 
+    #     # cls_embeeding_kv = projected_cls_embeddings_with_T.unsqueeze(1).expand(-1, projected_cls_embeddings_with_T.shape[1], -1, -1)
+    #     # cls_embeeding_kv = cls_embeeding_kv.reshape(-1,cls_embeeding_kv.shape[2],cls_embeeding_kv.shape[3]) # (bs*T,T,dim)
+    #     # his_pos = self.pe_layer(cls_embeeding_kv)
+
+    #     # format encoded histories
+    #     # (full_bs*T,1,dim) -> (token_bs,full_bs*T,dim)
+    #     projected_cls_embeddings_with_T = projected_cls_embeddings.squeeze(1)  # (full_bs*T,dim)
+    #     cls_embeeding_kv = projected_cls_embeddings_with_T.unsqueeze(0).expand(multimodal_embeddings.shape[0], -1, -1) # (token_bs, full_bs*T, dim)
+    #     his_pos = self.pe_layer(cls_embeeding_kv)
+
+
+    #     # format init memory
+    #     # resulting memory in (token_bs,C,d)
+    #     expanded_memory = self.M_init.unsqueeze(0).expand(cls_embeeding_kv.shape[0],-1,-1)
+
+
+    #     if sample_start == -1: # inferencing, no masking
+    #         # compressing
+    #         compressed_memory,_ = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
+    #             value=his_pos.transpose(0, 1),
+    #             query_pos=None,
+    #             value_pos=his_pos,
+    #             diff_ts=None,pad_mask=None,print_info=False)
+    #         compressed_memory = compressed_memory[-1].transpose(0,1) # (bs*T,C,d)
+    #     else:
+    #         # format masking
+    #         # memory masking (token_bs,his_T)
+    #         token_bs = his_pos.shape[0]
+    #         his_T = his_pos.shape[1]
+
+    #         mask_all = torch.zeros(token_bs,his_T,dtype=torch.bool).to(expanded_memory.device) # set mask to be all not masking
+    #         mask_effective = torch.triu(torch.ones(token_bs,token_bs,dtype=torch.bool)).to(expanded_memory.device)
+    #         mask_all[:, sample_start:sample_start+token_bs] = mask_effective # set corresponding idx to be trius
+    #         if sample_start+token_bs < mask_all.shape[1]:
+    #             mask_all[:, sample_start+token_bs:] = True # set future idx to be false if appliable (len remains after effective len >= 1)
+
+    #         # compressing
+    #         compressed_memory,_ = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
+    #             value=his_pos.transpose(0, 1),
+    #             query_pos=None,
+    #             value_pos=his_pos,
+    #             diff_ts=None,pad_mask=mask_all,print_info=False)
+    #         compressed_memory = compressed_memory[-1].transpose(0,1) # (bs*T,C,d)
+
+    #     print(self.M_init,self.histor_embeddings)      
+
+    #     return compressed_memory
+
+
+    def extract_cls(self,projected_patch_embeddings): # grid pooling, following Navid.
+
+        if not projected_patch_embeddings.is_contiguous():
+            projected_patch_embeddings = projected_patch_embeddings.contiguous()
+        
+        His_len,Token_len,C = projected_patch_embeddings.shape
+        _grid = projected_patch_embeddings.view(His_len,16,16,C)
+        _grid = _grid.permute(0,3,1,2)
+        pool = nn.AdaptiveAvgPool2d((2,2))
+        pooled = pool(_grid)
+
+        result = pooled.permute(0,2,3,1).reshape(His_len,4,C)
+
+        return result
+
+
+    def compress_memories(self,projected_cls_embeddings,img_ori_shape,multimodal_embeddings,sample_start): # grid pooled version
 
         if not projected_cls_embeddings.is_contiguous():
-            projected_cls_embeddings = projected_cls_embeddings.contiguous() # (bs*T,1,dim)
+            projected_cls_embeddings = projected_cls_embeddings.contiguous() # (his_len,4,dim)
 
 
-        # # format encoded histories
-        # # (bs*T,1,dim) -> (bs,T,dim)
-        # projected_cls_embeddings_with_T = projected_cls_embeddings.view(img_ori_shape[0],img_ori_shape[1],projected_cls_embeddings.shape[1],projected_cls_embeddings.shape[2]).squeeze(2) 
-        # cls_embeeding_kv = projected_cls_embeddings_with_T.unsqueeze(1).expand(-1, projected_cls_embeddings_with_T.shape[1], -1, -1)
-        # cls_embeeding_kv = cls_embeeding_kv.reshape(-1,cls_embeeding_kv.shape[2],cls_embeeding_kv.shape[3]) # (bs*T,T,dim)
-        # his_pos = self.pe_layer(cls_embeeding_kv)
+        token_bs = multimodal_embeddings.shape[0]
+        his_T = projected_cls_embeddings.shape[0]
 
-        # format encoded histories
-        # (full_bs*T,1,dim) -> (token_bs,full_bs*T,dim)
-        projected_cls_embeddings_with_T = projected_cls_embeddings.squeeze(1)  # (full_bs*T,dim)
-        cls_embeeding_kv = projected_cls_embeddings_with_T.unsqueeze(0).expand(multimodal_embeddings.shape[0], -1, -1) # (token_bs, full_bs*T, dim)
-        his_pos = self.pe_layer(cls_embeeding_kv)
+        projected_cls_embeddings = projected_cls_embeddings.view(-1,projected_cls_embeddings.shape[2]) # (his_len * 4,dim)
+        projected_cls_embeddings = projected_cls_embeddings.unsqueeze(0).expand(token_bs, -1, -1)  # (bs,his_len * 4,dim)
+     
+        his_pos = self.pe_layer(projected_cls_embeddings)
 
 
         # format init memory
         # resulting memory in (token_bs,C,d)
-        expanded_memory = self.M_init.unsqueeze(0).expand(cls_embeeding_kv.shape[0],-1,-1)
+        expanded_memory = self.M_init.unsqueeze(0).expand(token_bs,-1,-1)
 
 
         if sample_start == -1: # inferencing, no masking
@@ -583,15 +652,17 @@ class OpenVLN(PrismaticVLM):
         else:
             # format masking
             # memory masking (token_bs,his_T)
-            token_bs = his_pos.shape[0]
-            his_T = his_pos.shape[1]
-
             mask_all = torch.zeros(token_bs,his_T,dtype=torch.bool).to(expanded_memory.device) # set mask to be all not masking
             mask_effective = torch.triu(torch.ones(token_bs,token_bs,dtype=torch.bool)).to(expanded_memory.device)
             mask_all[:, sample_start:sample_start+token_bs] = mask_effective # set corresponding idx to be trius
             if sample_start+token_bs < mask_all.shape[1]:
                 mask_all[:, sample_start+token_bs:] = True # set future idx to be false if appliable (len remains after effective len >= 1)
 
+
+            # repeat 4 times on his_T dimension for grid pooled version
+            mask_all = mask_all.repeat_interleave(4,dim=1)
+
+        
             # compressing
             compressed_memory,_ = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
                 value=his_pos.transpose(0, 1),
@@ -600,9 +671,11 @@ class OpenVLN(PrismaticVLM):
                 diff_ts=None,pad_mask=mask_all,print_info=False)
             compressed_memory = compressed_memory[-1].transpose(0,1) # (bs*T,C,d)
 
-      
+        print(self.M_init)
 
+    
         return compressed_memory
+    
 
 
 
@@ -691,7 +764,7 @@ class OpenVLN(PrismaticVLM):
 
         # Run LLM Forward --> returns CausalLMOutputWithPast!
 
-        # print(self.M_init,self.histor_embeddings)
+        
             
         return self.llm_backbone(
             input_ids=None,
