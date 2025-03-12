@@ -30,6 +30,7 @@ from prismatic.util.nn_utils import FusedMLPProjector
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule
 from diffuser_baselines.models.common.position_encodings import PositionalEncoding
 from diffuser_baselines.models.utils import MemoryLlamaDecoderLayer, NormalLlamaDecoderLayer
+from transformers.loss.loss_utils import fixed_cross_entropy
 
 
 IGNORE_INDEX = -100
@@ -94,6 +95,8 @@ class OpenVLNPolicy(NetPolicy):
         self.vlm.llm_backbone.llm.model.layers = new_decoder_layers
 
         del original_layers
+
+      
 
 
 
@@ -247,7 +250,7 @@ class OpenVLNPolicy(NetPolicy):
         if self.config.OPENVLN.truncation: # current version only supports local bs = 1
             # truncats batch size to preventing cuda OOM
             total_ts = observations['rgb'].shape[1]
-            truncation_len = 6
+            truncation_len = 10
             if total_ts >= truncation_len:
                 start_idx = random.randint(0, total_ts - truncation_len)
                 end_idx = start_idx + truncation_len
@@ -257,6 +260,7 @@ class OpenVLNPolicy(NetPolicy):
 
             collected_data['rgb'] = observations['rgb'][:, start_idx:end_idx, :, :, :]
             collected_data['gt_actions'] = observations['gt_actions'][:, start_idx:end_idx]
+            collected_data['weights'] = observations['weights'][:,start_idx:end_idx]
             collected_data['ins_text'] = [row[start_idx:end_idx] for row in observations['ins_text']]
             collected_data['labels'] = [row[start_idx:end_idx] for row in observations['labels']]
             full_histories = observations['rgb'].clone()
@@ -352,7 +356,7 @@ class OpenVLNPolicy(NetPolicy):
         start_idx += 1 # to align with the memory padded with init memory
 
         with torch.cuda.amp.autocast(dtype=torch.bfloat16):
-            modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'], full_his = transformed_his_tensor, sample_start = start_idx)
+            modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'], full_his = transformed_his_tensor, sample_start = start_idx,vocab_size=len(self.tokenlizer), inf_weights = collected_data['weights'])
         
 
         # # change if finished !
@@ -365,13 +369,14 @@ class OpenVLNPolicy(NetPolicy):
         predicted_token_id_list = pred.cpu().tolist() # (bs,token_len)
 
         bs_result = []
+        raw_tokens = []
         for i in range(len(predicted_token_id_list)):
             decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[i])
             bs_result.append(decoded_tokens[-1])
+            raw_tokens.append(predicted_token_id_list[i][-1])
 
-        print(collected_data['gt_actions'],bs_result)
+        print(collected_data['gt_actions'],bs_result,raw_tokens)
 
- 
 
 
         return modelout.loss
@@ -418,7 +423,7 @@ class OpenVLN(PrismaticVLM):
 
 
         # initialize memory bank
-        self.menmory_embedding = nn.Embedding(32,4096)
+        self.menmory_embedding = nn.Embedding(128,4096)
         self.M_init = self.menmory_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
 
         
@@ -514,9 +519,11 @@ class OpenVLN(PrismaticVLM):
         # ==== Update Memories ====
         # express histories in [cls] way
         full_his_patches = self.vision_backbone({k: full_his[k] for k in full_his}) # (bs*T,vit_token_len,dim)
-        projected_his_embeddings = self.projector(full_his_patches)
-        projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,1,dim)
-        compressed_memory = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,sample_start)
+
+        projected_cls_embeddings = self.extract_cls(full_his_patches) # (bs*T,4,dim)
+        projected_his_embeddings = self.projector(projected_cls_embeddings)
+
+        compressed_memory = self.compress_memories(projected_his_embeddings,img_ori_shape,multimodal_embeddings,sample_start)
 
 
         inference_result = self.llm_backbone(
@@ -625,7 +632,10 @@ class OpenVLN(PrismaticVLM):
 
         if not projected_cls_embeddings.is_contiguous():
             projected_cls_embeddings = projected_cls_embeddings.contiguous() # (his_len,4,dim)
+        if not self.M_init.is_contiguous():
+            self.M_init = self.M_init.contiguous() # (his_len,4,dim)
 
+        
 
         token_bs = multimodal_embeddings.shape[0]
         his_T = projected_cls_embeddings.shape[0]
@@ -671,7 +681,11 @@ class OpenVLN(PrismaticVLM):
                 diff_ts=None,pad_mask=mask_all,print_info=False)
             compressed_memory = compressed_memory[-1].transpose(0,1) # (bs*T,C,d)
 
-        print(self.M_init)
+        
+
+        print(self.M_init,"mem",compressed_memory)
+
+
 
     
         return compressed_memory
@@ -697,6 +711,8 @@ class OpenVLN(PrismaticVLM):
         inference: Optional[bool] = False,
         full_his = None,
         sample_start = None,
+        vocab_size = None,
+        inf_weights = None,
     ) -> CausalLMOutputWithPast:
         """Run a forward pass through the VLN, returning a CausalLMOutputWithPast instance (contains loss)."""
 
@@ -755,18 +771,17 @@ class OpenVLN(PrismaticVLM):
         # ==== Update Memories ====
         # express histories in [cls] way
         full_his_patches = self.vision_backbone({k: full_his[k] for k in full_his}) # (bs*T,vit_token_len,dim)
-        projected_his_embeddings = self.projector(full_his_patches)
-        projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,1,dim)
-        compressed_memory = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,sample_start)
+        projected_cls_embeddings = self.extract_cls(full_his_patches) # (bs*T,4,dim)
+        projected_his_embeddings = self.projector(projected_cls_embeddings)
+        
+        compressed_memory = self.compress_memories(projected_his_embeddings,img_ori_shape,multimodal_embeddings,sample_start)
 
 
         
 
         # Run LLM Forward --> returns CausalLMOutputWithPast!
-
         
-            
-        return self.llm_backbone(
+        out = self.llm_backbone(
             input_ids=None,
             attention_mask=multimodal_attention_mask, # ([bs*T, token_len])
             position_ids=None,
@@ -779,6 +794,39 @@ class OpenVLN(PrismaticVLM):
             return_dict=return_dict,
             compressed_mem=compressed_memory, # ([bs*T, C, d])
         )
+        
+    
+        # calculating loss
+        logits = out.logits.float()
+
+        # Shift so that tokens < n predict n
+        shift_logits = logits[..., :-1, :].contiguous()
+        shift_labels = multimodal_labels[..., 1:].contiguous()
+
+        # Flatten the tokens
+        shift_logits = shift_logits.view(-1, 32064)
+        shift_labels = shift_labels.view(-1)
+        # Enable model parallelism
+        shift_labels = shift_labels.to(shift_logits.device)
+        # loss = fixed_cross_entropy(shift_logits, shift_labels, None, -100)
+
+        loss = nn.functional.cross_entropy(shift_logits,shift_labels,ignore_index=-100,reduction="none")
+
+        # loss weighting
+        bs,seq = multimodal_labels[..., 1:].size()
+        loss = loss.contiguous()
+        inf_weights = inf_weights.contiguous()
+        
+        loss = loss.view(bs,seq)
+        inf_weights = inf_weights.transpose(0,1) 
+        weighted_loss = loss * inf_weights
+        final_loss = weighted_loss.sum() / bs
+
+
+      
+        out.loss = final_loss
+            
+        return out
 
 
 
