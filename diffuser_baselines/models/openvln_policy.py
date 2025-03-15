@@ -281,17 +281,6 @@ class OpenVLNPolicy(NetPolicy):
             for ts in range(len(collected_data['ins_text'][sample])):
                 # build prompt
                 self.prompt_builder = self.vlm.get_prompt_builder()
-
-                # conversation = [
-                #     {"from": "human", "value": f"Which action should the robot take now to {collected_data['ins_text'][sample][ts]}"},
-                #     {"from": "gpt", "value": collected_data["labels"][sample][ts]},
-                # ]
-                # for turn in conversation:
-                #     self.prompt_builder.add_turn(turn["from"], turn["value"])
-                # print(self.prompt_builder.get_prompt())
-                # assert 1==2
-               
-
                 self.prompt_builder.add_turn(role="human", message=f"Which action should the robot take now to {collected_data['ins_text'][sample][ts]}?")
                 prompt_text = self.prompt_builder.get_prompt()
                 
@@ -368,12 +357,6 @@ class OpenVLNPolicy(NetPolicy):
 
         with torch.cuda.amp.autocast(dtype=cast_type):
             modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'], full_his = transformed_his_tensor, sample_start = start_idx,vocab_size=len(self.tokenlizer), inf_weights = collected_data['weights'])
-        
-
-        # # change if finished !
-        # with torch.cuda.amp.autocast(dtype=torch.bfloat16):
-        #     with torch.no_grad():
-        #         modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'], full_his = transformed_his_tensor, sample_start = start_idx)
         
 
         pred = modelout.logits.argmax(dim=-1)
