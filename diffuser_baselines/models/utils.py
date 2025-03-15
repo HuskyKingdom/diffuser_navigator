@@ -627,7 +627,7 @@ class MemoryLlamaFlashAttention2(LlamaFlashAttention2):
 
         attn_output = attn_output.reshape(bsz, q_len, -1).contiguous()
 
-        attn_output =  attn_output + mem_attn_output.reshape(bsz, q_len, -1).contiguous()
+        # attn_output =  attn_output + mem_attn_output.reshape(bsz, q_len, -1).contiguous()
 
         attn_output = self.o_proj(attn_output)
 
@@ -770,6 +770,8 @@ class MemoryLlamaDecoderLayer(LlamaDecoderLayer):
 
         super().__init__(config,layer_idx)
         # self.memory_layer_intergration_attention = FFWRelativeCrossAttentionModule(4096,2,1,use_adaln=False)
+        print(self.attn)
+        assert 1==2
         self.self_attn = MemoryLlamaFlashAttention2(config=config, layer_idx=layer_idx)
 
     

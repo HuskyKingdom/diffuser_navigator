@@ -72,11 +72,13 @@ class OpenVLNPolicy(NetPolicy):
             # <SPC>
             self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<SPC>"]})
             # actions <FORWARD> <LEFT> <RIGHT> <STOP>
+            # self.tokenlizer.add_tokens(["<FORWARD>","<LEFT>","<RIGHT>","<STOP>"])
             self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD>"]})
             self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT>"]})
             self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<RIGHT>"]})
             self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<STOP>"]})
-            self.vlm.llm_backbone.llm.resize_token_embeddings(len(self.tokenlizer), pad_to_multiple_of=64)
+            # self.vlm.llm_backbone.llm.resize_token_embeddings(len(self.tokenlizer), pad_to_multiple_of=64)
+            self.vlm.llm_backbone.llm.resize_token_embeddings(len(self.tokenlizer))
 
 
         original_layers = self.vlm.llm_backbone.llm.model.layers
@@ -369,13 +371,11 @@ class OpenVLNPolicy(NetPolicy):
         predicted_token_id_list = pred.cpu().tolist() # (bs,token_len)
 
         bs_result = []
-        raw_tokens = []
         for i in range(len(predicted_token_id_list)):
             decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[i])
-            bs_result.append(decoded_tokens[-1])
-            raw_tokens.append(predicted_token_id_list[i][-1])
+            bs_result.append(decoded_tokens[-2])
 
-        print(collected_data['gt_actions'],bs_result,raw_tokens)
+        print(collected_data['gt_actions'],bs_result)
 
 
 
@@ -683,7 +683,7 @@ class OpenVLN(PrismaticVLM):
 
         
 
-        print(self.M_init,"mem",compressed_memory)
+        # print(self.M_init,"mem",compressed_memory)
 
 
 
@@ -775,10 +775,8 @@ class OpenVLN(PrismaticVLM):
         projected_his_embeddings = self.projector(projected_cls_embeddings)
         
         compressed_memory = self.compress_memories(projected_his_embeddings,img_ori_shape,multimodal_embeddings,sample_start)
-
-
         
-
+        
         # Run LLM Forward --> returns CausalLMOutputWithPast!
         
         out = self.llm_backbone(
@@ -795,16 +793,18 @@ class OpenVLN(PrismaticVLM):
             compressed_mem=compressed_memory, # ([bs*T, C, d])
         )
         
-    
+        
         # calculating loss
-        logits = out.logits.float()
+        logits = out.logits.float() # (bs,token_len,dim)
 
         # Shift so that tokens < n predict n
         shift_logits = logits[..., :-1, :].contiguous()
         shift_labels = multimodal_labels[..., 1:].contiguous()
 
+        print(f"Forward Print {shift_logits[:,-1,-6:]}")
+
         # Flatten the tokens
-        shift_logits = shift_logits.view(-1, 32064)
+        shift_logits = shift_logits.view(-1, vocab_size)
         shift_labels = shift_labels.view(-1)
         # Enable model parallelism
         shift_labels = shift_labels.to(shift_logits.device)
@@ -822,7 +822,7 @@ class OpenVLN(PrismaticVLM):
         weighted_loss = loss * inf_weights
         final_loss = weighted_loss.sum() / bs
 
-
+        
       
         out.loss = final_loss
             
