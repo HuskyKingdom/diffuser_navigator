@@ -667,6 +667,7 @@ class MemoryLlamaSdpaAttention(LlamaSdpaAttention):
                 "LlamaModel is using LlamaSdpaAttention, but `torch.nn.functional.scaled_dot_product_attention` does not support `output_attentions=True`. Falling back to the manual attention implementation, "
                 'but specifying the manual implementation will be required from Transformers version v5.0.0 onwards. This warning can be removed using the argument `attn_implementation="eager"` when loading the model.'
             )
+            assert 1==2
             return super().forward(
                 hidden_states=hidden_states,
                 attention_mask=attention_mask,
@@ -677,6 +678,7 @@ class MemoryLlamaSdpaAttention(LlamaSdpaAttention):
                 cache_position=cache_position,
                 position_embeddings=position_embeddings,
             )
+        assert 1==2
         bsz, q_len, _ = hidden_states.size()
 
         query_states = self.q_proj(hidden_states)

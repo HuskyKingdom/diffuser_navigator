@@ -185,7 +185,12 @@ class OpenVLNPolicy(NetPolicy):
         } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
 
         start_idx = -1 # indicates no his_masking needed
-        with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+
+        cast_type = torch.float16
+        if self.config.OPENVLN.flash_atten:
+            cast_type = torch.bfloat16
+
+        with torch.cuda.amp.autocast(dtype=cast_type):
             modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = (B,T), sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor, sample_start = start_idx)
         
 
@@ -357,7 +362,11 @@ class OpenVLNPolicy(NetPolicy):
 
         start_idx += 1 # to align with the memory padded with init memory
 
-        with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+        cast_type = torch.float16
+        if self.config.OPENVLN.flash_atten:
+            cast_type = torch.bfloat16
+
+        with torch.cuda.amp.autocast(dtype=cast_type):
             modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'], full_his = transformed_his_tensor, sample_start = start_idx,vocab_size=len(self.tokenlizer), inf_weights = collected_data['weights'])
         
 

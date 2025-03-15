@@ -1101,8 +1101,14 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
         # fsdp
         self.reduce_in_full_precision = True
-        reduce_buffer_dtype = torch.bfloat16 if not self.reduce_in_full_precision else torch.float32
-        fsdp_precision_policy = MixedPrecision(param_dtype=torch.bfloat16, reduce_dtype=reduce_buffer_dtype, buffer_dtype=reduce_buffer_dtype)
+
+        if config.OPENVLN.flash_atten:
+            reduce_buffer_dtype = torch.float16 if not self.reduce_in_full_precision else torch.float32
+            fsdp_precision_policy = MixedPrecision(param_dtype=reduce_buffer_dtype, reduce_dtype=reduce_buffer_dtype, buffer_dtype=reduce_buffer_dtype)
+        else:
+            reduce_buffer_dtype = torch.bfloat16 if not self.reduce_in_full_precision else torch.float32
+            fsdp_precision_policy = MixedPrecision(param_dtype=reduce_buffer_dtype, reduce_dtype=reduce_buffer_dtype, buffer_dtype=reduce_buffer_dtype)
+
 
         if config.OPENVLN.stage not in {"full-finetune", "vla-full-train", "vla-sandwich-train"}: # if running fsdp with frozon vision backbone
             self.policy.vlm.vision_backbone.to(dtype=self.policy.vlm.vision_backbone.half_precision_dtype)
