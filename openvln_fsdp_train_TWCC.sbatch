@@ -12,14 +12,14 @@
 # partition
 #SBATCH -p gp4d
 
-#SBATCH -N 2
+#SBATCH -N 3
 #SBATCH --gres=gpu:8
 #SBATCH --ntasks-per-node=1
 // #SBATCH --cpus-per-task=4 
 
 
 // # cpu core / nodes
-#SBATCH -n 48
+#SBATCH -n 96
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk
@@ -74,7 +74,7 @@ export HF_HOME=./
 
 srun torchrun \
   --nproc_per_node=8 \
-  --nnodes=2 \
+  --nnodes=3 \
   --node_rank=$SLURM_NODEID \
   --rdzv_backend c10d \
   --rdzv_endpoint $MASTER_ADDR:$MASTER_PORT \
