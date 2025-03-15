@@ -387,7 +387,6 @@ class OpenVLNPolicy(NetPolicy):
         print(collected_data['gt_actions'],bs_result)
 
 
-
         return modelout.loss
     
 

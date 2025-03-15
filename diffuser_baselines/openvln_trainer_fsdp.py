@@ -1102,7 +1102,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         # fsdp
         self.reduce_in_full_precision = True
 
-        if config.OPENVLN.flash_atten:
+        if not config.OPENVLN.flash_atten:
             reduce_buffer_dtype = torch.float16 if not self.reduce_in_full_precision else torch.float32
             fsdp_precision_policy = MixedPrecision(param_dtype=reduce_buffer_dtype, reduce_dtype=reduce_buffer_dtype, buffer_dtype=reduce_buffer_dtype)
         else:
