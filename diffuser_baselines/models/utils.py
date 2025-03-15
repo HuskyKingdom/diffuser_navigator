@@ -397,7 +397,7 @@ def batch_obs(
     return batch_t.map(lambda v: v.to(device))
 
 from transformers import LlamaForCausalLM, LlamaModel
-from transformers.models.llama.modeling_llama import LlamaDecoderLayer,LlamaAttention,LlamaFlashAttention2,apply_rotary_pos_emb,_flash_attention_forward,LlamaSdpaAttention
+from transformers.models.llama.modeling_llama import LlamaDecoderLayer,LlamaAttention,LlamaFlashAttention2,apply_rotary_pos_emb,_flash_attention_forward,LlamaSdpaAttention,repeat_kv
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule
 from transformers.modeling_outputs import (
     BaseModelOutputWithPast,
