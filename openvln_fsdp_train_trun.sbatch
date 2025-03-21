@@ -7,16 +7,16 @@
 #SBATCH -o out/openvln_fsdp_trun.out
 
 # running time
-#SBATCH -t 2:00:00  
+#SBATCH -t 20:00:00  
 
 # partition
 #SBATCH -p normal
 
 #SBATCH -N 1
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:8
 
 # CPU Core
-#SBATCH -n 24
+#SBATCH -n 96
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk
@@ -55,4 +55,4 @@ export TOKENIZERS_PARALLELISM=true
 export NCCL_P2P_DISABLE=1
 
 # job run
-export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 run.py   --exp-config diffuser_baselines/config/openvln_fsdp_trun.yaml   --run-type train
+export HF_HOME=./ && CUDA_VISIBLE_DEVICES=0,1,3,4,5,6,7 python -m torch.distributed.launch --nproc_per_node=8 run.py   --exp-config diffuser_baselines/config/openvln_fsdp_trun.yaml   --run-type train
