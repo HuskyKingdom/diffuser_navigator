@@ -7,7 +7,7 @@
 #SBATCH -o out/openvln_fsdp_trun.out
 
 # running time
-#SBATCH -t 48:00:00  
+#SBATCH -t 20:00:00  
 
 # partition
 #SBATCH -p normal
