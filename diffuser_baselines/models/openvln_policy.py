@@ -258,7 +258,7 @@ class OpenVLNPolicy(NetPolicy):
 
             # truncats batch size to preventing cuda OOM
             total_ts = observations['rgb'].shape[1]
-            truncation_len = 5
+            truncation_len = 10
             if total_ts >= truncation_len:
                 # 60% chance to randomly select a segment, 40% chance to choose the last segment
                 if random.random() < 0.6:
