@@ -535,8 +535,6 @@ class MemoryLlamaFlashAttention2(LlamaFlashAttention2):
             #     "removed and `position_embeddings` will be mandatory."
             # )
             cos, sin = self.rotary_emb(value_states, position_ids)
-
-            assert 1==2
         else:
             cos, sin = position_embeddings
         query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin)
