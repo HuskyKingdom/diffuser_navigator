@@ -1023,55 +1023,24 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
     
 
 
-    def _update_agent( # with gradient accumulation
-        self,
-        observations,
-        step_grad: bool = True,
-        loss_accumulation_scalar: int = 4,
-        config = None,
-    ):
-        
-        
-        loss = self.policy.build_loss(observations)  # Access the underlying module
-        loss = loss / loss_accumulation_scalar
-        self.scaler.scale(loss).backward()
-
-
-        if not hasattr(self, "accumulation_counter"):
-            self.accumulation_counter = 1
-        else:
-            self.accumulation_counter += 1
-
-        
-        with torch.no_grad():
-            loss_tensor = loss.clone()
-            dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
-            loss_tensor = loss_tensor / self.world_size
-
-
-        
-        if self.accumulation_counter % loss_accumulation_scalar == 0:
-            self.scaler.unscale_(self.optimizer)
-            self.grad_clipping()
-            self.scaler.step(self.optimizer)
-            self.scaler.update()
-            self.optimizer.zero_grad()
-            self.accumulation_counter = 0
-        
-        return loss_tensor.item()
-
-        
-    # def _update_agent(
+    # def _update_agent( # with gradient accumulation
     #     self,
     #     observations,
     #     step_grad: bool = True,
-    #     loss_accumulation_scalar: int = 1,
+    #     loss_accumulation_scalar: int = 4,
     #     config = None,
     # ):
         
         
     #     loss = self.policy.build_loss(observations)  # Access the underlying module
     #     loss = loss / loss_accumulation_scalar
+    #     self.scaler.scale(loss).backward()
+
+
+    #     if not hasattr(self, "accumulation_counter"):
+    #         self.accumulation_counter = 1
+    #     else:
+    #         self.accumulation_counter += 1
 
         
     #     with torch.no_grad():
@@ -1081,24 +1050,55 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
 
         
-    #     self.scaler.scale(loss).backward()
-    #     self.scaler.unscale_(self.optimizer)
-    #     self.grad_clipping()
-
-    #     self.scaler.step(self.optimizer)
-    #     self.scaler.update()
-    #     self.optimizer.zero_grad()
+    #     if self.accumulation_counter % loss_accumulation_scalar == 0:
+    #         self.scaler.unscale_(self.optimizer)
+    #         self.grad_clipping()
+    #         self.scaler.step(self.optimizer)
+    #         self.scaler.update()
+    #         self.optimizer.zero_grad()
+    #         self.accumulation_counter = 0
+        
+    #     return loss_tensor.item()
 
         
-    #     # device = self.policy.vlm.device
-    #     # props = torch.cuda.get_device_properties(device)
-    #     # total_memory = props.total_memory / 1024**2  
-    #     # allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
-    #     # reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
-    #     # # print("Total memory: {:.2f} MB Memory allocated: {:.2f} MB Memory reserved (cached): {:.2f} MB \n".format(total_memory, allocated_memory, reserved_memory))
+    def _update_agent(
+        self,
+        observations,
+        step_grad: bool = True,
+        loss_accumulation_scalar: int = 1,
+        config = None,
+    ):
+        
+        
+        loss = self.policy.build_loss(observations)  # Access the underlying module
+        loss = loss / loss_accumulation_scalar
+
+        
+        with torch.no_grad():
+            loss_tensor = loss.clone()
+            dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
+            loss_tensor = loss_tensor / self.world_size
 
 
-    #     return loss_tensor.item()
+        
+        self.scaler.scale(loss).backward()
+        self.scaler.unscale_(self.optimizer)
+        self.grad_clipping()
+
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
+        self.optimizer.zero_grad()
+
+        
+        # device = self.policy.vlm.device
+        # props = torch.cuda.get_device_properties(device)
+        # total_memory = props.total_memory / 1024**2  
+        # allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
+        # reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
+        # # print("Total memory: {:.2f} MB Memory allocated: {:.2f} MB Memory reserved (cached): {:.2f} MB \n".format(total_memory, allocated_memory, reserved_memory))
+
+
+        return loss_tensor.item()
 
 
     def _initialize_policy(
