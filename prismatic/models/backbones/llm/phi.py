@@ -11,6 +11,8 @@ from torch import nn as nn
 from transformers import PhiForCausalLM
 from transformers.models.phi.modeling_phi import PhiDecoderLayer
 
+from diffuser_baselines.models.utils import MemoryPhiForCausalLM
+
 from prismatic.models.backbones.llm.base_llm import HFCausalLLMBackbone
 from prismatic.models.backbones.llm.prompting import PhiPromptBuilder, PromptBuilder
 
@@ -19,7 +21,7 @@ from prismatic.models.backbones.llm.prompting import PhiPromptBuilder, PromptBui
 PHI_MODELS = {
     # === Phi-2 ===
     "phi-2-3b": {
-        "llm_family": "phi", "llm_cls": PhiForCausalLM, "hf_hub_path": "microsoft/phi-2"
+        "llm_family": "phi", "llm_cls": MemoryPhiForCausalLM, "hf_hub_path": "microsoft/phi-2"
     }
 }
 # fmt: on

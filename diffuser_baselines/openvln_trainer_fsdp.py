@@ -1059,12 +1059,12 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
         
         
-        # device = self.policy.vlm.device
-        # props = torch.cuda.get_device_properties(device)
-        # total_memory = props.total_memory / 1024**2  
-        # allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
-        # reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
-        # # print("Total memory: {:.2f} MB Memory allocated: {:.2f} MB Memory reserved (cached): {:.2f} MB \n".format(total_memory, allocated_memory, reserved_memory))
+        device = self.policy.vlm.device
+        props = torch.cuda.get_device_properties(device)
+        total_memory = props.total_memory / 1024**2  
+        allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
+        reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
+        print("Total memory: {:.2f} MB Memory allocated: {:.2f} MB Memory reserved (cached): {:.2f} MB \n".format(total_memory, allocated_memory, reserved_memory))
 
 
         return loss_tensor.item()
@@ -1102,12 +1102,12 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         # fsdp
         self.reduce_in_full_precision = True
 
-        if not config.OPENVLN.flash_atten:
-            reduce_buffer_dtype = torch.float16 if not self.reduce_in_full_precision else torch.float32
-            fsdp_precision_policy = MixedPrecision(param_dtype=torch.float16, reduce_dtype=reduce_buffer_dtype, buffer_dtype=reduce_buffer_dtype)
-        else:
+        if config.OPENVLN.flash_atten and not self.config.OPENVLN.phase == "phi":
             reduce_buffer_dtype = torch.bfloat16 if not self.reduce_in_full_precision else torch.float32
             fsdp_precision_policy = MixedPrecision(param_dtype=torch.bfloat16, reduce_dtype=reduce_buffer_dtype, buffer_dtype=reduce_buffer_dtype)
+        else:
+            reduce_buffer_dtype = torch.float16 if not self.reduce_in_full_precision else torch.float32
+            fsdp_precision_policy = MixedPrecision(param_dtype=torch.float16, reduce_dtype=reduce_buffer_dtype, buffer_dtype=reduce_buffer_dtype)
 
 
         if config.OPENVLN.stage not in {"full-finetune", "vla-full-train", "vla-sandwich-train"}: # if running fsdp with frozon vision backbone

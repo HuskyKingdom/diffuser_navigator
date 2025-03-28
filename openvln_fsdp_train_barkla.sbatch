@@ -10,14 +10,14 @@
 #SBATCH -t 2:00:00  
 
 # partition
-#SBATCH -p gpulowbig
+#SBATCH -p gpulowsmall
 
 #SBATCH -N 1
 #SBATCH --gres=gpu:2
 # SBATCH --nodelist=gpu12
 
 # CPU Core
-#SBATCH -n 24
+#SBATCH -n 16
 
 # mail notice
 #SBATCH --mail-user=sgyson10@liverpool.ac.uk
@@ -49,7 +49,7 @@ conda activate openvln
 export PYTHONDONTWRITEBYTECODE=1
 export NCCL_DEBUG=INFO
 export PYTHONUNBUFFERED=1
-export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:64
+export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:24
 export TOKENIZERS_PARALLELISM=true
 export NCCL_P2P_DISABLE=1
 

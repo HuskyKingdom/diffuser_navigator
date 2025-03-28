@@ -51,7 +51,7 @@ OPENVLN:
   forward_type: "pre-train"
   # forward_type: in < "action_only" | "pre-train"  >
   flash_atten: True
-  phase: "align"
+  phase: "phii"
   truncation: True # whether to apply truncation on timesteps
 
 MODEL:

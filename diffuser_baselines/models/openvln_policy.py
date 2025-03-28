@@ -29,7 +29,7 @@ from PIL import Image
 from prismatic.util.nn_utils import FusedMLPProjector
 from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionModule
 from diffuser_baselines.models.common.position_encodings import PositionalEncoding
-from diffuser_baselines.models.utils import MemoryLlamaDecoderLayer, NormalLlamaDecoderLayer
+from diffuser_baselines.models.utils import MemoryLlamaDecoderLayer, NormalLlamaDecoderLayer, MemoryPhiDecoderLayer
 from transformers.loss.loss_utils import fixed_cross_entropy
 
 
@@ -53,9 +53,9 @@ class OpenVLNPolicy(NetPolicy):
 
         # == openvln ==
 
-        # init
-        base_vlm = "prism-dinosiglip-224px+7b"
-        # base_vlm = "hub/models--TRI-ML--prismatic-vlms/snapshots/a3ba8a19c453a82eaf5a3fb1e699dd9e441f0a12/prism-dinosiglip-224px+7b/" # find model weight locally
+        # init backbone
+        base_vlm = "phi-2+3b" # prism-dinosiglip-224px+7b
+        replace_layer = MemoryPhiDecoderLayer
 
         # load backbones
         hf_token = Path(".hf_token").read_text().strip()
@@ -86,11 +86,7 @@ class OpenVLNPolicy(NetPolicy):
         total_layers = len(original_layers)
 
         for idx, old_layer in enumerate(original_layers):
-            # if idx >= total_layers - 10:
-            #     new_layer = MemoryLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config, layer_idx=idx)
-            # else:
-            #     new_layer = NormalLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config, layer_idx=idx)
-            new_layer = MemoryLlamaDecoderLayer(self.vlm.llm_backbone.llm.model.config, layer_idx=idx)
+            new_layer = replace_layer(self.vlm.llm_backbone.llm.model.config, layer_idx=idx)
             new_layer.load_state_dict(old_layer.state_dict(), strict=False)
             new_decoder_layers.append(new_layer)
 
@@ -187,7 +183,7 @@ class OpenVLNPolicy(NetPolicy):
         start_idx = -1 # indicates no his_masking needed
 
         cast_type = torch.float16
-        if self.config.OPENVLN.flash_atten:
+        if self.config.OPENVLN.flash_atten and not self.config.OPENVLN.phase == "phi":
             cast_type = torch.bfloat16
 
         with torch.cuda.amp.autocast(dtype=cast_type):
@@ -257,7 +253,7 @@ class OpenVLNPolicy(NetPolicy):
         if self.config.OPENVLN.truncation: # current version only supports local bs = 1
             # truncats batch size to preventing cuda OOM
             total_ts = observations['rgb'].shape[1]
-            truncation_len = 5
+            truncation_len = 10
             if total_ts >= truncation_len:
                 start_idx = random.randint(0, total_ts - truncation_len)
                 end_idx = start_idx + truncation_len
@@ -310,11 +306,16 @@ class OpenVLNPolicy(NetPolicy):
         transformed_images = [self.image_transform(img) for img in pil_images]
 
 
+
         # back to tensor
-        transformed_images_tensor = {
-        k: torch.stack([sample[k] for sample in transformed_images]).float().to(observations['instruction'].device)
-        for k in transformed_images[0].keys()
-        } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
+        if isinstance(transformed_images[0], dict):
+            transformed_his_tensor = {
+                k: torch.stack([sample[k] for sample in transformed_images]).float().to(observations['instruction'].device)
+                for k in transformed_images[0].keys()
+                } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
+        else:
+            transformed_images_tensor = torch.stack([sample for sample in transformed_images]).float().to(observations['instruction'].device) # (his_len, 3, 336, 336)
+        
         
 
         # == formulating histories ==
@@ -338,11 +339,17 @@ class OpenVLNPolicy(NetPolicy):
         transformed_his = [self.image_transform(img) for img in pil_images_his]
 
         # back to tensor
-        transformed_his_tensor = {
-        k: torch.stack([sample[k] for sample in transformed_his]).float().to(observations['instruction'].device)
-        for k in transformed_his[0].keys()
-        } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
-        
+
+        if isinstance(transformed_his[0], dict):
+            transformed_his_tensor = {
+                k: torch.stack([sample[k] for sample in transformed_his]).float().to(observations['instruction'].device)
+                for k in transformed_his[0].keys()
+                } # in shape {dino: (his_len, 3, 224, 224); siglip: (his_len, 3, 224, 224)}
+        else:
+            transformed_his_tensor = torch.stack([sample for sample in transformed_his]).float().to(observations['instruction'].device) # (his_len, 3, 336, 336)
+
+
+
         
 
         # == formulating labels ==
@@ -352,7 +359,7 @@ class OpenVLNPolicy(NetPolicy):
         start_idx += 1 # to align with the memory padded with init memory
 
         cast_type = torch.float16
-        if self.config.OPENVLN.flash_atten:
+        if self.config.OPENVLN.flash_atten and not self.config.OPENVLN.phase == "phi":
             cast_type = torch.bfloat16
 
         with torch.cuda.amp.autocast(dtype=cast_type):
@@ -408,18 +415,15 @@ class OpenVLN(PrismaticVLM):
 
         super().__init__(*args, **kwargs)
 
-        # self.intergrated_his_embedding = nn.Embedding(1,4096)
-        # self.histor_embeddings = self.intergrated_his_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
-        # self.history_intergration_attention = FFWRelativeCrossAttentionModule(4096,2,1)
-
-
+        hidden_dim = 2560 # 4096
+        
         # initialize memory bank
-        self.menmory_embedding = nn.Embedding(128,4096)
+        self.menmory_embedding = nn.Embedding(128,hidden_dim)
         self.M_init = self.menmory_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
 
         
-        self.memory_fuser_attention = FFWRelativeCrossAttentionModule(4096,2,1)
-        self.pe_layer = PositionalEncoding(4096,0.2)
+        self.memory_fuser_attention = FFWRelativeCrossAttentionModule(hidden_dim,2,1)
+        self.pe_layer = PositionalEncoding(hidden_dim,0.2)
 
 
 
@@ -530,78 +534,6 @@ class OpenVLN(PrismaticVLM):
 
         return inference_result
 
-    # def extract_cls(self,projected_patch_embeddings):
-
-        
-    #     expanded_histories = self.histor_embeddings.unsqueeze(0).expand(projected_patch_embeddings.shape[0], -1, -1)
-
-    #     # intergrate histories [bsz, num_patches, llm_embed_dim] -> [bsz, 1, llm_embed_dim]
-    #     integrated_his,_ = self.history_intergration_attention(query=expanded_histories.transpose(0, 1),
-    #         value=projected_patch_embeddings.transpose(0, 1),
-    #         query_pos=None,
-    #         value_pos=None,
-    #         diff_ts=None,pad_mask=None)
-    #     integrated_his = integrated_his[-1].transpose(0,1) # (bs*T,1,d)
-    #     projected_cls_embeddings = integrated_his
-
-    #     return projected_cls_embeddings
-
-    # def compress_memories(self,projected_cls_embeddings,img_ori_shape,multimodal_embeddings,sample_start):
-
-    #     if not projected_cls_embeddings.is_contiguous():
-    #         projected_cls_embeddings = projected_cls_embeddings.contiguous() # (bs*T,1,dim)
-            
-    #     # # format encoded histories
-    #     # # (bs*T,1,dim) -> (bs,T,dim)
-    #     # projected_cls_embeddings_with_T = projected_cls_embeddings.view(img_ori_shape[0],img_ori_shape[1],projected_cls_embeddings.shape[1],projected_cls_embeddings.shape[2]).squeeze(2) 
-    #     # cls_embeeding_kv = projected_cls_embeddings_with_T.unsqueeze(1).expand(-1, projected_cls_embeddings_with_T.shape[1], -1, -1)
-    #     # cls_embeeding_kv = cls_embeeding_kv.reshape(-1,cls_embeeding_kv.shape[2],cls_embeeding_kv.shape[3]) # (bs*T,T,dim)
-    #     # his_pos = self.pe_layer(cls_embeeding_kv)
-
-    #     # format encoded histories
-    #     # (full_bs*T,1,dim) -> (token_bs,full_bs*T,dim)
-    #     projected_cls_embeddings_with_T = projected_cls_embeddings.squeeze(1)  # (full_bs*T,dim)
-    #     cls_embeeding_kv = projected_cls_embeddings_with_T.unsqueeze(0).expand(multimodal_embeddings.shape[0], -1, -1) # (token_bs, full_bs*T, dim)
-    #     his_pos = self.pe_layer(cls_embeeding_kv)
-
-
-    #     # format init memory
-    #     # resulting memory in (token_bs,C,d)
-    #     expanded_memory = self.M_init.unsqueeze(0).expand(cls_embeeding_kv.shape[0],-1,-1)
-
-
-    #     if sample_start == -1: # inferencing, no masking
-    #         # compressing
-    #         compressed_memory,_ = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
-    #             value=his_pos.transpose(0, 1),
-    #             query_pos=None,
-    #             value_pos=his_pos,
-    #             diff_ts=None,pad_mask=None,print_info=False)
-    #         compressed_memory = compressed_memory[-1].transpose(0,1) # (bs*T,C,d)
-    #     else:
-    #         # format masking
-    #         # memory masking (token_bs,his_T)
-    #         token_bs = his_pos.shape[0]
-    #         his_T = his_pos.shape[1]
-
-    #         mask_all = torch.zeros(token_bs,his_T,dtype=torch.bool).to(expanded_memory.device) # set mask to be all not masking
-    #         mask_effective = torch.triu(torch.ones(token_bs,token_bs,dtype=torch.bool)).to(expanded_memory.device)
-    #         mask_all[:, sample_start:sample_start+token_bs] = mask_effective # set corresponding idx to be trius
-    #         if sample_start+token_bs < mask_all.shape[1]:
-    #             mask_all[:, sample_start+token_bs:] = True # set future idx to be false if appliable (len remains after effective len >= 1)
-
-    #         # compressing
-    #         compressed_memory,_ = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
-    #             value=his_pos.transpose(0, 1),
-    #             query_pos=None,
-    #             value_pos=his_pos,
-    #             diff_ts=None,pad_mask=mask_all,print_info=False)
-    #         compressed_memory = compressed_memory[-1].transpose(0,1) # (bs*T,C,d)
-
-    #     print(self.M_init,self.histor_embeddings)      
-
-    #     return compressed_memory
-
 
     def extract_cls(self,projected_patch_embeddings): # grid pooling, following Navid.
 
@@ -609,7 +541,12 @@ class OpenVLN(PrismaticVLM):
             projected_patch_embeddings = projected_patch_embeddings.contiguous()
         
         His_len,Token_len,C = projected_patch_embeddings.shape
-        _grid = projected_patch_embeddings.view(His_len,16,16,C)
+
+        if Token_len == 256:
+            _grid = projected_patch_embeddings.view(His_len,16,16,C)
+        else:
+            _grid = projected_patch_embeddings.view(His_len,24,24,C)
+
         _grid = _grid.permute(0,3,1,2)
         pool = nn.AdaptiveAvgPool2d((2,2))
         pooled = pool(_grid)
@@ -741,15 +678,13 @@ class OpenVLN(PrismaticVLM):
                 # patch_features = self.vision_backbone({k: pixel_values[k][multimodal_indices] for k in pixel_values})
                 patch_features = self.vision_backbone({k: pixel_values[k] for k in pixel_values})
             else:
-                patch_features = self.vision_backbone(pixel_values[multimodal_indices])
+                patch_features = self.vision_backbone(pixel_values)
         
         
 
         # Projection Logic :: [bsz, num_patches, llm_embed_dim] =>> num_patches = (2 *) (256 + 1) for ViT-L + CLS
         projected_patch_embeddings = self.projector(patch_features)
 
-
-        
 
 
         # ==== INPUT & LABEL & MASK ====
@@ -761,7 +696,13 @@ class OpenVLN(PrismaticVLM):
 
         # ==== Update Memories ====
         # express histories in [cls] way
-        full_his_patches = self.vision_backbone({k: full_his[k] for k in full_his}) # (bs*T,vit_token_len,dim)
+
+        with torch.set_grad_enabled(self.vision_backbone_requires_grad):
+            if isinstance(full_his, dict):
+                full_his_patches = self.vision_backbone({k: full_his[k] for k in full_his}) # (bs*T,vit_token_len,dim)
+            else:
+                full_his_patches = self.vision_backbone(full_his)
+        
         projected_cls_embeddings = self.extract_cls(full_his_patches) # (bs*T,4,dim)
         projected_his_embeddings = self.projector(projected_cls_embeddings)
         
