@@ -24,7 +24,7 @@ IL:
   ckpt_to_load: data/checkpoints/openvln_fsdp/ckpt.1.pth
   load_from_ckpt: False # for testing overfitting only 
   epochs: 16
-  batch_size: 8
+  batch_size: 6 # global bs
   is_requeue: False # continuo training
   
 
@@ -37,7 +37,7 @@ IL:
     update_size: 6000
     p: 0.75
     preload_lmdb_features: True
-    lmdb_features_dir: data/trajectories_dirs/d3ddp_phase2/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/openvln1/trajectories.lmdb
     lmdb_commit_frequency: 50
     
     
@@ -51,7 +51,7 @@ OPENVLN:
   forward_type: "pre-train"
   # forward_type: in < "action_only" | "pre-train"  >
   flash_atten: True
-  phase: "align"
+  phase: "phii"
   truncation: True # whether to apply truncation on timesteps
 
 MODEL:

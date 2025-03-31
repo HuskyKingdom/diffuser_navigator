@@ -604,7 +604,7 @@ class MemoryLlamaFlashAttention2(LlamaFlashAttention2):
             query_states,
             mem_key_states,
             mem_value_states,
-            attention_mask,
+            None,
             q_len,
             position_ids=position_ids,
             dropout=dropout_rate,
@@ -1340,8 +1340,16 @@ class MemoryPhiFlashAttention2(PhiFlashAttention2):
         # memory weights (scores)
         # memory KV
         mem_len = compressed_mem.shape[1]
-        mem_key_states = self.k_mem_proj(compressed_mem).view(bsz, mem_len, self.num_heads, self.head_dim).transpose(1, 2)
-        mem_value_states = self.v_mem_proj(compressed_mem).view(bsz, mem_len, self.num_heads, self.head_dim).transpose(1, 2)
+
+        mem_key_states = self.k_mem_proj(compressed_mem)
+        mem_value_states = self.v_mem_proj(compressed_mem)
+
+        if self.qk_layernorm:
+            mem_key_states = self.k_layernorm(mem_key_states)
+
+
+        mem_key_states = mem_key_states.view(bsz, mem_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
+        mem_value_states = mem_value_states.view(bsz, mem_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
 
         mem_key_states = mem_key_states.transpose(1, 2)
         mem_value_states = mem_value_states.transpose(1, 2)
@@ -1355,24 +1363,19 @@ class MemoryPhiFlashAttention2(PhiFlashAttention2):
             else:
                 target_dtype = self.q_proj.weight.dtype
 
-            logger.warning_once(
-                f"The input hidden states seems to be silently casted in float32, this might be related to"
-                f" the fact you have upcasted embedding or layer norm layers in float32. We will cast back the input in"
-                f" {target_dtype}."
-            )
+
 
             query_states = query_states.to(target_dtype)
             key_states = key_states.to(target_dtype)
             value_states = value_states.to(target_dtype)
             mem_key_states =  mem_key_states.to(target_dtype)
             mem_value_states =  mem_value_states.to(target_dtype)
-
         
         mem_attn_output = _flash_attention_forward(
             query_states,
             mem_key_states,
             mem_value_states,
-            attention_mask,
+            None,
             q_len,
             position_ids=position_ids,
             dropout=attn_dropout,
@@ -1395,8 +1398,8 @@ class MemoryPhiFlashAttention2(PhiFlashAttention2):
         )
 
         attn_output = attn_output.reshape(bsz, q_len, self.hidden_size).contiguous()
-
-        attn_output =  attn_output + mem_attn_output.reshape(bsz, q_len, -1).contiguous()
+        mem_attn_output = mem_attn_output.reshape(bsz, q_len, -1).contiguous()
+        attn_output =  attn_output + mem_attn_output
 
 
         attn_output = self.dense(attn_output)

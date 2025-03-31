@@ -130,141 +130,282 @@ def compress_data(data):
 
 
 
-
-    
-
 def collate_fn(batch):
     """
-    batch 是样本列表
-    每个样本是：
+    每个样本原始结构：
     [
         {
             'instruction': (len_seq, 200),
             'progress': (len_seq, 1),
             'rgb_features': (len_seq, 2048, 4, 4),
-            'depth_features': (len_seq, 128, 4, 4)
+            'depth_features': (len_seq, 128, 4, 4),
+            'rgb': (len_seq, 224, 224, 3)   # 假设这里已有完整序列RGB
         },
         prev_actions: (len_seq),
         gt_actions: (len_seq),
-        trajectories: (len_seq,4),
-        ins_text; str
+        trajectories: (len_seq, 4),
+        ins_text: str
     ]
-    """
-
-    def _pad_helper(t, max_len, fill_val=0):
-        pad_amount = max_len - len(t)
-        if pad_amount == 0:
-            return t
-
-        pad = torch.full_like(t[0:1], fill_val).expand(
-            pad_amount, *t.size()[1:]
-        )
-        return torch.cat([t, pad], dim=0)
     
+    新要求：
+      1. 对每个样本随机选取一个timestep，其选择依据如下分布：
+         25% 几率选择 gt_action 为 0；25% 几率选择 gt_action 为 1；25% 几率选择 gt_action 为 2；25% 几率选择 gt_action 为 3。
+      2. 提取该timestep对应的 RGB、instruction、gt_action、weight、ins_text、label（label通过 mapping 得到）。
+      3. 同时将该timestep之前的RGB组成历史序列 rgb_prev，并对其按batch中最长历史（max_his_len）做padding，
+         同时提供对应的 rgb_prev_mask（padding位置为True）。
+      4. 另外返回 padding_mask（这里为所选timestep部分，因只有一个时刻，无需padding，统一设置为False）。
+      
+    返回的字典格式为：
+        {
+            'instruction': [bs, ...],               
+            'rgb': [bs, ...],
+            'rgb_prev': [bs, max_his_len, ...],
+            'rgb_prev_mask': [bs, max_his_len],
+            'gt_actions': [bs, ...],
+            'padding_mask': [bs, ...],
+            'weights': [bs, ...],
+            'ins_text': [bs, ...],
+            'labels': [bs, ...],
+        }
+    """
+    import random
+    import torch
+
+
+    mappings = ["<STOP>", "<FORWARD>", "<LEFT>", "<RIGHT>"]
 
     collected_data = {
-        'instruction': [],           
-        # 'rgb_features': [],          
-        # 'depth_features': [],         
+        'instruction': [],
         'rgb': [],
-        'gt_actions': [],            
-        'trajectories':[],
-        'prev_actions':[],
-        'padding_mask': [],
-        'lengths': [],
+        'rgb_prev': [],   
+        'gt_actions': [],
+        'padding_mask': [], 
         'weights': [],
         'ins_text': [],
-        'progress': [],
         'labels': [],
     }
-    
-    # Transpose the batch to separate each component
-    transposed = list(zip(*batch))
 
-    # Compute max sequence length in the batch
-    lengths = [len(sample[0]['instruction']) for sample in batch]
-    collected_data['lengths'] = torch.tensor(lengths).long()
-    max_len = max(lengths)
+
+    rgb_prev_lengths = []
+
 
     for sample in batch:
 
-        collected_data["ins_text"].append([])
-        collected_data["labels"].append([])
-
-        # Extract data from the sample
         sample_dict = sample[0]
-        instr = torch.tensor(sample_dict['instruction'][0])  # (len_seq, 200) only take one instruction
 
-        rgb = torch.tensor(sample_dict['rgb']) # (len_seq, 224, 224, 3)
-     
-        gt_actions = torch.tensor(sample[2])  # (len_seq)
-        trajectories = torch.tensor(sample[3])  # (len_seq, 4)
-        prev_actions = torch.tensor(sample[1]) 
-        progress = torch.tensor(sample_dict['progress'])
+        instruction = torch.tensor(sample_dict['instruction'][0])
+        rgb_seq = torch.tensor(sample_dict['rgb'])
+        T = rgb_seq.shape[0]
 
-
+        gt_actions_seq = torch.tensor(sample[2])
         
+        # compute inflection weights
 
-        
-
-        # compute weights
         inflection_weights = torch.tensor([1.0, 3.2])
-        inflections = torch.cat(
-            [
-                torch.tensor([1], dtype=torch.long),
-                (gt_actions[1:] != gt_actions[:-1]).long(),
-            ]
-        )
-        weights = inflection_weights[inflections]
+        if T > 0:
+            inflections = torch.cat([torch.tensor([1], dtype=torch.long),
+                                       (gt_actions_seq[1:] != gt_actions_seq[:-1]).long()])
+        else:
+            inflections = torch.tensor([1], dtype=torch.long)
+        weights_seq = inflection_weights[inflections]
 
-        
+        # uniformly sample different actions
+        target_action = random.choices([0, 1, 2, 3], weights=[20, 30, 20, 20], k=1)[0]
+        indices = (gt_actions_seq == target_action).nonzero(as_tuple=False).squeeze(-1)
+        if indices.numel() > 0:
+            chosen_idx = int(indices[random.randint(0, indices.numel() - 1)].item())
+        else:
+            chosen_idx = random.randint(0, T - 1) if T > 0 else 0
 
-        # Pad sequences to the maximum length
-        # pad_rgb_feat = _pad_helper(rgb_feat, max_len)
-        # pad_depth_feat = _pad_helper(depth_feat, max_len)
-        pad_rgb = _pad_helper(rgb, max_len)
-        pad_gt_actions = _pad_helper(gt_actions, max_len)
-        pad_prev_actions = _pad_helper(prev_actions, max_len)
-        pad_trajectories = _pad_helper(trajectories, max_len)
-        pad_weights = _pad_helper(weights, max_len)
-        pad_progress = _pad_helper(progress,max_len)
+        # retrive sampled data
+        chosen_rgb = rgb_seq[chosen_idx]             
+        chosen_gt_action = gt_actions_seq[chosen_idx]  
+        chosen_weight = weights_seq[chosen_idx]       
+        chosen_label = mappings[int(chosen_gt_action.item())]  
+        chosen_ins_text = sample[4][0]
 
+        # rgb_prev
+        if chosen_idx > 0:
+            rgb_prev = rgb_seq[:chosen_idx]
+        else:
+            rgb_prev = rgb_seq.new_empty((0,) + rgb_seq.shape[1:])
 
-
-        seq_len = gt_actions.shape[0]
-        for ts in range(pad_gt_actions.shape[0]): # cp instructions and construct input for decoder-only model
-            mappings = ["<STOP>","<FORWARD>","<LEFT>","<RIGHT>"]
-            collected_data["ins_text"][-1].append(sample[4][0]) # instruction text
-            collected_data['labels'][-1].append(mappings[pad_gt_actions[ts]])
-
-
-
-        # Create padding_mask for this sample
-        mask = torch.ones(max_len, dtype=torch.bool)
-        mask[:seq_len] = False  # False represents real data
-
-        # Append padded data to collected_data
-        collected_data['instruction'].append(instr)
+        # record current his length
+        rgb_prev_lengths.append(rgb_prev.shape[0])
 
 
+        chosen_padding_mask = torch.tensor(False)
 
-        collected_data['rgb'].append(pad_rgb)
-        collected_data['gt_actions'].append(pad_gt_actions)
-        collected_data["prev_actions"].append(pad_prev_actions)
-        collected_data['trajectories'].append(pad_trajectories)
-        collected_data['padding_mask'].append(mask) # padding mask for dec_input
-        collected_data["weights"].append(pad_weights),
-        collected_data["progress"].append(pad_progress)
+        collected_data['instruction'].append(instruction)
+        collected_data['rgb'].append(chosen_rgb)
+        collected_data['gt_actions'].append(chosen_gt_action)
+        collected_data['weights'].append(chosen_weight)
+        collected_data['ins_text'].append(chosen_ins_text)
+        collected_data['labels'].append(chosen_label)
+        collected_data['padding_mask'].append(chosen_padding_mask)
+        collected_data['rgb_prev'].append(rgb_prev)
+
+    # max padding rgb_prev
+    max_his_len = max(rgb_prev_lengths) if rgb_prev_lengths else 0
+    padded_rgb_prev = []
+    rgb_prev_mask_list = []  # padding pos == True
+    for rgb_prev in collected_data['rgb_prev']:
+        L = rgb_prev.shape[0]
+        if L < max_his_len:
+            if L == 0:
+                frame_shape = collected_data['rgb'][0].shape
+            else:
+                frame_shape = rgb_prev.shape[1:]
+            pad_tensor = torch.zeros((max_his_len - L, *frame_shape), dtype=rgb_prev.dtype)
+            rgb_prev_padded = torch.cat([rgb_prev, pad_tensor], dim=0)
+        else:
+            rgb_prev_padded = rgb_prev
+        padded_rgb_prev.append(rgb_prev_padded)
+        mask = torch.ones(max_his_len, dtype=torch.bool)
+        mask[:L] = False
+        rgb_prev_mask_list.append(mask)
+
+    
+    collected_data['rgb_prev'] = torch.stack(padded_rgb_prev, dim=0)
+    collected_data['rgb_prev_mask'] = torch.stack(rgb_prev_mask_list, dim=0)
 
 
-    # Stack each list in collected_data into a tensor
-    for key in collected_data:
-        if key == 'lengths' or key == "ins_text" or key == "labels":
-            continue
-        collected_data[key] = torch.stack(collected_data[key], dim=0)
+    collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
+    collected_data['rgb'] = torch.stack(collected_data['rgb'], dim=0)
+    collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
+    collected_data['weights'] = torch.stack(collected_data['weights'], dim=0)
+    collected_data['padding_mask'] = torch.stack(collected_data['padding_mask'], dim=0)
 
 
     return collected_data
+
+
+    
+
+# def collate_fn(batch):
+#     """
+#     batch 是样本列表
+#     每个样本是：
+#     [
+#         {
+#             'instruction': (len_seq, 200),
+#             'progress': (len_seq, 1),
+#             'rgb_features': (len_seq, 2048, 4, 4),
+#             'depth_features': (len_seq, 128, 4, 4)
+#         },
+#         prev_actions: (len_seq),
+#         gt_actions: (len_seq),
+#         trajectories: (len_seq,4),
+#         ins_text; str
+#     ]
+#     """
+
+#     def _pad_helper(t, max_len, fill_val=0):
+#         pad_amount = max_len - len(t)
+#         if pad_amount == 0:
+#             return t
+
+#         pad = torch.full_like(t[0:1], fill_val).expand(
+#             pad_amount, *t.size()[1:]
+#         )
+#         return torch.cat([t, pad], dim=0)
+    
+
+#     collected_data = {
+#         'instruction': [],              
+#         'rgb': [],
+#         'gt_actions': [],            
+#         'trajectories':[],
+#         'prev_actions':[],
+#         'padding_mask': [],
+#         'lengths': [],
+#         'weights': [],
+#         'ins_text': [],
+#         'progress': [],
+#         'labels': [],
+#     }
+    
+#     # Transpose the batch to separate each component
+#     transposed = list(zip(*batch))
+
+#     # Compute max sequence length in the batch
+#     lengths = [len(sample[0]['instruction']) for sample in batch]
+#     collected_data['lengths'] = torch.tensor(lengths).long()
+#     max_len = max(lengths)
+
+#     for sample in batch:
+
+#         collected_data["ins_text"].append([])
+#         collected_data["labels"].append([])
+
+#         # Extract data from the sample
+#         sample_dict = sample[0]
+#         instr = torch.tensor(sample_dict['instruction'][0])  # (len_seq, 200) only take one instruction
+
+#         rgb = torch.tensor(sample_dict['rgb']) # (len_seq, 224, 224, 3)
+     
+#         gt_actions = torch.tensor(sample[2])  # (len_seq)
+#         trajectories = torch.tensor(sample[3])  # (len_seq, 4)
+#         prev_actions = torch.tensor(sample[1]) 
+#         progress = torch.tensor(sample_dict['progress'])
+
+
+
+#         # compute weights
+#         inflection_weights = torch.tensor([1.0, 3.2])
+#         inflections = torch.cat(
+#             [
+#                 torch.tensor([1], dtype=torch.long),
+#                 (gt_actions[1:] != gt_actions[:-1]).long(),
+#             ]
+#         )
+#         weights = inflection_weights[inflections]
+
+        
+
+#         # Pad sequences to the maximum length
+#         pad_rgb = _pad_helper(rgb, max_len)
+#         pad_gt_actions = _pad_helper(gt_actions, max_len)
+#         pad_prev_actions = _pad_helper(prev_actions, max_len)
+#         pad_trajectories = _pad_helper(trajectories, max_len)
+#         pad_weights = _pad_helper(weights, max_len)
+#         pad_progress = _pad_helper(progress,max_len)
+
+
+#         seq_len = gt_actions.shape[0]
+#         for ts in range(pad_gt_actions.shape[0]): # cp instructions and construct input for decoder-only model
+#             mappings = ["<STOP>","<FORWARD>","<LEFT>","<RIGHT>"]
+#             collected_data["ins_text"][-1].append(sample[4][0]) # instruction text
+#             collected_data['labels'][-1].append(mappings[pad_gt_actions[ts]])
+
+
+
+#         # Create padding_mask for this sample
+#         mask = torch.ones(max_len, dtype=torch.bool)
+#         mask[:seq_len] = False  # False represents real data
+
+#         # Append padded data to collected_data
+#         collected_data['instruction'].append(instr)
+
+
+
+#         collected_data['rgb'].append(pad_rgb)
+#         collected_data['gt_actions'].append(pad_gt_actions)
+#         collected_data["prev_actions"].append(pad_prev_actions)
+#         collected_data['trajectories'].append(pad_trajectories)
+#         collected_data['padding_mask'].append(mask) # padding mask for dec_input
+#         collected_data["weights"].append(pad_weights),
+#         collected_data["progress"].append(pad_progress)
+
+
+#     # Stack each list in collected_data into a tensor
+#     for key in collected_data:
+#         if key == 'lengths' or key == "ins_text" or key == "labels":
+#             continue
+#         collected_data[key] = torch.stack(collected_data[key], dim=0)
+
+
+#     return collected_data
 
 
 
@@ -1034,7 +1175,12 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         loss = self.policy.build_loss(observations)  # Access the underlying module
 
         
-        
+        device = self.policy.vlm.device
+        props = torch.cuda.get_device_properties(device)
+        total_memory = props.total_memory / 1024**2  
+        allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
+        reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
+        print("Total memory: {:.2f} MB Memory allocated: {:.2f} MB Memory reserved (cached): {:.2f} MB \n".format(total_memory, allocated_memory, reserved_memory))
 
         
         with torch.no_grad():
@@ -1059,12 +1205,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
         
         
-        device = self.policy.vlm.device
-        props = torch.cuda.get_device_properties(device)
-        total_memory = props.total_memory / 1024**2  
-        allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
-        reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
-        print("Total memory: {:.2f} MB Memory allocated: {:.2f} MB Memory reserved (cached): {:.2f} MB \n".format(total_memory, allocated_memory, reserved_memory))
+        
 
 
         return loss_tensor.item()
