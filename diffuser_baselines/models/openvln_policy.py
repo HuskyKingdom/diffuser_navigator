@@ -96,10 +96,10 @@ class OpenVLNPolicy(NetPolicy):
       
 
 
-    def formating_input_frame(self,frame,device):
+    def formating_input_frame(self,current_frame,device):
 
-        if not frame.is_contiguous():
-            frame = frame.contiguous()
+        if not current_frame.is_contiguous():
+            current_frame = current_frame.contiguous()
 
         B,T,H,W,C = current_frame.shape
         current_frame = current_frame.detach().cpu().numpy().astype(np.uint8)
