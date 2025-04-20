@@ -210,7 +210,7 @@ def collate_fn(batch):
         weights_seq = inflection_weights[inflections]
 
         # uniformly sample different actions
-        target_action = random.choices([0, 1, 2, 3], weights=[20, 30, 20, 20], k=1)[0]
+        target_action = random.choices([0, 1, 2, 3], weights=[10, 40, 25, 25], k=1)[0]
         indices = (gt_actions_seq == target_action).nonzero(as_tuple=False).squeeze(-1)
         if indices.numel() > 0:
             chosen_idx = int(indices[random.randint(0, indices.numel() - 1)].item())

@@ -1252,6 +1252,9 @@ class MemoryPhiFlashAttention2(PhiFlashAttention2):
         self.k_mem_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=True)
         self.v_mem_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=True)
 
+        self.alpha_proj = nn.linear(self.hidden_size, self.hidden_size, bias=True)
+        self.beta_proj = nn.linear(self.hidden_size, self.hidden_size, bias=True)
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -1398,8 +1401,12 @@ class MemoryPhiFlashAttention2(PhiFlashAttention2):
         )
 
         attn_output = attn_output.reshape(bsz, q_len, self.hidden_size).contiguous()
-        mem_attn_output = mem_attn_output.reshape(bsz, q_len, -1).contiguous()
-        attn_output =  attn_output + mem_attn_output
+        mem_attn_output = mem_attn_output.reshape(bsz, q_len, self.hidden_size).contiguous()
+
+        mem_alpha = self.alpha_proj(mem_attn_output)
+        mem_beta = self.beta_proj(mem_attn_output)
+
+        attn_output =  attn_output + self.mem_alpha * attn_output + mem_attn_output
 
 
         attn_output = self.dense(attn_output)

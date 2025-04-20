@@ -96,6 +96,70 @@ class OpenVLNPolicy(NetPolicy):
       
 
 
+    def formating_input_frame(frame,device):
+
+        if not frame.is_contiguous():
+            frame = frame.contiguous()
+
+        B,T,H,W,C = current_frame.shape
+        current_frame = current_frame.detach().cpu().numpy().astype(np.uint8)
+
+        # to PIL image for transform
+        pil_images = [Image.fromarray(img) for img in current_frame]
+        transformed_images = [self.image_transform(img) for img in pil_images]
+
+        # back to tensor
+        transformed_images_tensor = {
+        k: torch.stack([sample[k] for sample in transformed_images]).float().to(device)
+        for k in transformed_images[0].keys()
+        } # in shape {dino: (1, 3, 224, 224); siglip: (1, 3, 224, 224)}
+
+
+        if isinstance(transformed_images[0], dict):
+            transformed_his_tensor = {
+                k: torch.stack([sample[k] for sample in transformed_images]).float().to(device)
+                for k in transformed_images[0].keys()
+                } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
+        else:
+            transformed_images_tensor = torch.stack([sample for sample in transformed_images]).float().to(device) # (his_len, 3, 336, 336)
+        
+
+        return transformed_images_tensor
+        
+
+    def formating_history_frames(full_histories,device):
+
+        B,T,H,W,C = full_histories.shape
+
+        # appfront init memory
+        init_empty_memory = torch.zeros(B,1,H,W,C).to(full_histories.device)
+        full_histories = torch.cat((init_empty_memory,full_histories), dim = 1)
+        B,T,H,W,C = full_histories.shape
+
+        # reshape and format
+        if not full_histories.is_contiguous():
+            full_histories = full_histories.contiguous()
+        full_histories = full_histories.view(-1,H,W,C).detach().cpu().numpy().astype(np.uint8)
+
+
+        # to PIL image for transform
+        pil_images_his = [Image.fromarray(img) for img in full_histories]
+        transformed_his = [self.image_transform(img) for img in pil_images_his]
+
+        # back to tensor
+        if isinstance(transformed_his[0], dict):
+            transformed_his_tensor = {
+                k: torch.stack([sample[k] for sample in transformed_his]).float().to(device)
+                for k in transformed_his[0].keys()
+                } # in shape {dino: (his_len, 3, 224, 224); siglip: (his_len, 3, 224, 224)}
+        else:
+            transformed_his_tensor = torch.stack([sample for sample in transformed_his]).float().to(device) # (his_len, 3, 336, 336)
+
+
+
+        return transformed_his_tensor
+
+
 
 
         
@@ -135,49 +199,17 @@ class OpenVLNPolicy(NetPolicy):
 
 
         # == formulating images == (single frame)
-        # reshape and format
         current_frame = collected_data['rgb'][:,-1:,:,:,:]
-
-        B,T,H,W,C = current_frame.shape
-        current_frame = current_frame.view(-1,H,W,C).cpu().numpy().astype(np.uint8)
-
-        # to PIL image for transform
-        pil_images = [Image.fromarray(img) for img in current_frame]
-        transformed_images = [self.image_transform(img) for img in pil_images]
-
-        # back to tensor
-        transformed_images_tensor = {
-        k: torch.stack([sample[k] for sample in transformed_images]).float().to(observations['rgb'].device)
-        for k in transformed_images[0].keys()
-        } # in shape {dino: (1, 3, 224, 224); siglip: (1, 3, 224, 224)}
+        current_frame = current_frame.squeeze(1)
+        transformed_images_tensor = self.formating_input_frame(current_frame,observations['instruction'].device)
         
-
 
         # == prepare histories ==
         full_histories = collected_data['rgb'][:,:-1,:,:,:]
-        B,T,H,W,C = full_histories.shape
+        transformed_his_tensor = self.formating_history_frames(full_histories,observations['instruction'].device)
 
-        # appfront init memory
-        init_empty_memory = torch.zeros(B,1,H,W,C).to(full_histories.device)
-        full_histories = torch.cat((init_empty_memory,full_histories), dim = 1)
-        B,T,H,W,C = full_histories.shape
 
-        # reshape and format
-        if not full_histories.is_contiguous():
-            full_histories = full_histories.contiguous()
-        full_histories = full_histories.view(-1,H,W,C).detach().cpu().numpy().astype(np.uint8)
 
-        
-
-        # to PIL image for transform
-        pil_images_his = [Image.fromarray(img) for img in full_histories]
-        transformed_his = [self.image_transform(img) for img in pil_images_his]
-
-        # back to tensor
-        transformed_his_tensor = {
-        k: torch.stack([sample[k] for sample in transformed_his]).float().to(observations['instruction'].device)
-        for k in transformed_his[0].keys()
-        } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
 
         start_idx = -1 # indicates no his_masking needed
 
@@ -229,154 +261,6 @@ class OpenVLNPolicy(NetPolicy):
         
     
 
-    # def build_loss(self,observations):
-
-
-
-    #     # format batch data
-    #     collected_data = {
-    #     'instruction': observations['instruction'],
-    #     'rgb': observations['rgb'],
-    #     'gt_actions': observations['gt_actions'], # (bs,T)
-    #     'prev_actions': observations['prev_actions'],
-    #     'lengths': observations['lengths'],
-    #     'weights': observations['weights'],
-    #     'ins_text': observations['ins_text'],
-    #     'labels': observations["labels"],
-    #     }
-
-
-    #     if self.config.OPENVLN.truncation: # current version only supports local bs = 1
-    #         # truncats batch size to preventing cuda OOM
-    #         total_ts = observations['rgb'].shape[1]
-    #         truncation_len = 5
-    #         if total_ts >= truncation_len:
-    #             start_idx = random.randint(0, total_ts - truncation_len)
-    #             end_idx = start_idx + truncation_len
-    #         else:
-    #             start_idx = 0
-    #             end_idx = total_ts
-
-    #         collected_data['rgb'] = observations['rgb'][:, start_idx:end_idx, :, :, :]
-    #         collected_data['gt_actions'] = observations['gt_actions'][:, start_idx:end_idx]
-    #         collected_data['weights'] = observations['weights'][:,start_idx:end_idx]
-    #         collected_data['ins_text'] = [row[start_idx:end_idx] for row in observations['ins_text']]
-    #         collected_data['labels'] = [row[start_idx:end_idx] for row in observations['labels']]
-    #         full_histories = observations['rgb'].clone()
-
-            
-
-    #     # == build model input (prompt + label) ==
-
-    #     # == add <SPC> & tokenlization instructions & labels ==
-    #     for sample in range(len(collected_data['ins_text'])):
-    #         for ts in range(len(collected_data['ins_text'][sample])):
-    #             # build prompt
-    #             self.prompt_builder = self.vlm.get_prompt_builder()
-    #             self.prompt_builder.add_turn(role="human", message=f"Which action should the robot take now to {collected_data['ins_text'][sample][ts]}?")
-    #             prompt_text = self.prompt_builder.get_prompt()
-                
-    #             prompt_text += collected_data["labels"][sample][ts]
-    #             collected_data['ins_text'][sample][ts] = self.tokenlizer(prompt_text, truncation=False, return_tensors="pt").input_ids[0] # auto added BOS , in shape (T)
-        
-    #     inputids = [item for sublist in collected_data['ins_text'] for item in sublist]
-    #     inputids = pad_sequence(inputids, batch_first=True, padding_value=self.tokenlizer.pad_token_id).to(observations['instruction'].device)
-        
-
-    #     attention_mask = inputids.ne(self.tokenlizer.pad_token_id)
-
-        
-
-    #     # == formulating training images ==
-    #     # reshape and format
-    #     B,T,H,W,C = collected_data['rgb'].shape
-    #     if not collected_data['rgb'].is_contiguous():
-    #         collected_data['rgb'] = collected_data['rgb'].contiguous()
-    #     collected_data['rgb'] = collected_data['rgb'].view(-1,H,W,C).detach().cpu().numpy().astype(np.uint8)
-
-        
-
-
-    #     # to PIL image for transform
-    #     pil_images = [Image.fromarray(img) for img in collected_data['rgb']]
-    #     transformed_images = [self.image_transform(img) for img in pil_images]
-
-
-
-    #     # back to tensor
-    #     if isinstance(transformed_images[0], dict):
-    #         transformed_his_tensor = {
-    #             k: torch.stack([sample[k] for sample in transformed_images]).float().to(observations['instruction'].device)
-    #             for k in transformed_images[0].keys()
-    #             } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
-    #     else:
-    #         transformed_images_tensor = torch.stack([sample for sample in transformed_images]).float().to(observations['instruction'].device) # (his_len, 3, 336, 336)
-        
-        
-
-    #     # == formulating histories ==
-       
-    #     B,T,H,W,C = full_histories.shape
-
-    #     # appfront init memory
-    #     init_empty_memory = torch.zeros(B,1,H,W,C).to(full_histories.device)
-    #     full_histories = torch.cat((init_empty_memory,full_histories), dim = 1)
-    #     B,T,H,W,C = full_histories.shape
-
-    #     # reshape and format
-    #     if not full_histories.is_contiguous():
-    #         full_histories = full_histories.contiguous()
-    #     full_histories = full_histories.view(-1,H,W,C).detach().cpu().numpy().astype(np.uint8)
-
-        
-
-    #     # to PIL image for transform
-    #     pil_images_his = [Image.fromarray(img) for img in full_histories]
-    #     transformed_his = [self.image_transform(img) for img in pil_images_his]
-
-    #     # back to tensor
-
-    #     if isinstance(transformed_his[0], dict):
-    #         transformed_his_tensor = {
-    #             k: torch.stack([sample[k] for sample in transformed_his]).float().to(observations['instruction'].device)
-    #             for k in transformed_his[0].keys()
-    #             } # in shape {dino: (his_len, 3, 224, 224); siglip: (his_len, 3, 224, 224)}
-    #     else:
-    #         transformed_his_tensor = torch.stack([sample for sample in transformed_his]).float().to(observations['instruction'].device) # (his_len, 3, 336, 336)
-
-
-
-        
-
-    #     # == formulating labels ==
-    #     input_labels = inputids.detach().clone() # create labels
-
-
-    #     start_idx += 1 # to align with the memory padded with init memory
-
-    #     cast_type = torch.float16
-    #     if self.config.OPENVLN.flash_atten and not self.config.OPENVLN.phase == "phi":
-    #         cast_type = torch.bfloat16
-
-    #     with torch.cuda.amp.autocast(dtype=cast_type):
-    #         modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = observations['lengths'], full_his = transformed_his_tensor, sample_start = start_idx,vocab_size=len(self.tokenlizer), inf_weights = collected_data['weights'])
-        
-
-    #     pred = modelout.logits.argmax(dim=-1)
-    #     predicted_token_id_list = pred.cpu().tolist() # (bs,token_len)
-
-    #     bs_result = []
-    #     for i in range(len(predicted_token_id_list)):
-    #         decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[i])
-    #         bs_result.append(decoded_tokens[-2])
-
-    #     print(collected_data['gt_actions'],bs_result)
-
-
-    #     return modelout.loss
-    
-
-
     def build_loss(self,observations):
 
 
@@ -416,54 +300,20 @@ class OpenVLNPolicy(NetPolicy):
   
         # == formulating training images ==
         # to PIL image for transform
-
-        if not collected_data['rgb'].is_contiguous():
-            collected_data['rgb'] = collected_data['rgb'].contiguous()
-        collected_data['rgb'] = collected_data['rgb'].detach().cpu().numpy().astype(np.uint8)
-        pil_images = [Image.fromarray(img) for img in collected_data['rgb']]
-        transformed_images = [self.image_transform(img) for img in pil_images]
-        # back to tensor
-        if isinstance(transformed_images[0], dict):
-            transformed_his_tensor = {
-                k: torch.stack([sample[k] for sample in transformed_images]).float().to(observations['instruction'].device)
-                for k in transformed_images[0].keys()
-                } # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
-        else:
-            transformed_images_tensor = torch.stack([sample for sample in transformed_images]).float().to(observations['instruction'].device) # (his_len, 3, 336, 336)
-        
+        transformed_images_tensor = self.formating_input_frame(collected_data['rgb'],observations['instruction'].device)
         
 
         # == formulating histories ==
         # to PIL image for transform
         full_histories = collected_data['rgb_prev']
+        transformed_his_tensor = self.formating_history_frames(full_histories,observations['instruction'].device)
 
         # appfront init memory & update history mask
-        B,T,H,W,C = full_histories.shape
-        init_empty_memory = torch.zeros(B,1,H,W,C).to(full_histories.device)
-        full_histories = torch.cat((init_empty_memory,full_histories), dim = 1)
         init_empty_memory_mask = torch.zeros(B,1).bool().to(full_histories.device)
         collected_data['rgb_prev_mask'] = torch.cat((init_empty_memory_mask,collected_data['rgb_prev_mask']), dim = 1)
 
 
-        B,T,H,W,C = full_histories.shape
-        # reshape and format
-        if not full_histories.is_contiguous():
-            full_histories = full_histories.contiguous()
-        full_histories = full_histories.view(-1,H,W,C).detach().cpu().numpy().astype(np.uint8)
-        pil_images_his = [Image.fromarray(img) for img in full_histories]
-        transformed_his = [self.image_transform(img) for img in pil_images_his]
-        # back to tensor
-        if isinstance(transformed_his[0], dict):
-            transformed_his_tensor = {
-                k: torch.stack([sample[k] for sample in transformed_his]).float().to(observations['instruction'].device)
-                for k in transformed_his[0].keys()
-                } # in shape {dino: (his_len, 3, 224, 224); siglip: (his_len, 3, 224, 224)}
-        else:
-            transformed_his_tensor = torch.stack([sample for sample in transformed_his]).float().to(observations['instruction'].device) # (his_len, 3, 336, 336)
 
-
-
-        
 
         # == formulating labels ==
         input_labels = inputids.detach().clone() # create labels
