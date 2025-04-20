@@ -108,12 +108,6 @@ class OpenVLNPolicy(NetPolicy):
         transformed_images = [self.image_transform(img) for img in pil_images]
 
         # back to tensor
-        transformed_images_tensor = {
-        k: torch.stack([sample[k] for sample in transformed_images]).float().to(device)
-        for k in transformed_images[0].keys()
-        } # in shape {dino: (1, 3, 224, 224); siglip: (1, 3, 224, 224)}
-
-
         if isinstance(transformed_images[0], dict):
             transformed_his_tensor = {
                 k: torch.stack([sample[k] for sample in transformed_images]).float().to(device)
