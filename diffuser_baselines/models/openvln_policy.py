@@ -101,7 +101,6 @@ class OpenVLNPolicy(NetPolicy):
         if not current_frame.is_contiguous():
             current_frame = current_frame.contiguous()
 
-        B,T,H,W,C = current_frame.shape
         current_frame = current_frame.detach().cpu().numpy().astype(np.uint8)
 
         # to PIL image for transform
@@ -157,7 +156,7 @@ class OpenVLNPolicy(NetPolicy):
 
 
 
-        return transformed_his_tensor
+        return transformed_his_tensor,(B,T)
 
 
 
@@ -206,7 +205,7 @@ class OpenVLNPolicy(NetPolicy):
 
         # == prepare histories ==
         full_histories = collected_data['rgb'][:,:-1,:,:,:]
-        transformed_his_tensor = self.formating_history_frames(full_histories,observations['instruction'].device)
+        transformed_his_tensor,img_ori_shape = self.formating_history_frames(full_histories,observations['instruction'].device)
 
 
 
@@ -218,7 +217,7 @@ class OpenVLNPolicy(NetPolicy):
             cast_type = torch.bfloat16
 
         with torch.cuda.amp.autocast(dtype=cast_type):
-            modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = (B,T), sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor, sample_start = start_idx)
+            modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor, sample_start = start_idx)
         
 
 
@@ -306,7 +305,7 @@ class OpenVLNPolicy(NetPolicy):
         # == formulating histories ==
         # to PIL image for transform
         full_histories = collected_data['rgb_prev']
-        transformed_his_tensor = self.formating_history_frames(full_histories,observations['instruction'].device)
+        transformed_his_tensor,img_ori_shape = self.formating_history_frames(full_histories,observations['instruction'].device)
 
         # appfront init memory & update history mask
         init_empty_memory_mask = torch.zeros(B,1).bool().to(full_histories.device)
@@ -325,7 +324,7 @@ class OpenVLNPolicy(NetPolicy):
  
 
         with torch.cuda.amp.autocast(dtype=cast_type):
-            modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = (B,T), sample_valid_len = last_valid_index, full_his = transformed_his_tensor, pre_mask = collected_data['rgb_prev_mask'], vocab_size=len(self.tokenlizer), inf_weights = collected_data['weights'])
+            modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = img_ori_shape, sample_valid_len = last_valid_index, full_his = transformed_his_tensor, pre_mask = collected_data['rgb_prev_mask'], vocab_size=len(self.tokenlizer), inf_weights = collected_data['weights'])
         
 
         pred = modelout.logits.argmax(dim=-1)

@@ -87,7 +87,7 @@ from torch.distributed.fsdp import (
     StateDictType,
 )
 from transformers.models.llama.modeling_llama import LlamaRMSNorm
-
+from transformers import get_cosine_schedule_with_warmup
 
 
 @contextmanager
@@ -1195,15 +1195,12 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         self.grad_clipping()
 
         self.scaler.step(self.optimizer)
+        
+        if config.lr_Schedule:
+            self.lr_scheduler.step()
+
         self.scaler.update()
         self.optimizer.zero_grad()
-
-        # loss.backward()
-        # self.grad_clipping()
-        # self.optimizer.step()
-        # self.optimizer.zero_grad()
-
-        
         
         
 
@@ -1280,12 +1277,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
                 trainable_params, lr=self.config.OPENVLN.LR
             )
             if config.lr_Schedule: # train 250 + 500 + 750  + 1000 + 1250 + 1500 + 1750 + 2000 + 2250 + 2500 
-                if not config.dagger: # self.config.IL.DAGGER.update_size // self.config.IL.batch_size
-                    self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.OPENVLN.LR, pct_start=0.35, 
-                                                    steps_per_epoch=7862, epochs=self.config.IL.epochs)
-                else:
-                    self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.OPENVLN.LR, pct_start=0.35, 
-                                                    total_steps = self.config.IL.DAGGER.update_size * 55 // self.config.IL.batch_size * self.config.IL.epochs)
+                self.lr_scheduler = get_cosine_schedule_with_warmup(self.optimizer, 0.4 * 8592, 8592)
         else:
             self.policy.to(torch.cuda.current_device())
             
