@@ -1252,8 +1252,8 @@ class MemoryPhiFlashAttention2(PhiFlashAttention2):
         self.k_mem_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=True)
         self.v_mem_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=True)
 
-        self.alpha_proj = nn.linear(self.hidden_size, self.hidden_size, bias=True)
-        self.beta_proj = nn.linear(self.hidden_size, self.hidden_size, bias=True)
+        self.alpha_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
+        self.beta_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
 
     def forward(
         self,
