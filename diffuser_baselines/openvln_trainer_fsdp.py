@@ -1195,8 +1195,8 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
         self.grad_clipping()
 
         self.scaler.step(self.optimizer)
-        
-        if config.lr_Schedule:
+
+        if self.config.lr_Schedule:
             self.lr_scheduler.step()
 
         self.scaler.update()
