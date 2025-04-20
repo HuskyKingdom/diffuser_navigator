@@ -96,7 +96,7 @@ class OpenVLNPolicy(NetPolicy):
       
 
 
-    def formating_input_frame(frame,device):
+    def formating_input_frame(self,frame,device):
 
         if not frame.is_contiguous():
             frame = frame.contiguous()
@@ -127,7 +127,7 @@ class OpenVLNPolicy(NetPolicy):
         return transformed_images_tensor
         
 
-    def formating_history_frames(full_histories,device):
+    def formating_history_frames(self,full_histories,device):
 
         B,T,H,W,C = full_histories.shape
 
