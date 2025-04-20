@@ -301,6 +301,7 @@ class OpenVLNPolicy(NetPolicy):
         full_histories = collected_data['rgb_prev']
         transformed_his_tensor,img_ori_shape = self.formating_history_frames(full_histories,observations['instruction'].device)
 
+        B = img_ori_shape[0]
         # appfront init memory & update history mask
         init_empty_memory_mask = torch.zeros(B,1).bool().to(full_histories.device)
         collected_data['rgb_prev_mask'] = torch.cat((init_empty_memory_mask,collected_data['rgb_prev_mask']), dim = 1)
