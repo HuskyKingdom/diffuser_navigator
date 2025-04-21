@@ -598,7 +598,7 @@ class OpenVLN(PrismaticVLM):
         pre_mask = None,
         vocab_size = None,
         inf_weights = None,
-        ori_ins = None,
+        ori_inst = None,
     ) -> CausalLMOutputWithPast:
         """Run a forward pass through the VLN, returning a CausalLMOutputWithPast instance (contains loss)."""
 
