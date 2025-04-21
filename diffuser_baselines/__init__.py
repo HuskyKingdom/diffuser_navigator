@@ -8,4 +8,4 @@ from diffuser_baselines import (
     phase2_data_collector
 )
 from vlnce_baselines.common import environments
-from diffuser_baselines.models import d3diffuser_navigator,openvln_policy
+from diffuser_baselines.models import d3diffuser_navigator,openvln_policy, openvln_policy_ins

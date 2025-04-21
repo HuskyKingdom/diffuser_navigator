@@ -50,7 +50,8 @@ def load(
     hf_token: Optional[str] = None,
     cache_dir: Optional[Union[str, Path]] = None,
     load_for_training: bool = False,
-    flash_atten = True
+    flash_atten = True,
+    type = None,
 ) -> PrismaticVLM:
     """Loads a pretrained PrismaticVLM from either local disk or the HuggingFace Hub."""
     if os.path.isdir(model_id_or_path):
@@ -120,14 +121,25 @@ def load(
     overwatch.info(f"Loading VLM [bold blue]{model_cfg['model_id']}[/] from Checkpoint")
     print(f"Loading VLM [bold blue]{model_cfg['model_id']}[/] from Checkpoint")
 
-    from diffuser_baselines.models.openvln_policy import OpenVLN
-    vlm = OpenVLN.from_pretrained(
-        checkpoint_pt,
-        model_cfg["model_id"],
-        vision_backbone,
-        llm_backbone,
-        arch_specifier=model_cfg["arch_specifier"],
-        freeze_weights=not load_for_training,
-    )
+    if type == None: 
+        from diffuser_baselines.models.openvln_policy import OpenVLN
+        vlm = OpenVLN.from_pretrained(
+            checkpoint_pt,
+            model_cfg["model_id"],
+            vision_backbone,
+            llm_backbone,
+            arch_specifier=model_cfg["arch_specifier"],
+            freeze_weights=not load_for_training,
+        )
+    else:
+        from diffuser_baselines.models.openvln_policy_ins import OpenVLN
+        vlm = OpenVLN.from_pretrained(
+            checkpoint_pt,
+            model_cfg["model_id"],
+            vision_backbone,
+            llm_backbone,
+            arch_specifier=model_cfg["arch_specifier"],
+            freeze_weights=not load_for_training,
+        )
 
     return vlm

@@ -1277,7 +1277,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
                 trainable_params, lr=self.config.OPENVLN.LR
             )
             if config.lr_Schedule: # train 250 + 500 + 750  + 1000 + 1250 + 1500 + 1750 + 2000 + 2250 + 2500 
-                self.lr_scheduler = get_cosine_schedule_with_warmup(self.optimizer, 0.04 * 8592, 8592)
+                self.lr_scheduler = get_cosine_schedule_with_warmup(self.optimizer, 0.04 * 7488, 7488)
         else:
             self.policy.to(torch.cuda.current_device())
             

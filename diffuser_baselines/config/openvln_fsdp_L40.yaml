@@ -24,7 +24,7 @@ IL:
   ckpt_to_load: data/checkpoints/openvln_fsdp/ckpt.1.pth
   load_from_ckpt: False # for testing overfitting only 
   epochs: 16
-  batch_size: 32 # global bs
+  batch_size: 6 # global bs
   is_requeue: False # continuo training
   
 
@@ -55,7 +55,7 @@ OPENVLN:
   truncation: True # whether to apply truncation on timesteps
 
 MODEL:
-  policy_name: OpenVLNPolicy
+  policy_name: OpenVLNPolicyIns
 
 TYPE: VLN-CE-v1
 SPLIT: joint_train_envdrop
