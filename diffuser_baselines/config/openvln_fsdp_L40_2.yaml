@@ -6,7 +6,7 @@ NUM_ENVIRONMENTS: 1
 NUM_PROCESSES: 1
 TENSORBOARD_DIR: data/tensorboard_dirs/openvln_fsdp
 CHECKPOINT_FOLDER: data/checkpoints/openvln_fsdp
-EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp/ckpt.8.pth
+EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp/ckpt.14.pth
 RESULTS_DIR: data/checkpoints/openvln_fsdp/evals
 VIDEO_OPTION: []
 JobName: openvln_fsdp
@@ -16,7 +16,7 @@ dagger: True
 
 EVAL:
   USE_CKPT_CONFIG: False
-  SPLIT: joint_train_envdrop # for testing overfitting only
+  SPLIT: val_unseen # for testing overfitting only
   EPISODE_COUNT: -1
   ACTION_POP: True
 
@@ -55,7 +55,7 @@ OPENVLN:
   truncation: True # whether to apply truncation on timesteps
 
 MODEL:
-  policy_name: OpenVLNPolicyIns
+  policy_name: OpenVLNPolicy
 
 TYPE: VLN-CE-v1
 SPLIT: joint_train_envdrop
