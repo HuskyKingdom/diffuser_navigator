@@ -1406,7 +1406,7 @@ class MemoryPhiFlashAttention2(PhiFlashAttention2):
         mem_alpha = self.alpha_proj(mem_attn_output)
         mem_beta = self.beta_proj(mem_attn_output)
 
-        attn_output =  attn_output + mem_alpha * attn_output + mem_attn_output
+        attn_output =  attn_output + mem_alpha * attn_output + mem_beta
 
 
         attn_output = self.dense(attn_output)
