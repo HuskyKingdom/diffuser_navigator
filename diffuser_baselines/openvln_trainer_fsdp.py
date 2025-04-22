@@ -1266,14 +1266,6 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             )
             trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
 
-            # # gradient checkpointsing
-            # non_reentrant_wrapper = partial(checkpoint_wrapper, checkpoint_impl=CheckpointImpl.NO_REENTRANT)
-            # def check_fn(submodule: nn.Module) -> bool:
-            #     return isinstance(submodule, self.policy.vlm.llm_backbone.transformer_layer_cls)
-
-            # # Note that the terms "activation checkpointing" and "gradient checkpointing" are synonymous!
-            # apply_activation_checkpointing(self.policy.vlm, checkpoint_wrapper_fn=non_reentrant_wrapper, check_fn=check_fn)
-
             # optimizer & lr_scheduler (no weight decay)
             self.optimizer = torch.optim.AdamW(
                 trainable_params, lr=self.config.OPENVLN.LR
