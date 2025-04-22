@@ -1136,12 +1136,14 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
                                 step_id += 1  # noqa: SIM113
                                 num_epoch_batch += 1
 
+
+                        epoch_loss /= num_epoch_batch
+                        wandb.log({"epoch loss": epoch_loss, "steps": num_epoch_batch, "Epoch": epoch})
+                        epoch_loss = 0
+                        num_epoch_batch = 0
+
                         if self.world_rank == 0: # fsdp save 
-                            epoch_loss /= num_epoch_batch
                             logger.info(f"epoch loss: {epoch_loss}  | steps {num_epoch_batch} | On Diffuser iter {dagger_it}, Epoch {epoch}.")
-                            wandb.log({"epoch loss": epoch_loss, "steps": num_epoch_batch, "Epoch": epoch})
-                            epoch_loss = 0
-                            num_epoch_batch = 0
 
                         # fsdp save logic
                         if (dagger_it * self.config.IL.epochs + epoch + 1) % self.config.OPENVLN.saving_frequency == 0:
