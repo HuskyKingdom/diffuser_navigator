@@ -211,7 +211,7 @@ class OpenVLNPolicyIns(NetPolicy):
             cast_type = torch.bfloat16
 
         with torch.cuda.amp.autocast(dtype=cast_type):
-            modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor, sample_start = start_idx)
+            modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor, sample_start = start_idx,ori_inst= (input_ids,None))
         
 
 
@@ -461,7 +461,7 @@ class OpenVLN(PrismaticVLM):
         return multimodal_embeddings, multimodal_attention_mask, multimodal_labels
         
     
-    def inference_action(self,input_ids, pixel_values, full_his, img_ori_shape,sample_valid_len):
+    def inference_action(self,input_ids, pixel_values, full_his, img_ori_shape,sample_valid_len,ori_inst):
 
         # ===== inference forward logic =====
 
@@ -485,7 +485,7 @@ class OpenVLN(PrismaticVLM):
         projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,4,dim)
         
 
-        compressed_memory = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask = None)
+        compressed_memory = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask = None,ori_ins=ori_inst)
 
 
         inference_result = self.llm_backbone(
@@ -533,8 +533,12 @@ class OpenVLN(PrismaticVLM):
         # processing instructions
         original_instructions = ori_ins[0]
         original_instructions = self.llm_backbone.embed_input_ids(original_instructions) # encode
-        original_instructions_mask = ori_ins[1]
-        original_instructions_mask = (~original_instructions_mask).bool()  # mask transfer
+        
+        if ori_ins[1] != None:
+            original_instructions_mask = ori_ins[1]
+            original_instructions_mask = (~original_instructions_mask).bool()  # mask transfer
+        else:
+            original_instructions_mask = None
 
         token_bs = multimodal_embeddings.shape[0]
         his_T,grid_len,hidden_dim = projected_cls_embeddings.shape
@@ -605,7 +609,7 @@ class OpenVLN(PrismaticVLM):
         # Handle Inference (leverage cache, short-circuit on just LLM forward)
 
         if inference:
-            return self.inference_action(input_ids, pixel_values, full_his, img_ori_shape,sample_valid_len)
+            return self.inference_action(input_ids, pixel_values, full_his, img_ori_shape,sample_valid_len,ori_inst)
 
 
         # Handle Multimodal Indices is None --> pretend like the batch is fully multimodal (always image + text)!
