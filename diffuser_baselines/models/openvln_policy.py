@@ -553,8 +553,9 @@ class OpenVLN(PrismaticVLM):
 
 
         # repeat 4 times on his_T dimension for grid pooled version
-        pre_mask = pre_mask.repeat_interleave(4,dim=1)
-        pre_mask = pre_mask.bool()
+        if pre_mask!=None:
+            pre_mask = pre_mask.repeat_interleave(4,dim=1)
+            pre_mask = pre_mask.bool()
 
         
 
