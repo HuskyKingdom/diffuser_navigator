@@ -211,7 +211,7 @@ class OpenVLNPolicy(NetPolicy):
             cast_type = torch.bfloat16
 
         with torch.cuda.amp.autocast(dtype=cast_type):
-            modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor, sample_start = start_idx)
+            modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor)
         
 
 
@@ -463,7 +463,12 @@ class OpenVLN(PrismaticVLM):
 
         # ==== IMG PATCH FEATURES ====
         # Run Visual Feature Extraction # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
-        patch_features = self.vision_backbone({k: pixel_values[k] for k in pixel_values})
+        with torch.set_grad_enabled(self.vision_backbone_requires_grad):
+            if isinstance(pixel_values, dict):
+                # patch_features = self.vision_backbone({k: pixel_values[k][multimodal_indices] for k in pixel_values})
+                patch_features = self.vision_backbone({k: pixel_values[k] for k in pixel_values})
+            else:
+                patch_features = self.vision_backbone(pixel_values)
 
         # Projection Logic :: [bsz, num_patches, llm_embed_dim] =>> num_patches = (2 *) (256 + 1) for ViT-L + CLS
         projected_patch_embeddings = self.projector(patch_features)
@@ -475,7 +480,11 @@ class OpenVLN(PrismaticVLM):
 
         # ==== Update Memories ====
         # express histories in [cls] way
-        full_his_patches = self.vision_backbone({k: full_his[k] for k in full_his}) # (bs*T,vit_token_len,dim)
+        with torch.set_grad_enabled(self.vision_backbone_requires_grad):
+            if isinstance(full_his, dict):
+                full_his_patches = self.vision_backbone({k: full_his[k] for k in full_his}) # (bs*T,vit_token_len,dim)
+            else:
+                full_his_patches = self.vision_backbone(full_his)
 
         projected_his_embeddings = self.projector(full_his_patches)
         projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,4,dim)
