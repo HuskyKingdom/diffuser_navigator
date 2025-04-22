@@ -204,14 +204,12 @@ class OpenVLNPolicyIns(NetPolicy):
 
 
 
-        start_idx = -1 # indicates no his_masking needed
-
         cast_type = torch.float16
         if self.config.OPENVLN.flash_atten and not self.config.OPENVLN.phase == "phi":
             cast_type = torch.bfloat16
 
         with torch.cuda.amp.autocast(dtype=cast_type):
-            modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor, sample_start = start_idx,ori_inst= (inputids,None))
+            modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor, ori_inst= (inputids,None))
         
 
 
