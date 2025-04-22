@@ -465,7 +465,7 @@ class OpenVLN(PrismaticVLM):
 
         # ==== IMG PATCH FEATURES ====
         # Run Visual Feature Extraction # in shape {dino: (2120, 3, 224, 224); siglip: (2120, 3, 224, 224)}
-         with torch.set_grad_enabled(self.vision_backbone_requires_grad):
+        with torch.set_grad_enabled(self.vision_backbone_requires_grad):
             if isinstance(pixel_values, dict):
                 # patch_features = self.vision_backbone({k: pixel_values[k][multimodal_indices] for k in pixel_values})
                 patch_features = self.vision_backbone({k: pixel_values[k] for k in pixel_values})
