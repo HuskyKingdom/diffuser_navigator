@@ -211,7 +211,7 @@ class OpenVLNPolicyIns(NetPolicy):
             cast_type = torch.bfloat16
 
         with torch.cuda.amp.autocast(dtype=cast_type):
-            modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor, sample_start = start_idx,ori_inst= (input_ids,None))
+            modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor, sample_start = start_idx,ori_inst= (inputids,None))
         
 
 
@@ -533,7 +533,7 @@ class OpenVLN(PrismaticVLM):
         # processing instructions
         original_instructions = ori_ins[0]
         original_instructions = self.llm_backbone.embed_input_ids(original_instructions) # encode
-        
+
         if ori_ins[1] != None:
             original_instructions_mask = ori_ins[1]
             original_instructions_mask = (~original_instructions_mask).bool()  # mask transfer
