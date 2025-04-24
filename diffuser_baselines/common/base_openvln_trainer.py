@@ -687,7 +687,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                     
 
                     class_probs = inf_logits[:,-4]
-                    class_probs = class_probs_tensor[i].cpu().tolist()
+                    class_probs = class_probs[i].cpu().tolist()
                     frame = self.append_probs_to_image(frame, class_labels, class_probs)
 
 
