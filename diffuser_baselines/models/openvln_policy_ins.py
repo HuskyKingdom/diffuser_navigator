@@ -248,7 +248,7 @@ class OpenVLNPolicyIns(NetPolicy):
             # print(decoded_tokens)
 
 
-        return action
+        return action,inference_logits
         
     
 

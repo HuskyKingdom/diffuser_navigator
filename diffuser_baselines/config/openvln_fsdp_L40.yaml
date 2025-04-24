@@ -8,7 +8,7 @@ TENSORBOARD_DIR: data/tensorboard_dirs/openvln_fsdp
 CHECKPOINT_FOLDER: data/checkpoints/openvln_fsdp
 EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp/ckpt.10.pth
 RESULTS_DIR: data/checkpoints/openvln_fsdp/evals
-VIDEO_OPTION: []
+VIDEO_OPTION: ['disk']
 JobName: openvln_fsdp
 lr_Schedule: False
 dagger: True

@@ -480,6 +480,61 @@ class BaseVLNCETrainer(BaseILTrainer):
         return final
 
 
+    def append_probs_to_image(self, image, labels, probs):
+        """
+        在原始 image 下面拼接一段文字条，
+        每个 label 后面跟它对应的 prob（0~1），
+        然后根据 prob 用 viridis colormap 着色。
+        """
+        import numpy as np
+        import cv2
+        from matplotlib import cm
+
+        assert len(labels) == len(probs), "标签数和概率数必须一致"
+        assert all(0.0 <= p <= 1.0 for p in probs), "所有概率必须在 [0,1]"
+
+        h, w, _ = image.shape
+        # 初始一块 100px 高的黑色画布，宽度和 image 一致
+        blank_h = 100
+        blank = np.zeros((blank_h, w, 3), dtype=np.uint8)
+
+        # colormap
+        cmap = cm.get_cmap("viridis")
+        colors = [
+            tuple(int(c * 255) for c in cmap(p)[:3])
+            for p in probs
+        ]
+
+        # 文本绘制参数
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_size = 0.5
+        thickness = 1
+        x, y = 10, 30
+
+        for label, prob, color in zip(labels, probs, colors):
+            text = f"{label}:{prob:.2f}"
+            (tx, ty), _ = cv2.getTextSize(text, font, font_size, thickness)
+            cv2.putText(
+                blank,
+                text,
+                (x, y),
+                font,
+                font_size,
+                color,
+                thickness,
+                lineType=cv2.LINE_AA,
+            )
+            x += tx + 10
+            # 换行
+            if x >= w - 10:
+                x = 10
+                y += ty + 10
+
+        # 裁剪多余空白
+        blank = blank[: y + 10, :, :]
+
+    # 垂直拼接
+    return np.concatenate((image, blank), axis=0)
 
     def _eval_checkpoint(
         self,
@@ -607,7 +662,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 gc.collect() 
 
             with torch.no_grad():
-                actions = self.policy.act(batch,prev_actions,print_info=True,ins_text=ins_text)
+                actions, inf_logits = self.policy.act(batch,prev_actions,print_info=True,ins_text=ins_text)
             prev_actions.copy_(actions)
 
             outputs = envs.step([a[0].item() for a in actions])
@@ -621,7 +676,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 device=self.device,
             )
             
-            
+            class_labels = ["<FORWARD>", "<LEFT>", "<RIGHT>", "<STOP>"]
 
             # reset envs and observations if necessary
             for i in range(envs.num_envs):
@@ -632,31 +687,10 @@ class BaseVLNCETrainer(BaseILTrainer):
                     )
                     
 
-                    # vis cross attention weights
-                    avg_weights = self.policy.navigator.decoder.avg_weights
-                    avg_weights = avg_weights[-1].tolist()
+                    class_probs = inf_logits[:,-4]
+                    class_probs = class_probs_tensor[i].cpu().tolist()
+                    frame = self.append_probs_to_image(frame, class_labels, class_probs)
 
- 
-                    min_val = min(avg_weights) # norm
-                    max_val = max(avg_weights)
-                    if min_val == max_val:  # avoid /0
-                        avg_weights =  [0.0 for _ in avg_weights]
-                    else:
-                        avg_weights = [(x - min_val) / (max_val - min_val) for x in avg_weights]
-                    
-                    
-                    tokens = tokenizer.tokenize(current_episodes[i].instruction.instruction_text)
-                    frame = self.append_text_with_weights_to_image(frame,tokens,avg_weights)
-
-                    # # show frame
-                    # import cv2
-                    # import matplotlib.pyplot as plt
-                    # image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                    # # 显示图片
-                    # plt.imshow(image_rgb)
-                    # plt.axis('off')  # 关闭坐标轴
-                    # plt.title("Image Display")  # 可选：添加标题
-                    # plt.show()
 
 
                     rgb_frames[i].append(frame)
