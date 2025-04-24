@@ -51,7 +51,7 @@ def load(
     cache_dir: Optional[Union[str, Path]] = None,
     load_for_training: bool = False,
     flash_atten = True,
-    type = None,
+    load_type = None,
 ) -> PrismaticVLM:
     """Loads a pretrained PrismaticVLM from either local disk or the HuggingFace Hub."""
     if os.path.isdir(model_id_or_path):
@@ -121,7 +121,7 @@ def load(
     overwatch.info(f"Loading VLM [bold blue]{model_cfg['model_id']}[/] from Checkpoint")
     print(f"Loading VLM [bold blue]{model_cfg['model_id']}[/] from Checkpoint")
 
-    if type == None: 
+    if load_type == None: 
         from diffuser_baselines.models.openvln_policy import OpenVLN
         vlm = OpenVLN.from_pretrained(
             checkpoint_pt,
