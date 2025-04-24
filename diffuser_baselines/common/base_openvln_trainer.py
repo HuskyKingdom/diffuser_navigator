@@ -532,9 +532,8 @@ class BaseVLNCETrainer(BaseILTrainer):
 
         # 裁剪多余空白
         blank = blank[: y + 10, :, :]
-
-    # 垂直拼接
-    return np.concatenate((image, blank), axis=0)
+        # 垂直拼接
+        return np.concatenate((image, blank), axis=0)
 
     def _eval_checkpoint(
         self,
@@ -601,6 +600,9 @@ class BaseVLNCETrainer(BaseILTrainer):
             True,
             4, 
         )
+
+        # envs.sim.config.sim_cfg.allow_sliding = True
+
         self.policy.eval()
 
         observations = envs.reset()
@@ -610,9 +612,6 @@ class BaseVLNCETrainer(BaseILTrainer):
         )
 
   
-        
-        
-        
 
         batch = batch_obs(observations, self.device)
         batch = apply_obs_transforms_batch(batch, self.obs_transforms)
@@ -696,8 +695,6 @@ class BaseVLNCETrainer(BaseILTrainer):
                     rgb_frames[i].append(frame)
                     
                   
-                                    
-
                     
 
                 if not dones[i]:
