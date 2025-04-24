@@ -380,7 +380,7 @@ class OpenVLN(PrismaticVLM):
 
         
         self.memory_fuser_attention = FFWRelativeCrossAttentionModule(hidden_dim,8,4)
-        self.memory_fuser_attention_sec = FFWRelativeCrossAttentionModule(hidden_dim,4,2)
+        self.memory_fuser_attention_sec = FFWRelativeCrossAttentionModule(hidden_dim,8,4)
         self.pe_layer = PositionalEncoding(hidden_dim,0.2)
 
 

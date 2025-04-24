@@ -378,7 +378,7 @@ class OpenVLN(PrismaticVLM):
         self.M_init = self.menmory_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
 
         
-        self.memory_fuser_attention = FFWRelativeCrossAttentionModule(hidden_dim,2,1)
+        self.memory_fuser_attention = FFWRelativeCrossAttentionModule(hidden_dim,8,4)
         self.pe_layer = PositionalEncoding(hidden_dim,0.2)
 
 
