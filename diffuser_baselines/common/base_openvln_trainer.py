@@ -687,6 +687,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                     
 
                     class_probs = inf_logits[:,-1,-4:]
+                    class_probs = torch.softmax(class_probs, dim=1)
                     class_probs = class_probs[i].cpu().tolist()
                     frame = self.append_probs_to_image(frame, class_labels, class_probs)
 
