@@ -4,12 +4,12 @@ SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 1
 NUM_PROCESSES: 1
-TENSORBOARD_DIR: data/tensorboard_dirs/openvln_fsdp
-CHECKPOINT_FOLDER: data/checkpoints/openvln_fsdp
-EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp/ckpt.14.pth
-RESULTS_DIR: data/checkpoints/openvln_fsdp/evals
+TENSORBOARD_DIR: data/tensorboard_dirs/openvln_fsdp_noins
+CHECKPOINT_FOLDER: data/checkpoints/openvln_fsdp_noins
+EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp_noins/ckpt.14.pth
+RESULTS_DIR: data/checkpoints/openvln_fsdp_noins/evals
 VIDEO_OPTION: []
-JobName: openvln_fsdp
+JobName: openvln_fsdp_noins
 lr_Schedule: False
 dagger: True
 
@@ -23,7 +23,7 @@ EVAL:
 IL:
   ckpt_to_load: data/checkpoints/openvln_fsdp/ckpt.1.pth
   load_from_ckpt: False # for testing overfitting only 
-  epochs: 16
+  epochs: 24
   batch_size: 32 # global bs
   is_requeue: False # continuo training
   

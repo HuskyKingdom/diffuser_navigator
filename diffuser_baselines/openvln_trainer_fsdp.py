@@ -210,7 +210,7 @@ def collate_fn(batch):
         weights_seq = inflection_weights[inflections]
 
         # uniformly sample different actions
-        target_action = random.choices([0, 1, 2, 3], weights=[10, 40, 25, 25], k=1)[0]
+        target_action = random.choices([0, 1, 2, 3], weights=[10, 32, 29, 29], k=1)[0]
         indices = (gt_actions_seq == target_action).nonzero(as_tuple=False).squeeze(-1)
         if indices.numel() > 0:
             chosen_idx = int(indices[random.randint(0, indices.numel() - 1)].item())
@@ -1271,7 +1271,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
                 trainable_params, lr=self.config.OPENVLN.LR
             )
             if config.lr_Schedule: # train 250 + 500 + 750  + 1000 + 1250 + 1500 + 1750 + 2000 + 2250 + 2500 
-                self.lr_scheduler = get_cosine_schedule_with_warmup(self.optimizer, 0.04 * 7488, 7488)
+                self.lr_scheduler = get_cosine_schedule_with_warmup(self.optimizer, 0.04 * 468 * config.IL.epochs, 468 * config.IL.epochs)
         else:
             self.policy.to(torch.cuda.current_device())
             

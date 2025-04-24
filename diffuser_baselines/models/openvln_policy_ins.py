@@ -706,7 +706,7 @@ class OpenVLN(PrismaticVLM):
         shift_logits = logits[..., :-1, :].contiguous()
         shift_labels = multimodal_labels[..., 1:].contiguous()
 
-        print(f"Forward Print {shift_logits[:,-1,-6:]};")
+        # print(f"Forward Print {shift_logits[:,-1,-6:]};")
 
         # Flatten the tokens
         shift_logits = shift_logits.view(-1, vocab_size)
@@ -727,12 +727,9 @@ class OpenVLN(PrismaticVLM):
 
         final_loss = weighted_loss.sum() / bs
 
-        
       
         out.loss = final_loss
         
-        
-            
         return out
 
 
