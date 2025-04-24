@@ -406,6 +406,7 @@ from transformers.modeling_outputs import (
     SequenceClassifierOutputWithPast,
     TokenClassifierOutput,
 )
+import torch.nn.init as init
 
 # Llama LLM Adapte-Classes
 
