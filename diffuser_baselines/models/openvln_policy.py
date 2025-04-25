@@ -239,7 +239,7 @@ class OpenVLNPolicy(NetPolicy):
             action = [[0]]
 
         # past long episodes
-        if len(self.rgb_his) >= 300:
+        if len(self.rgb_his) >= 220:
             action = [[0]]
 
         action = torch.tensor(action).to(modelout.logits.device)
