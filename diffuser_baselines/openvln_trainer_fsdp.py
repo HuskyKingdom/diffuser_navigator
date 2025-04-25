@@ -1138,7 +1138,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
 
                         epoch_loss /= num_epoch_batch
-                        wandb.log({"epoch loss": epoch_loss, "steps": num_epoch_batch, "Epoch": epoch})
+                        wandb.log({"epoch loss": epoch_loss, "Epoch": dagger_it * self.config.IL.epochs + epoch})
                         epoch_loss = 0
                         num_epoch_batch = 0
 

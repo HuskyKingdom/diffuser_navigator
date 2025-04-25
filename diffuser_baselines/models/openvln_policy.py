@@ -165,6 +165,9 @@ class OpenVLNPolicy(NetPolicy):
         # storing histories
         self.rgb_his.append(rgb)
 
+        if encode_only:
+            return None
+
 
         # action inference
         rgbs = torch.stack(self.rgb_his, dim=1) # (1,seq,224,224,3)

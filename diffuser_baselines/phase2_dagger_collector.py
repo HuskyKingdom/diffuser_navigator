@@ -41,12 +41,20 @@ import torch.nn as nn
 # img-text
 import requests
 from PIL import Image
-from transformers import BlipProcessor, BlipForConditionalGeneration
 
-
-# ddp
+# fsdp
 import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp import CPUOffload
+from diffuser_baselines.common.base_openvln_trainer import BaseVLNCETrainer
+from torch.cuda.amp import autocast, GradScaler
+from functools import partial
+from torch.distributed.algorithms._checkpoint.checkpoint_wrapper import (
+    CheckpointImpl,
+    apply_activation_checkpointing,
+    checkpoint_wrapper,
+)
+
 
 from habitat_baselines.rl.ddppo.ddp_utils import (
     EXIT,
@@ -71,7 +79,17 @@ from torch.utils.data import DataLoader, DistributedSampler
 import torch.nn.functional as Fuc
 
 from contextlib import contextmanager
-
+# openvln
+import wandb
+from peft import get_peft_model, LoraConfig
+from torch.distributed.fsdp import (
+    FullStateDictConfig,
+    MixedPrecision,
+    ShardingStrategy,
+    StateDictType,
+)
+from transformers.models.llama.modeling_llama import LlamaRMSNorm
+from transformers import get_cosine_schedule_with_warmup
 
 @contextmanager
 def maybe_tqdm(total=None, desc=None, leave=True, dynamic_ncols=True):
@@ -122,113 +140,149 @@ class ObservationsDict(dict):
 
 def collate_fn(batch):
     """
-    batch 是样本列表
-    每个样本是：
+    每个样本原始结构：
     [
         {
             'instruction': (len_seq, 200),
             'progress': (len_seq, 1),
             'rgb_features': (len_seq, 2048, 4, 4),
-            'depth_features': (len_seq, 128, 4, 4)
+            'depth_features': (len_seq, 128, 4, 4),
+            'rgb': (len_seq, 224, 224, 3)   # 假设这里已有完整序列RGB
         },
         prev_actions: (len_seq),
         gt_actions: (len_seq),
-        trajectories: (len_seq,4),
-        ins_text; str
+        trajectories: (len_seq, 4),
+        ins_text: str
     ]
-    """
-
-    def _pad_helper(t, max_len, fill_val=0):
-        pad_amount = max_len - len(t)
-        if pad_amount == 0:
-            return t
-
-        pad = torch.full_like(t[0:1], fill_val).expand(
-            pad_amount, *t.size()[1:]
-        )
-        return torch.cat([t, pad], dim=0)
     
+    新要求：
+      1. 对每个样本随机选取一个timestep，其选择依据如下分布：
+         25% 几率选择 gt_action 为 0；25% 几率选择 gt_action 为 1；25% 几率选择 gt_action 为 2；25% 几率选择 gt_action 为 3。
+      2. 提取该timestep对应的 RGB、instruction、gt_action、weight、ins_text、label（label通过 mapping 得到）。
+      3. 同时将该timestep之前的RGB组成历史序列 rgb_prev，并对其按batch中最长历史（max_his_len）做padding，
+         同时提供对应的 rgb_prev_mask（padding位置为True）。
+      4. 另外返回 padding_mask（这里为所选timestep部分，因只有一个时刻，无需padding，统一设置为False）。
+      
+    返回的字典格式为：
+        {
+            'instruction': [bs, ...],               
+            'rgb': [bs, ...],
+            'rgb_prev': [bs, max_his_len, ...],
+            'rgb_prev_mask': [bs, max_his_len],
+            'gt_actions': [bs, ...],
+            'padding_mask': [bs, ...],
+            'weights': [bs, ...],
+            'ins_text': [bs, ...],
+            'labels': [bs, ...],
+        }
+    """
+    import random
+    import torch
+
+
+    mappings = ["<STOP>", "<FORWARD>", "<LEFT>", "<RIGHT>"]
 
     collected_data = {
-        'instruction': [],           
-        'rgb_features': [],          
-        'depth_features': [],         
-        'gt_actions': [],            
-        'trajectories':[],
-        'prev_actions':[],
-        'padding_mask': [],
-        'lengths': [],
+        'instruction': [],
+        'rgb': [],
+        'rgb_prev': [],   
+        'gt_actions': [],
+        'padding_mask': [], 
         'weights': [],
         'ins_text': [],
-        'progress': [],
+        'labels': [],
     }
-    
-    # Transpose the batch to separate each component
-    transposed = list(zip(*batch))
 
-    # Compute max sequence length in the batch
-    lengths = [len(sample[0]['instruction']) for sample in batch]
-    collected_data['lengths'] = torch.tensor(lengths).long()
-    max_len = max(lengths)
+
+    rgb_prev_lengths = []
+
 
     for sample in batch:
-        # Extract data from the sample
+
         sample_dict = sample[0]
-        instr = torch.tensor(sample_dict['instruction'][0])  # (len_seq, 200) only take one instruction
-        rgb_feat = torch.tensor(sample_dict['rgb_features'])  # (len_seq, 2048, 4, 4)
-        depth_feat = torch.tensor(sample_dict['depth_features'])  # (len_seq, 128, 4, 4)
-        gt_actions = torch.tensor(sample[2])  # (len_seq)
-        trajectories = torch.tensor(sample[3])  # (len_seq, 4)
-        prev_actions = torch.tensor(sample[1]) 
-        progress = torch.tensor(sample_dict['progress'])
 
-        collected_data["ins_text"].append(sample[4][0]) # instruction text
+        instruction = torch.tensor(sample_dict['instruction'][0])
+        rgb_seq = torch.tensor(sample_dict['rgb'])
+        T = rgb_seq.shape[0]
 
+        gt_actions_seq = torch.tensor(sample[2])
         
+        # compute inflection weights
 
-        # compute weights
         inflection_weights = torch.tensor([1.0, 3.2])
-        inflections = torch.cat(
-            [
-                torch.tensor([1], dtype=torch.long),
-                (gt_actions[1:] != gt_actions[:-1]).long(),
-            ]
-        )
-        weights = inflection_weights[inflections]
+        if T > 0:
+            inflections = torch.cat([torch.tensor([1], dtype=torch.long),
+                                       (gt_actions_seq[1:] != gt_actions_seq[:-1]).long()])
+        else:
+            inflections = torch.tensor([1], dtype=torch.long)
+        weights_seq = inflection_weights[inflections]
 
-        seq_len = gt_actions.shape[0]
+        # uniformly sample different actions
+        target_action = random.choices([0, 1, 2, 3], weights=[10, 32, 29, 29], k=1)[0]
+        indices = (gt_actions_seq == target_action).nonzero(as_tuple=False).squeeze(-1)
+        if indices.numel() > 0:
+            chosen_idx = int(indices[random.randint(0, indices.numel() - 1)].item())
+        else:
+            chosen_idx = random.randint(0, T - 1) if T > 0 else 0
 
-        # Pad sequences to the maximum length
-        pad_rgb_feat = _pad_helper(rgb_feat, max_len)
-        pad_depth_feat = _pad_helper(depth_feat, max_len)
-        pad_gt_actions = _pad_helper(gt_actions, max_len)
-        pad_prev_actions = _pad_helper(prev_actions, max_len)
-        pad_trajectories = _pad_helper(trajectories, max_len)
-        pad_weights = _pad_helper(weights, max_len)
-        pad_progress = _pad_helper(progress,max_len)
+        # retrive sampled data
+        chosen_rgb = rgb_seq[chosen_idx]             
+        chosen_gt_action = gt_actions_seq[chosen_idx]  
+        chosen_weight = weights_seq[chosen_idx]       
+        chosen_label = mappings[int(chosen_gt_action.item())]  
+        chosen_ins_text = sample[4][0]
+
+        # rgb_prev
+        if chosen_idx > 0:
+            rgb_prev = rgb_seq[:chosen_idx]
+        else:
+            rgb_prev = rgb_seq.new_empty((0,) + rgb_seq.shape[1:])
+
+        # record current his length
+        rgb_prev_lengths.append(rgb_prev.shape[0])
 
 
+        chosen_padding_mask = torch.tensor(False)
 
-        # Create padding_mask for this sample
-        mask = torch.ones(max_len, dtype=torch.bool)
-        mask[:seq_len] = False  # False represents real data
+        collected_data['instruction'].append(instruction)
+        collected_data['rgb'].append(chosen_rgb)
+        collected_data['gt_actions'].append(chosen_gt_action)
+        collected_data['weights'].append(chosen_weight)
+        collected_data['ins_text'].append(chosen_ins_text)
+        collected_data['labels'].append(chosen_label)
+        collected_data['padding_mask'].append(chosen_padding_mask)
+        collected_data['rgb_prev'].append(rgb_prev)
 
-        # Append padded data to collected_data
-        collected_data['instruction'].append(instr)
-        collected_data['rgb_features'].append(pad_rgb_feat)
-        collected_data['depth_features'].append(pad_depth_feat)
-        collected_data['gt_actions'].append(pad_gt_actions)
-        collected_data["prev_actions"].append(pad_prev_actions)
-        collected_data['trajectories'].append(pad_trajectories)
-        collected_data['padding_mask'].append(mask) # padding mask for dec_input
-        collected_data["weights"].append(pad_weights),
-        collected_data["progress"].append(pad_progress)
+    # max padding rgb_prev
+    max_his_len = max(rgb_prev_lengths) if rgb_prev_lengths else 0
+    padded_rgb_prev = []
+    rgb_prev_mask_list = []  # padding pos == True
+    for rgb_prev in collected_data['rgb_prev']:
+        L = rgb_prev.shape[0]
+        if L < max_his_len:
+            if L == 0:
+                frame_shape = collected_data['rgb'][0].shape
+            else:
+                frame_shape = rgb_prev.shape[1:]
+            pad_tensor = torch.zeros((max_his_len - L, *frame_shape), dtype=rgb_prev.dtype)
+            rgb_prev_padded = torch.cat([rgb_prev, pad_tensor], dim=0)
+        else:
+            rgb_prev_padded = rgb_prev
+        padded_rgb_prev.append(rgb_prev_padded)
+        mask = torch.ones(max_his_len, dtype=torch.bool)
+        mask[:L] = False
+        rgb_prev_mask_list.append(mask)
 
-    # Stack each list in collected_data into a tensor
-    for key in collected_data:
-        if key == 'lengths' or key == "ins_text":
-            continue
-        collected_data[key] = torch.stack(collected_data[key], dim=0)
+    
+    collected_data['rgb_prev'] = torch.stack(padded_rgb_prev, dim=0)
+    collected_data['rgb_prev_mask'] = torch.stack(rgb_prev_mask_list, dim=0)
+
+
+    collected_data['instruction'] = torch.stack(collected_data['instruction'], dim=0)
+    collected_data['rgb'] = torch.stack(collected_data['rgb'], dim=0)
+    collected_data['gt_actions'] = torch.stack(collected_data['gt_actions'], dim=0)
+    collected_data['weights'] = torch.stack(collected_data['weights'], dim=0)
+    collected_data['padding_mask'] = torch.stack(collected_data['padding_mask'], dim=0)
 
 
     return collected_data
@@ -429,19 +483,27 @@ class IWTrajectoryDataset(torch.utils.data.IterableDataset):
 
 
 
-@baseline_registry.register_trainer(name="phase1_data_collector")
-class Phase1DataCollector(BaseVLNCETrainer):
+@baseline_registry.register_trainer(name="phase2_dagger_collector")
+class Phase2DaggerCollector(BaseVLNCETrainer):
     def __init__(self, config=None):
         self.lmdb_features_dir = config.IL.DAGGER.lmdb_features_dir.format(
             split=config.TASK_CONFIG.DATASET.SPLIT
         )
         self.envs = None
         super().__init__(config)
+        # init wandb
+        wandb.init(
 
-        # loading img-text model from hf
-        # # base
-        # self.processor = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-        # self.img_model = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base").to("cuda")
+            project="yhscode-university-of-liverpool",
+            # track hyperparameters and run metadata
+            config={
+            "learning_rate": config.OPENVLN.LR,
+            "epochs": config.IL.epochs,
+            "bs": config.IL.batch_size,
+            }
+        )
+
+        self.scaler = GradScaler(backoff_factor=0.2)
         
 
 
@@ -464,12 +526,6 @@ class Phase1DataCollector(BaseVLNCETrainer):
 
 
         if self.envs is None:
-            # allocated_cuda_memory = torch.cuda.memory_allocated(device=self.local_rank) / (1024 * 1024 * 1024)
-            # if allocated_cuda_memory > 6:
-            #     self.config.defrost()
-            #     self.config.NUM_PROCESSES = int((12 - allocated_cuda_memory) // 2.5)
-            #     self.config.freeze()
-            #     logger.info("cuda memory is not enough, processes reduce to ", int((12 - allocated_cuda_memory) // 2.5))
             self.config.defrost()
             self.config.TASK_CONFIG.DATASET.split_num = self.world_size
             self.config.TASK_CONFIG.DATASET.split_rank = self.local_rank
@@ -583,6 +639,11 @@ class Phase1DataCollector(BaseVLNCETrainer):
                         prev_instructions[i] = self.envs.current_episodes()[i].instruction.instruction_text
 
                     if dones[i] and not skips[i]:
+
+                        if len(episodes[i]) > 220:
+                            episodes[i] = []
+                            self.policy.clear_his()
+                            continue
                         
                         self.timesteps[i] = 0 # reset ts count
         
@@ -596,10 +657,6 @@ class Phase1DataCollector(BaseVLNCETrainer):
                             traj_obs[k] = v.numpy()
                             if self.config.IL.DAGGER.lmdb_fp16:
                                 traj_obs[k] = traj_obs[k].astype(np.float16)
-                        
-
-                        # modif
-                        # prev_instructions[i] += "If you deviate from the correct path or do not see the clues above, try to explore and get back on track."
                     
 
                         transposed_ep = [
@@ -677,15 +734,12 @@ class Phase1DataCollector(BaseVLNCETrainer):
                     #     batch, prev_actions, encode_only=True, ins_text=ins_text
                     # ) remove
                     actions = batch[expert_uuid].long()
-                    _,_ = self.policy.act(batch,None,print_info=True,ins_text=ins_text) # modif no inference only store
+                    self.policy.module.act(batch,None,print_info=True, encode_only = True, ins_text=ins_text) # no inference, only store
                 else:
                     # action from model
-                    actions,_ = self.policy.act(batch,None,print_info=True,ins_text=ins_text) 
+                    actions,_ = self.policy.module.act(batch,None,print_info=True,ins_text=ins_text) 
                                 
 
-                
-                rgb_features = None
-                depth_features = None
 
                 # wrap data for current ts across all environments ----------------
 
@@ -747,6 +801,7 @@ class Phase1DataCollector(BaseVLNCETrainer):
         
         self.envs.close()
         self.envs = None
+        self.policy.module.clear_his()
 
 
 
@@ -758,6 +813,7 @@ class Phase1DataCollector(BaseVLNCETrainer):
         else:
             self.local_rank = int(os.environ.get("LOCAL_RANK", 0))
             tcp_store = torch.distributed.distributed_c10d._get_default_store()
+        torch.cuda.set_device(self.local_rank)
         add_signal_handlers()
     
         self.world_rank = dist.get_rank()
@@ -836,25 +892,7 @@ class Phase1DataCollector(BaseVLNCETrainer):
                 gc.collect()
 
 
-                assert 1==2 # remove
-
-                # get dataset ---
-                    
-                # diffusion_dataset = TrajectoryDataset(self.lmdb_features_dir,self.config.IL.DAGGER.lmdb_map_size,self.config.IL.batch_size)
-                # ddp
-                # ddp_sampler = DistributedSampler(diffusion_dataset,shuffle=True)
-                # diter = torch.utils.data.DataLoader(
-                #     diffusion_dataset,
-                #     batch_size=self.config.IL.batch_size // self.world_size,
-                #     shuffle=False,
-                #     sampler=ddp_sampler,
-                #     collate_fn=collate_fn,
-                #     pin_memory=False,
-                #     drop_last=True,  # drop last batch if smaller
-                #     num_workers=4,
-                # )
-
-                diffusion_dataset = IWTrajectoryDataset(
+                pre_collected_dataset = IWTrajectoryDataset(
                     self.lmdb_features_dir,
                     lmdb_map_size=self.config.IL.DAGGER.lmdb_map_size,
                     batch_size=self.config.IL.batch_size,
@@ -862,7 +900,7 @@ class Phase1DataCollector(BaseVLNCETrainer):
                     world_size=self.world_size
                 )
                 diter = torch.utils.data.DataLoader(
-                    diffusion_dataset,
+                    pre_collected_dataset,
                     batch_size=self.config.IL.batch_size // self.world_size, 
                     shuffle=False,
                     collate_fn=collate_fn,
@@ -891,7 +929,7 @@ class Phase1DataCollector(BaseVLNCETrainer):
 
                         with maybe_tqdm_iterable(
                             diter,
-                            total=diffusion_dataset.length // diffusion_dataset.batch_size,
+                            total=pre_collected_dataset.length // pre_collected_dataset.batch_size,
                             leave=False,
                             dynamic_ncols=True,
                             desc="Batches"
@@ -902,12 +940,12 @@ class Phase1DataCollector(BaseVLNCETrainer):
                             
                                 batch = {
                                 k: (
-                                        v.to(
+                                    v.to(
                                     device=self.device,
                                     dtype=torch.float32,
                                     non_blocking=True,
                                 )
-                                if k != "ins_text" else v
+                                if k != "ins_text" and k != "labels" else v
                                 )
                                 for k, v in batch.items()
                                 }
@@ -915,7 +953,7 @@ class Phase1DataCollector(BaseVLNCETrainer):
                                 loss = self._update_agent(
                                     batch
                                 )
-
+                                wandb.log({"loss": loss})
                                 epoch_loss += loss
 
                                 if self.world_rank == 0: #ddp
@@ -924,19 +962,22 @@ class Phase1DataCollector(BaseVLNCETrainer):
                                     )
                                 step_id += 1  # noqa: SIM113
                                 num_epoch_batch += 1
+                        
+                        epoch_loss /= num_epoch_batch
+                        wandb.log({"epoch loss": epoch_loss, "Epoch": epoch})
+                        epoch_loss = 0
+                        num_epoch_batch = 0
 
-                        if self.world_rank == 0: #ddp
-                            if (dagger_it * self.config.IL.epochs + epoch + 1) % self.config.DIFFUSER.saving_frequency == 0:
-                                self.save_checkpoint(
-                                    f"ckpt.{dagger_it * self.config.IL.epochs + epoch + 1}.pth"
-                                )
-                            else:
-                                print("Not to save.")
-
-                            epoch_loss /= num_epoch_batch
+                        if self.world_rank == 0: # fsdp save 
                             logger.info(f"epoch loss: {epoch_loss}  | steps {num_epoch_batch} | On Diffuser iter {dagger_it}, Epoch {epoch}.")
-                            epoch_loss = 0
-                            num_epoch_batch = 0
+
+                        # fsdp save logic
+                        if (dagger_it * self.config.IL.epochs + epoch + 1) % self.config.OPENVLN.saving_frequency == 0:
+                            self.save_checkpoint(
+                                f"ckpt.{dagger_it * self.config.IL.epochs + epoch + 1}.pth"
+                            )
+                        else:
+                            print("Not to save.")
                             
 
                         dist.barrier() #ddp
@@ -944,18 +985,54 @@ class Phase1DataCollector(BaseVLNCETrainer):
         dist.destroy_process_group() #ddp
                     
 
-    def grad_clipping(self, net, theta):  # @save
-        """Clip the gradient."""
-        if isinstance(net, nn.Module):
-            params = [p for p in net.parameters() if p.requires_grad and p.grad is not None]
-        else:
-            params = [p for p in net.params if p.grad is not None]
-            
-        norm = torch.sqrt(sum(torch.sum((p.grad ** 2)) for p in params))
-        if norm > theta:
-            for param in params:
-                param.grad[:] *= theta / norm
+    def grad_clipping(self):  # @save
 
+        self.policy.vlm.clip_grad_norm_(max_norm=1.0)
+
+
+    def _update_agent(
+        self,
+        observations,
+        step_grad: bool = True,
+        loss_accumulation_scalar: int = 1,
+        config = None,
+    ):
+        
+        
+        loss = self.policy.build_loss(observations)  # Access the underlying module
+
+        
+        device = self.policy.vlm.device
+        props = torch.cuda.get_device_properties(device)
+        total_memory = props.total_memory / 1024**2  
+        allocated_memory = torch.cuda.memory_allocated(device) / 1024**2  
+        reserved_memory = torch.cuda.memory_reserved(device) / 1024**2  
+        print("Total memory: {:.2f} MB Memory allocated: {:.2f} MB Memory reserved (cached): {:.2f} MB \n".format(total_memory, allocated_memory, reserved_memory))
+
+        
+        with torch.no_grad():
+            loss_tensor = loss.clone()
+            dist.all_reduce(loss_tensor, op=dist.ReduceOp.SUM)
+            loss_tensor = loss_tensor / self.world_size
+
+
+        
+        self.scaler.scale(loss).backward()
+        self.scaler.unscale_(self.optimizer)
+        self.grad_clipping()
+
+        self.scaler.step(self.optimizer)
+
+        if self.config.lr_Schedule:
+            self.lr_scheduler.step()
+
+        self.scaler.update()
+        self.optimizer.zero_grad()
+        
+        
+
+
+        return loss_tensor.item()
 
     def _initialize_policy(
         self,
@@ -963,52 +1040,64 @@ class Phase1DataCollector(BaseVLNCETrainer):
         load_from_ckpt: bool,
         num_actions: int,
     ) -> None:
-        
-        if self.config.MODEL.policy_name == "NoPolicy":
-            logger.info(f"No policy loaded, performing teacher forcing only.")
-            return
 
-        train = True
+
+        torch.cuda.empty_cache()
+
+        train = config.IL.training
+        # train = False
+
         
         policy = baseline_registry.get_policy(self.config.MODEL.policy_name)
         self.policy = policy(
             config,
-            num_actions=num_actions,
-            embedding_dim = config.DIFFUSER.embedding_dim,
-            num_attention_heads= config.DIFFUSER.num_attention_heads,
-            num_layers = config.DIFFUSER.num_layers,
-            diffusion_timesteps = config.DIFFUSER.diffusion_timesteps
-        )
-        self.policy.to(self.device)
-
-        self.optimizer = torch.optim.AdamW(
-            self.policy.parameters(), lr=self.config.DIFFUSER.LR
         )
 
-        if config.lr_Schedule: # train 250 + 500 + 750  + 1000 + 1250 + 1500 + 1750 + 2000 + 2250 + 2500 
-            if not config.dagger: # self.config.IL.DAGGER.update_size // self.config.IL.batch_size
-                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
-                                                steps_per_epoch=7862, epochs=self.config.IL.epochs)
-            else:
-                self.scheduler = torch.optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.config.DIFFUSER.LR, pct_start=0.35, 
-                                                total_steps = self.config.IL.DAGGER.update_size * 55 // self.config.IL.batch_size * self.config.IL.epochs)
+
 
         if load_from_ckpt:
             ckpt_path = config.IL.ckpt_to_load
             ckpt_dict = self.load_checkpoint(ckpt_path, map_location="cpu")
-            self.policy.load_state_dict(ckpt_dict["state_dict"])
 
-            if config.IL.is_requeue:
-                self.optimizer.load_state_dict(ckpt_dict["optim_state"])
-                self.scheduler.load_state_dict(ckpt_dict["scheduler_state"])
-                self.start_epoch = 20
-                self.step_id = 235092
+            self.policy.vlm.load_state_dict(ckpt_dict["state_dict"])
             logger.info(f"Loaded weights from checkpoint: {ckpt_path}")
 
-        self.policy = nn.SyncBatchNorm.convert_sync_batchnorm(self.policy)
+
+        # fsdp
+        self.reduce_in_full_precision = True
+
+        if config.OPENVLN.flash_atten and not self.config.OPENVLN.phase == "phi":
+            reduce_buffer_dtype = torch.bfloat16 if not self.reduce_in_full_precision else torch.float32
+            fsdp_precision_policy = MixedPrecision(param_dtype=torch.bfloat16, reduce_dtype=reduce_buffer_dtype, buffer_dtype=reduce_buffer_dtype)
+        else:
+            reduce_buffer_dtype = torch.float16 if not self.reduce_in_full_precision else torch.float32
+            fsdp_precision_policy = MixedPrecision(param_dtype=torch.float16, reduce_dtype=reduce_buffer_dtype, buffer_dtype=reduce_buffer_dtype)
+
+
+        if config.OPENVLN.stage not in {"full-finetune", "vla-full-train", "vla-sandwich-train"}: # if running fsdp with frozon vision backbone
+            self.policy.vlm.vision_backbone.to(dtype=self.policy.vlm.vision_backbone.half_precision_dtype)
+        
 
         if train:
-            self.policy = DDP(self.policy, device_ids=[self.local_rank], output_device=self.local_rank)
+            self.policy.vlm = FSDP(
+            self.policy.vlm,
+            auto_wrap_policy=self.policy.vlm.get_fsdp_wrapping_policy(),
+            mixed_precision=fsdp_precision_policy,
+            sharding_strategy=ShardingStrategy.FULL_SHARD,
+            device_id=torch.cuda.current_device(),
+            limit_all_gathers=True,
+            use_orig_params=True,
+            )
+            trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
+
+            # optimizer & lr_scheduler (no weight decay)
+            self.optimizer = torch.optim.AdamW(
+                trainable_params, lr=self.config.OPENVLN.LR
+            )
+            if config.lr_Schedule: 
+                self.lr_scheduler = get_cosine_schedule_with_warmup(self.optimizer, 0.04 * 468 * config.IL.epochs, 468 * config.IL.epochs)
+        else:
+            self.policy.to(torch.cuda.current_device())
             
 
         params = sum(param.numel() for param in self.policy.parameters())
@@ -1018,6 +1107,13 @@ class Phase1DataCollector(BaseVLNCETrainer):
         logger.info(f"Agent parameters: {params}. Trainable: {params_t}")
         logger.info("Finished setting up policy.")
 
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache() 
+            gc.collect() 
+
+
+        # MEM LEFT 25GB
+
         
 
     def save_checkpoint(self, file_name: str) -> None: # rewrite for ddp
@@ -1026,12 +1122,36 @@ class Phase1DataCollector(BaseVLNCETrainer):
         Args:
             file_name: file name for checkpoint
         """
-        checkpoint = {
-            "state_dict": self.policy.module.state_dict(),
-            "optim_state": self.optimizer.state_dict(),
-            "scheduler_state": self.scheduler.state_dict(),
-            "config": self.config,
-        }
-        torch.save(
-            checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name)
-        )
+
+
+        with FSDP.state_dict_type(self.policy.vlm, StateDictType.FULL_STATE_DICT, FullStateDictConfig(offload_to_cpu=True, rank0_only=True)):
+
+            full_vlm_state_dict = self.policy.vlm.state_dict()
+
+            checkpoint = {
+                "state_dict": full_vlm_state_dict,
+                "optim_state": None,
+                "scheduler_state": None,
+                "config": self.config,
+            }
+
+            if self.world_rank == 0:
+                torch.save(
+                checkpoint, os.path.join(self.config.CHECKPOINT_FOLDER, file_name)
+                )
+
+
+
+            # model_state_dicts = {
+            #     mkey: OrderedDict() for mkey in (self.policy.vlm.all_module_keys)
+            # }
+            # # Iterate through `full_vlm_state_dict` and split `mkey.{full_dotted_path}` -> `mkey: {full_dotted_path}`
+            # for key, param in full_vlm_state_dict.items():
+            #     for mkey in model_state_dicts:
+            #         if key.startswith(mprefix := f"{mkey}."):
+            #             model_state_dicts[mkey][key.removeprefix(mprefix)] = param
+
+            # checkpoint_path = file_name
+
+            # # Save Checkpoint & Copy Latest to `latest-checkpoint.pt`
+            # torch.save({"model": model_state_dicts}, checkpoint_path)
