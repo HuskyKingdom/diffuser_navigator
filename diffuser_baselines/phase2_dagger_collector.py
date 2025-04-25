@@ -746,6 +746,8 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
 
                 # wrap data for current ts across all environments ----------------
 
+                rgb_features = None
+                depth_features = None
 
                 for i in range(self.envs.num_envs):
 
