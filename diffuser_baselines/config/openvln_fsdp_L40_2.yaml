@@ -6,7 +6,7 @@ NUM_ENVIRONMENTS: 1
 NUM_PROCESSES: 1
 TENSORBOARD_DIR: data/tensorboard_dirs/openvln_fsdp_noins
 CHECKPOINT_FOLDER: data/checkpoints/openvln_fsdp_noins
-EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp_noins/ckpt.14.pth
+EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp_noins/ckpt.24.pth
 RESULTS_DIR: data/checkpoints/openvln_fsdp_noins/evals
 VIDEO_OPTION: []
 JobName: openvln_fsdp_noins

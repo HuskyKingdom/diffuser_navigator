@@ -250,7 +250,7 @@ class OpenVLNPolicy(NetPolicy):
             # print(decoded_tokens)
 
 
-        return action
+        return action, modelout.logits # none for inf_weights place holder
         
     
 
