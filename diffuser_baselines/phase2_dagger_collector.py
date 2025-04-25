@@ -740,7 +740,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
                     self.policy.act(batch,None,print_info=True, encode_only = True, ins_text=ins_text) # no inference, only store
                 else:
                     # action from model
-                    actions,_ = self.policy.act(batch,None,print_info=True,ins_text=ins_text) 
+                    actions,_ = self.policy.act(batch,None,print_info=False,ins_text=ins_text) 
                                 
 
 
