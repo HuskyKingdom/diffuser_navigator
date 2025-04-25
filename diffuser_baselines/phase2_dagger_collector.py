@@ -610,7 +610,10 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
 
         with lmdb.open(self.lmdb_features_dir,map_size=int(self.config.IL.DAGGER.lmdb_map_size),) as lmdb_env, torch.no_grad():
             
-            required_size = (data_it+1) * self.config.IL.DAGGER.update_size
+            if self.config.IL.load_from_ckpt:
+                required_size = data_it * self.config.IL.DAGGER.update_size
+            else:
+                required_size = (data_it+1) * self.config.IL.DAGGER.update_size
             remain_update_size = required_size - lmdb_env.stat()["entries"]
             start_id = lmdb_env.stat()["entries"]
 
@@ -734,10 +737,10 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
                     #     batch, prev_actions, encode_only=True, ins_text=ins_text
                     # ) remove
                     actions = batch[expert_uuid].long()
-                    self.policy.module.act(batch,None,print_info=True, encode_only = True, ins_text=ins_text) # no inference, only store
+                    self.policy.act(batch,None,print_info=True, encode_only = True, ins_text=ins_text) # no inference, only store
                 else:
                     # action from model
-                    actions,_ = self.policy.module.act(batch,None,print_info=True,ins_text=ins_text) 
+                    actions,_ = self.policy.act(batch,None,print_info=True,ins_text=ins_text) 
                                 
 
 
@@ -801,7 +804,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         
         self.envs.close()
         self.envs = None
-        self.policy.module.clear_his()
+        self.policy.clear_his()
 
 
 
