@@ -686,37 +686,37 @@ class OpenVLN(PrismaticVLM):
         )
         
         
-        # calculating loss
-        logits = out.logits.float() # (bs,token_len,dim)
+        # # calculating loss
+        # logits = out.logits.float() # (bs,token_len,dim)
 
-        # Shift so that tokens < n predict n
-        shift_logits = logits[..., :-1, :].contiguous()
-        shift_labels = multimodal_labels[..., 1:].contiguous()
+        # # Shift so that tokens < n predict n
+        # shift_logits = logits[..., :-1, :].contiguous()
+        # shift_labels = multimodal_labels[..., 1:].contiguous()
 
-        print(f"Forward Print {shift_logits[:,-1,-6:]};")
+        # print(f"Forward Print {shift_logits[:,-1,-6:]};")
 
-        # Flatten the tokens
-        shift_logits = shift_logits.view(-1, vocab_size)
-        shift_labels = shift_labels.view(-1)
-        # Enable model parallelism
-        shift_labels = shift_labels.to(shift_logits.device)
+        # # Flatten the tokens
+        # shift_logits = shift_logits.view(-1, vocab_size)
+        # shift_labels = shift_labels.view(-1)
+        # # Enable model parallelism
+        # shift_labels = shift_labels.to(shift_logits.device)
 
-        loss = nn.functional.cross_entropy(shift_logits,shift_labels,ignore_index=-100,reduction="none")
+        # loss = nn.functional.cross_entropy(shift_logits,shift_labels,ignore_index=-100,reduction="none")
 
-        # loss weighting
-        bs,seq = multimodal_labels[..., 1:].size()
-        loss = loss.contiguous()
-        inf_weights = inf_weights.contiguous()
+        # # loss weighting
+        # bs,seq = multimodal_labels[..., 1:].size()
+        # loss = loss.contiguous()
+        # inf_weights = inf_weights.contiguous()
         
-        loss = loss.view(bs,seq)
-        inf_weights = inf_weights.unsqueeze(1)
-        weighted_loss = loss * inf_weights
+        # loss = loss.view(bs,seq)
+        # inf_weights = inf_weights.unsqueeze(1)
+        # weighted_loss = loss * inf_weights
 
-        final_loss = weighted_loss.sum() / bs
+        # final_loss = weighted_loss.sum() / bs
 
         
       
-        out.loss = final_loss
+        # out.loss = final_loss
         
         
             
