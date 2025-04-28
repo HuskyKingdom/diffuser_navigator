@@ -1101,7 +1101,23 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
                 trainable_params, lr=self.config.OPENVLN.LR
             )
             if config.lr_Schedule: 
-                self.lr_scheduler = get_cosine_schedule_with_warmup(self.optimizer, 0.04 * 468 * config.IL.epochs, 468 * config.IL.epochs)
+
+                iterations   = self.config.IL.DAGGER.iterations
+                update_size  = self.config.IL.DAGGER.update_size  
+                epochs       = self.config.IL.epochs
+                batch_size   = self.config.IL.batch_size // self.world_size
+                warmup_ratio = 0.04
+
+                # 2. 预先算出每轮的 steps_per_epoch，再乘以 epochs
+                steps_per_iter = [
+                    math.ceil((i + 1) * update_size / batch_size)
+                    for i in range(iterations)
+                ]
+
+                total_steps = sum(s * epochs for s in steps_per_iter)
+                warmup_steps = int(total_steps * warmup_ratio)
+
+                self.lr_scheduler = get_cosine_schedule_with_warmup(self.optimizer, warmup_steps, total_steps)
         else:
             self.policy.to(torch.cuda.current_device())
         
