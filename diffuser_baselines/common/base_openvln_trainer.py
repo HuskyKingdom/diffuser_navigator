@@ -734,6 +734,19 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                 print(f"infos: {infos[i]}")
 
+                ep_id = current_episodes[i].episode_id
+                stats_episodes[ep_id] = infos[i]
+
+                num_done = len(stats_episodes)
+                metrics = next(iter(stats_episodes.values())).keys()
+                agg_stats = {
+                    metric: sum(info[metric] for info in stats_episodes.values()) / num_done
+                    for metric in metrics
+                }
+                logger.info(f"--- Cumulative stats after {num_done} episodes ---")
+                for k, v in agg_stats.items():
+                    logger.info(f"{k}: {v:.6f}")
+
             observations = extract_instruction_tokens(
                 observations,
                 self.config.TASK_CONFIG.TASK.INSTRUCTION_SENSOR_UUID,
@@ -762,17 +775,6 @@ class BaseVLNCETrainer(BaseILTrainer):
             )
 
 
-            aggregated_stats = {}
-            num_episodes = len(stats_episodes)
-            for k in next(iter(stats_episodes.values())).keys():
-                aggregated_stats[k] = (
-                    sum(v[k] for v in stats_episodes.values()) / num_episodes
-                )
-
-            checkpoint_num = checkpoint_index + 1
-            for k, v in aggregated_stats.items():
-                logger.info(f"{k}: {v:.6f}")
-                writer.add_scalar(f"eval_{split}_{k}", v, checkpoint_num)
 
         envs.close()
         if config.use_pbar:
