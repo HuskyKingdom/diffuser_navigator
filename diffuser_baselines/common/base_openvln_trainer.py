@@ -761,6 +761,19 @@ class BaseVLNCETrainer(BaseILTrainer):
                 rgb_frames,
             )
 
+
+            aggregated_stats = {}
+            num_episodes = len(stats_episodes)
+            for k in next(iter(stats_episodes.values())).keys():
+                aggregated_stats[k] = (
+                    sum(v[k] for v in stats_episodes.values()) / num_episodes
+                )
+
+            checkpoint_num = checkpoint_index + 1
+            for k, v in aggregated_stats.items():
+                logger.info(f"{k}: {v:.6f}")
+                writer.add_scalar(f"eval_{split}_{k}", v, checkpoint_num)
+
         envs.close()
         if config.use_pbar:
             pbar.close()
