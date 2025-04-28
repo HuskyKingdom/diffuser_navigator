@@ -626,6 +626,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
             # txn = lmdb_env.begin(write=True)
 
             while collected_eps < remain_update_size and not (lmdb_env.stat()["entries"] >= required_size):
+
                 print(f"rank {self.local_rank} ; collected eps {collected_eps} ; stats {lmdb_env.stat()['entries']}; required {required_size}")
                 current_episodes = None
                 envs_to_pause = None
@@ -645,7 +646,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
 
                         if len(episodes[i]) > 220:
                             episodes[i] = []
-                            self.policy.clear_his()
+                            self._orig_module.clear_his()
                             continue
                         
                         self.timesteps[i] = 0 # reset ts count
@@ -737,10 +738,10 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
                     #     batch, prev_actions, encode_only=True, ins_text=ins_text
                     # ) remove
                     actions = batch[expert_uuid].long()
-                    self.policy.act(batch,None,print_info=True, encode_only = True, ins_text=ins_text) # no inference, only store
+                    self._orig_module.act(batch,None,print_info=True, encode_only = True, ins_text=ins_text) # no inference, only store
                 else:
                     # action from model
-                    actions,_ = self.policy.act(batch,None,print_info=False,ins_text=ins_text) 
+                    actions,_ = self._orig_module.act(batch,None,print_info=False,ins_text=ins_text) 
                                 
 
 
@@ -806,7 +807,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         
         self.envs.close()
         self.envs = None
-        self.policy.clear_his()
+        self._orig_module.clear_his()
 
 
 
@@ -1103,7 +1104,9 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
                 self.lr_scheduler = get_cosine_schedule_with_warmup(self.optimizer, 0.04 * 468 * config.IL.epochs, 468 * config.IL.epochs)
         else:
             self.policy.to(torch.cuda.current_device())
-            
+        
+        # unwraped model reference
+        self._orig_module   = self.policy.vlm.module
 
         params = sum(param.numel() for param in self.policy.parameters())
         params_t = sum(

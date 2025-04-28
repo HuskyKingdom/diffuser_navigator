@@ -101,7 +101,6 @@ class OpenVLNPolicy(NetPolicy):
         if not current_frame.is_contiguous():
             current_frame = current_frame.contiguous()
 
-
         current_frame = current_frame.detach().cpu().numpy().astype(np.uint8)
 
         # to PIL image for transform
