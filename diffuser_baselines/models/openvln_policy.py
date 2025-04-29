@@ -219,19 +219,19 @@ class OpenVLNPolicy(NetPolicy):
 
 
 
-        # # retrive last action logits (greedy)
-        # predicted_token_id = torch.argmax(modelout.logits, dim=-1)
-        # predicted_token_id_list = predicted_token_id.cpu().tolist()
-        # decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[0])
-        # # decoded_text = self.tokenlizer.decode(predicted_token_id_list[0], skip_special_tokens=False)
+        # retrive last action logits (greedy)
+        predicted_token_id = torch.argmax(modelout.logits, dim=-1)
+        predicted_token_id_list = predicted_token_id.cpu().tolist()
+        decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[0])
+        # decoded_text = self.tokenlizer.decode(predicted_token_id_list[0], skip_special_tokens=False)
 
-        # retrive last action logits (prob)
-        last_logits = modelout.logits[:, -1, :]
-        temperature = 1.0
-        probs = F.softmax(last_logits / temperature, dim=-1)
-        sampled_ids = torch.multinomial(probs, num_samples=1)
-        sampled_id_list = sampled_ids.squeeze(-1).cpu().tolist()
-        decoded_tokens = self.tokenlizer.convert_ids_to_tokens(sampled_id_list)
+        # # retrive last action logits (prob)
+        # last_logits = modelout.logits[:, -1, :]
+        # temperature = 1.0
+        # probs = F.softmax(last_logits / temperature, dim=-1)
+        # sampled_ids = torch.multinomial(probs, num_samples=1)
+        # sampled_id_list = sampled_ids.squeeze(-1).cpu().tolist()
+        # decoded_tokens = self.tokenlizer.convert_ids_to_tokens(sampled_id_list)
     
         action_token = decoded_tokens[-1]
 
