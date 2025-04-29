@@ -8,7 +8,7 @@ TENSORBOARD_DIR: data/tensorboard_dirs/openvln_moreepoch
 CHECKPOINT_FOLDER: data/checkpoints/openvln_moreepoch
 EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_moreepoch/ckpt.32.pth
 RESULTS_DIR: data/checkpoints/openvln_moreepoch/evals
-VIDEO_OPTION: []
+VIDEO_OPTION: ['disk']
 JobName: openvln_moreepoch
 lr_Schedule: False
 dagger: True
