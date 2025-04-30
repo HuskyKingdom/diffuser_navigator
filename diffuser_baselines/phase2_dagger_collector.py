@@ -18,6 +18,7 @@ import tqdm
 from habitat import logger
 from habitat_baselines.common.baseline_registry import baseline_registry
 import math
+import copy
 
 # from habitat_baselines.common.environments import get_env_class
 from habitat.core.environments import get_env_class
@@ -527,8 +528,9 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         gc.collect()
 
 
-        if isinstance(self.policy.vlm, FSDP):
-            self.policy.vlm = self._orig_module
+        if isinstance(self.policy.vlm, FSDP): # retrive the unwraped original model
+            self._infer_vlm = copy.deepcopy(self.original_model).to(self.device).eval()
+            self.policy.vlm = self._infer_vlm
             self.policy.vlm.to(self.device)
 
 
@@ -815,7 +817,8 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         self.envs = None
         self.policy.clear_his()
 
-        self.policy.vlm = self._fsdp_wrapper
+        self.policy.vlm = self.wrapped_model
+        del self._infer_vlm
 
 
 
@@ -1094,7 +1097,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
 
         if train:
             
-            self._orig_module   = self.policy.vlm
+            self.original_model = self.policy.vlm
 
             self.policy.vlm = FSDP(
             self.policy.vlm,
@@ -1106,8 +1109,8 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
             use_orig_params=True,
             )
 
-            self._fsdp_wrapper = self.policy.vlm
-            
+            self.wrapped_model = self.policy.vlm
+
 
             trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
 
