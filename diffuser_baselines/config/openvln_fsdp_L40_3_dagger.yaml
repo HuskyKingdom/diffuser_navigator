@@ -26,7 +26,7 @@ IL:
   epochs: 4
   batch_size: 8 # global bs
   is_requeue: False 
-  training: True
+  training: False
 
   
 
@@ -35,10 +35,10 @@ IL:
       /mnt/nfs/sgyson10/data/datasets/R2R_VLNCE_v1-3_preprocessed/{split}/{split}_gt.json.gz
     
   DAGGER:
-    iterations: 5
-    update_size: 50
-    p: 0.75
-    preload_lmdb_features: False
+    iterations: 1
+    update_size: 7500
+    p: 0.10
+    preload_lmdb_features: True
     lmdb_features_dir: data/trajectories_dirs/nofilmalign_dagger/trajectories.lmdb
     lmdb_commit_frequency: 50
     

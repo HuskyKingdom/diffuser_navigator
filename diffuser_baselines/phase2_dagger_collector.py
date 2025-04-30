@@ -528,11 +528,6 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         gc.collect()
 
 
-        if isinstance(self.policy.vlm, FSDP): # retrive the unwraped original model
-            self.policy.vlm = self.original_model
-            self.policy.vlm.to(self.device)
-
-
 
         if self.envs is None:
             self.config.defrost()
@@ -623,6 +618,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
                 required_size = data_it * self.config.IL.DAGGER.update_size
             else:
                 required_size = (data_it+1) * self.config.IL.DAGGER.update_size
+
             remain_update_size = required_size - lmdb_env.stat()["entries"]
             start_id = lmdb_env.stat()["entries"]
 
@@ -653,7 +649,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
 
                     if dones[i] and not skips[i]:
 
-                        if len(episodes[i]) > 220:
+                        if len(episodes[i]) >= 150:
                             episodes[i] = []
                             self.policy.clear_his()
                             continue
@@ -745,7 +741,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
                     #     batch, prev_actions, encode_only=True, ins_text=ins_text
                     # ) remove
                     actions = batch[expert_uuid].long()
-                    self.policy.act(batch,None,print_info=True, encode_only = True, ins_text=ins_text) # no inference, only store
+                    self.policy.act(batch,None,print_info=False, encode_only = True, ins_text=ins_text) # no inference, only store
                 else:
                     # action from model
                     actions,_ = self.policy.act(batch,None,print_info=False,ins_text=ins_text) 
@@ -816,7 +812,6 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         self.envs = None
         self.policy.clear_his()
 
-        self.policy.vlm = self.wrapped_model
 
 
 
@@ -838,21 +833,21 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
             os.makedirs(self.config.CHECKPOINT_FOLDER, exist_ok=True)
     
 
-        """Main method for training DAgger."""
-        if self.config.IL.DAGGER.preload_lmdb_features:
-            try:
-                lmdb.open(self.lmdb_features_dir, readonly=True, lock=False)
-            except lmdb.Error as err:
-                logger.error(
-                    "Cannot open database for teacher forcing preload."
-                )
-                raise err
-        else:
-            with lmdb.open(
-                self.lmdb_features_dir,
-                map_size=int(self.config.IL.DAGGER.lmdb_map_size), lock=False
-            ) as lmdb_env, lmdb_env.begin(write=True) as txn:
-                txn.drop(lmdb_env.open_db())
+        # """Main method for training DAgger."""
+        # if self.config.IL.DAGGER.preload_lmdb_features:
+        #     try:
+        #         lmdb.open(self.lmdb_features_dir, readonly=True, lock=False)
+        #     except lmdb.Error as err:
+        #         logger.error(
+        #             "Cannot open database for teacher forcing preload."
+        #         )
+        #         raise err
+        # else:
+        #     with lmdb.open(
+        #         self.lmdb_features_dir,
+        #         map_size=int(self.config.IL.DAGGER.lmdb_map_size), lock=False
+        #     ) as lmdb_env, lmdb_env.begin(write=True) as txn:
+        #         txn.drop(lmdb_env.open_db())
 
         EPS = self.config.IL.DAGGER.expert_policy_sensor
         if EPS not in self.config.TASK_CONFIG.TASK.SENSORS:
@@ -896,15 +891,22 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
                 # get dataset ---
                 step_id = self.step_id
 
-                if not self.config.IL.DAGGER.preload_lmdb_features:
+                if self.config.IL.DAGGER.preload_lmdb_features:
                     self._update_dataset_img(
                         dagger_it + (1 if self.config.IL.load_from_ckpt else 0)
                     )
+                else:
+                    print("set config.IL.DAGGER.preload_lmdb_features = True to specify a existing trajectories dataset.")
+                    assert 1==2
+
                 dist.barrier()
                 if torch.cuda.is_available():
                     with torch.cuda.device(self.device):
                         torch.cuda.empty_cache()
                 gc.collect()
+
+                print("data collected.")
+                assert 1==2
 
 
                 pre_collected_dataset = IWTrajectoryDataset(
@@ -1094,8 +1096,6 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         
 
         if train:
-            
-            self.original_model = self.policy.vlm
 
             self.policy.vlm = FSDP(
             self.policy.vlm,
@@ -1106,8 +1106,6 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
             limit_all_gathers=True,
             use_orig_params=True,
             )
-
-            self.wrapped_model = self.policy.vlm
 
 
             trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
