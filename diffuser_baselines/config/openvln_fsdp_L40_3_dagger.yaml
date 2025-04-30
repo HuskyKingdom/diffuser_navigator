@@ -36,7 +36,7 @@ IL:
     
   DAGGER:
     iterations: 1
-    update_size: 7500
+    update_size: 22500 # 15000 + 7500
     p: 0.10
     preload_lmdb_features: True
     lmdb_features_dir: data/trajectories_dirs/nofilmalign_dagger/trajectories.lmdb
