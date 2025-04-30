@@ -529,8 +529,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
 
 
         if isinstance(self.policy.vlm, FSDP): # retrive the unwraped original model
-            self._infer_vlm = copy.deepcopy(self.original_model).to(self.device).eval()
-            self.policy.vlm = self._infer_vlm
+            self.policy.vlm = self.original_model
             self.policy.vlm.to(self.device)
 
 
@@ -818,7 +817,6 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         self.policy.clear_his()
 
         self.policy.vlm = self.wrapped_model
-        del self._infer_vlm
 
 
 
