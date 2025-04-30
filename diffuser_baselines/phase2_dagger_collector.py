@@ -1093,6 +1093,9 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         
 
         if train:
+            
+            self._orig_module   = self.policy.vlm
+
             self.policy.vlm = FSDP(
             self.policy.vlm,
             auto_wrap_policy=self.policy.vlm.get_fsdp_wrapping_policy(),
@@ -1104,7 +1107,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
             )
 
             self._fsdp_wrapper = self.policy.vlm
-            self._orig_module   = self.policy.vlm.module
+            
 
             trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
 
