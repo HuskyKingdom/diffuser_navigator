@@ -527,6 +527,10 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         gc.collect()
 
 
+        if isinstance(self.policy.vlm, FSDP):
+            self.policy.vlm = self._orig_module
+
+
         if self.envs is None:
             self.config.defrost()
             self.config.TASK_CONFIG.DATASET.split_num = self.world_size
@@ -732,9 +736,6 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
                 for i in range(self.envs.num_envs):
                     ins_text.append(self.envs.current_episodes()[i].instruction.instruction_text + "If you deviate from the correct path or do not see the clues above, try to explore and get back on track.")   
 
-                if (lmdb_env.stat()["entries"] >= required_size): # others finished
-                    break
-
                 if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta):
                     # action from expert
                     # actions = self.policy.module.act( 
@@ -811,6 +812,8 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         self.envs.close()
         self.envs = None
         self.policy.clear_his()
+
+        self.policy.vlm = self._fsdp_wrapper
 
 
 
@@ -1097,6 +1100,10 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
             limit_all_gathers=True,
             use_orig_params=True,
             )
+
+            self._fsdp_wrapper = self.policy.vlm
+            self._orig_module   = self.policy.vlm.module
+
             trainable_params = [param for param in self.policy.parameters() if param.requires_grad]
 
             # optimizer & lr_scheduler (no weight decay)
