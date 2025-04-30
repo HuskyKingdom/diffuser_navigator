@@ -529,6 +529,8 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
 
         if isinstance(self.policy.vlm, FSDP):
             self.policy.vlm = self._orig_module
+            self.policy.vlm.to(self.device)
+
 
 
         if self.envs is None:
