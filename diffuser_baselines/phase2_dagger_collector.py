@@ -17,6 +17,7 @@ import torch
 import tqdm
 from habitat import logger
 from habitat_baselines.common.baseline_registry import baseline_registry
+import math
 
 # from habitat_baselines.common.environments import get_env_class
 from habitat.core.environments import get_env_class
