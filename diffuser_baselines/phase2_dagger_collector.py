@@ -519,7 +519,6 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
 
     def _update_dataset_img(self, data_it):
 
-        self.policy.vlm = self._orig_module
 
         # init ----------------
         if torch.cuda.is_available():
@@ -733,7 +732,8 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
                 for i in range(self.envs.num_envs):
                     ins_text.append(self.envs.current_episodes()[i].instruction.instruction_text + "If you deviate from the correct path or do not see the clues above, try to explore and get back on track.")   
 
-          
+                if (lmdb_env.stat()["entries"] >= required_size): # others finished
+                    break
 
                 if (torch.rand_like(prev_actions.long(), dtype=torch.float) < beta):
                     # action from expert
@@ -811,7 +811,6 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         self.envs.close()
         self.envs = None
         self.policy.clear_his()
-        self.policy.vlm = self.wraped_module
 
 
 
@@ -1125,9 +1124,6 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         else:
             self.policy.to(torch.cuda.current_device())
         
-        # unwraped model reference
-        self.wraped_module = self.policy.vlm
-        self._orig_module   = self.policy.vlm.module
 
         params = sum(param.numel() for param in self.policy.parameters())
         params_t = sum(
