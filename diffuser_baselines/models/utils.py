@@ -1253,12 +1253,12 @@ class MemoryPhiFlashAttention2(PhiFlashAttention2):
         self.k_mem_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=True)
         self.v_mem_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=True)
 
-        self.alpha_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
-        self.beta_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
+        # self.alpha_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
+        # self.beta_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
 
-        for m in (self.alpha_proj, self.beta_proj):
-            init.constant_(m.weight, 0.0)
-            init.constant_(m.bias,   0.0)
+        # for m in (self.alpha_proj, self.beta_proj):
+        #     init.constant_(m.weight, 0.0)
+        #     init.constant_(m.bias,   0.0)
 
     def forward(
         self,
@@ -1408,10 +1408,10 @@ class MemoryPhiFlashAttention2(PhiFlashAttention2):
         attn_output = attn_output.reshape(bsz, q_len, self.hidden_size).contiguous()
         mem_attn_output = mem_attn_output.reshape(bsz, q_len, self.hidden_size).contiguous()
 
-        mem_alpha = self.alpha_proj(mem_attn_output)
-        mem_beta = self.beta_proj(mem_attn_output)
+        # mem_alpha = self.alpha_proj(mem_attn_output)
+        # mem_beta = self.beta_proj(mem_attn_output)
 
-        attn_output =  attn_output + mem_alpha * attn_output + mem_beta
+        # attn_output =  attn_output + mem_alpha * attn_output + mem_beta
 
         attn_output =  attn_output + mem_attn_output
 

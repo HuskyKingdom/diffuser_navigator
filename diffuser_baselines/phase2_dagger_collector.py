@@ -519,6 +519,8 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
 
     def _update_dataset_img(self, data_it):
 
+        self.policy.vlm = self.self._orig_module
+
         # init ----------------
         if torch.cuda.is_available():
             with torch.cuda.device(self.device):
@@ -647,7 +649,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
 
                         if len(episodes[i]) > 220:
                             episodes[i] = []
-                            self._orig_module.clear_his()
+                            self.policy.clear_his()
                             continue
                         
                         self.timesteps[i] = 0 # reset ts count
@@ -739,10 +741,10 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
                     #     batch, prev_actions, encode_only=True, ins_text=ins_text
                     # ) remove
                     actions = batch[expert_uuid].long()
-                    self._orig_module.act(batch,None,print_info=True, encode_only = True, ins_text=ins_text) # no inference, only store
+                    self.policy.act(batch,None,print_info=True, encode_only = True, ins_text=ins_text) # no inference, only store
                 else:
                     # action from model
-                    actions,_ = self._orig_module.act(batch,None,print_info=False,ins_text=ins_text) 
+                    actions,_ = self.policy.act(batch,None,print_info=False,ins_text=ins_text) 
                                 
 
 
@@ -808,7 +810,8 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
         
         self.envs.close()
         self.envs = None
-        self._orig_module.clear_his()
+        self.policy.clear_his()
+        self.policy.vlm = self.wraped_module
 
 
 
@@ -1123,6 +1126,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
             self.policy.to(torch.cuda.current_device())
         
         # unwraped model reference
+        self.wraped_module = self.policy.vlm
         self._orig_module   = self.policy.vlm.module
 
         params = sum(param.numel() for param in self.policy.parameters())
