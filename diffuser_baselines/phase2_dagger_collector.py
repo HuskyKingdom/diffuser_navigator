@@ -519,7 +519,7 @@ class Phase2DaggerCollector(BaseVLNCETrainer):
 
     def _update_dataset_img(self, data_it):
 
-        self.policy.vlm = self.self._orig_module
+        self.policy.vlm = self._orig_module
 
         # init ----------------
         if torch.cuda.is_available():
