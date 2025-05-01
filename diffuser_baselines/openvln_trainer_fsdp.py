@@ -1270,8 +1270,9 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
             self.optimizer = torch.optim.AdamW(
                 trainable_params, lr=self.config.OPENVLN.LR
             )
+            step = config.IL.DAGGER.update_size // config.IL.batch_size
             if config.lr_Schedule: # train 250 + 500 + 750  + 1000 + 1250 + 1500 + 1750 + 2000 + 2250 + 2500 
-                self.lr_scheduler = get_cosine_schedule_with_warmup(self.optimizer, 0.04 * 468 * config.IL.epochs, 468 * config.IL.epochs)
+                self.lr_scheduler = get_cosine_schedule_with_warmup(self.optimizer, 0.04 * step * config.IL.epochs, step * config.IL.epochs)
         else:
             self.policy.to(torch.cuda.current_device())
             
