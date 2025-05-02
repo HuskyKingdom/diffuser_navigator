@@ -1220,7 +1220,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
 
         torch.cuda.empty_cache()
         
-        train = not load_from_ckpt
+        train = config.IL.training
         # train = False
 
         
