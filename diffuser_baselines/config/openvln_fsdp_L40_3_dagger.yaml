@@ -6,7 +6,7 @@ NUM_ENVIRONMENTS: 1
 NUM_PROCESSES: 1
 TENSORBOARD_DIR: data/tensorboard_dirs/openvln_fsdp_nofilmalign_dagger
 CHECKPOINT_FOLDER: data/checkpoints/openvln_fsdp_nofilmalign_dagger
-EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp_nofilmalign_dagger/ckpt.32.pth
+EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp_nofilmalign_dagger/ckpt.24.pth
 RESULTS_DIR: data/checkpoints/openvln_fsdp_nofilmalign_dagger/evals
 VIDEO_OPTION: []
 JobName: openvln_fsdp_nofilmalign_dagger
@@ -26,7 +26,7 @@ IL:
   epochs: 24
   batch_size: 32 # global bs
   is_requeue: False 
-  training: True
+  training: False
 
   
 
