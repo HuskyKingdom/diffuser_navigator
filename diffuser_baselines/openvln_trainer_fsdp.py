@@ -183,6 +183,7 @@ def collate_fn(batch):
         'weights': [],
         'ins_text': [],
         'labels': [],
+        'quantities': [],
     }
 
 
@@ -224,6 +225,28 @@ def collate_fn(batch):
         chosen_label = mappings[int(chosen_gt_action.item())]  
         chosen_ins_text = sample[4][0]
 
+
+        # —— quantity —— 
+        # 3 steps behind
+        chosen_act = int(chosen_gt_action.item())
+        same_cnt = 1
+        for offset in range(1, 4):
+            next_idx = chosen_idx + offset
+            if next_idx < T and int(gt_seq[next_idx].item()) == chosen_act:
+                same_cnt += 1
+            else:
+                break
+        act_id = int(chosen_gt_action)
+        if act_id == 1:
+            amount = same_cnt * 25   # forward
+        elif act_id in (2, 3):
+            amount = same_cnt * 15   # left/right
+        else:
+            amount = 0               # stop
+
+        print(f"gt seq {gt_actions_seq}; chosen position {chosen_idx}; amount {amount} ")
+        assert 1==2
+
         # rgb_prev
         if chosen_idx > 0:
             rgb_prev = rgb_seq[:chosen_idx]
@@ -244,6 +267,7 @@ def collate_fn(batch):
         collected_data['labels'].append(chosen_label)
         collected_data['padding_mask'].append(chosen_padding_mask)
         collected_data['rgb_prev'].append(rgb_prev)
+        collected_data['quantities'].append(amount)
 
     # max padding rgb_prev
     max_his_len = max(rgb_prev_lengths) if rgb_prev_lengths else 0
