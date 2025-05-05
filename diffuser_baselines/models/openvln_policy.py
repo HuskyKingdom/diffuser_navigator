@@ -276,6 +276,7 @@ class OpenVLNPolicy(NetPolicy):
         'weights': observations['weights'],
         'ins_text': observations['ins_text'],
         'labels': observations["labels"],
+        'quantities': observations["quantities"],
         }
 
    
@@ -288,6 +289,10 @@ class OpenVLNPolicy(NetPolicy):
             self.prompt_builder.add_turn(role="human", message=f"Which action should the robot take now to {collected_data['ins_text'][sample]}?")
             prompt_text = self.prompt_builder.get_prompt()
             
+            combined = f"{collected_data['labels'][sample][:-1]}_{collected_data['quantities'][sample][1:]}"
+            print(combined)
+            assert 1==2
+
             prompt_text += collected_data["labels"][sample]
             collected_data['ins_text'][sample] = self.tokenlizer(prompt_text, truncation=False, return_tensors="pt").input_ids[0] # auto added BOS , in shape (T)
     
