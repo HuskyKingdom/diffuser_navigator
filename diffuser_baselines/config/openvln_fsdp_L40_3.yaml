@@ -26,6 +26,7 @@ IL:
   epochs: 24
   batch_size: 32 # global bs
   is_requeue: False # continuo training
+  training: True
   
 
   RECOLLECT_TRAINER:
