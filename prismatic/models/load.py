@@ -131,6 +131,16 @@ def load(
             arch_specifier=model_cfg["arch_specifier"],
             freeze_weights=not load_for_training,
         )
+    elif load_type == "seq": 
+        from diffuser_baselines.models.openvln_policy_seqact import OpenVLN
+        vlm = OpenVLN.from_pretrained(
+            checkpoint_pt,
+            model_cfg["model_id"],
+            vision_backbone,
+            llm_backbone,
+            arch_specifier=model_cfg["arch_specifier"],
+            freeze_weights=not load_for_training,
+        )
     else:
         from diffuser_baselines.models.openvln_policy_ins import OpenVLN
         vlm = OpenVLN.from_pretrained(

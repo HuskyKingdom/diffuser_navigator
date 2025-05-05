@@ -37,7 +37,7 @@ IGNORE_INDEX = -100
 
 
 @baseline_registry.register_policy
-class OpenVLNPolicy(NetPolicy):
+class OpenVLNPolicySeq(NetPolicy):
     
     def __init__(
         self, config
@@ -58,7 +58,7 @@ class OpenVLNPolicy(NetPolicy):
 
         # load backbones
         hf_token = Path(".hf_token").read_text().strip()
-        self.vlm = load(base_vlm, hf_token=hf_token, load_for_training=True, flash_atten = config.OPENVLN.flash_atten)
+        self.vlm = load(base_vlm, hf_token=hf_token, load_for_training=True, flash_atten = config.OPENVLN.flash_atten, load_type="seq")
         self.tokenlizer = self.vlm.llm_backbone.get_tokenizer()
         self.image_transform = self.vlm.vision_backbone.get_image_transform()
 
@@ -71,21 +71,21 @@ class OpenVLNPolicy(NetPolicy):
             # <SPC>
             self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<SPC>"]})
 
-            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD_25>"]})
-            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD_50>"]})
-            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD_75>"]})
-            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT_15>"]})
-            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT_30>"]})
-            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT_45>"]})
-            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<RIGHT_15>"]})
-            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<RIGHT_30>"]})
-            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<RIGHT_45>"]})
-            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<STOP_0>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD_25>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD_50>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD_75>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT_15>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT_30>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT_45>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<RIGHT_15>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<RIGHT_30>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<RIGHT_45>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<STOP_0>"]})
 
-            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD>"]})
-            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT>"]})
-            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<RIGHT>"]})
-            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<STOP>"]})
+            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD>"]})
+            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT>"]})
+            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<RIGHT>"]})
+            # self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<STOP>"]})
 
 
             # self.vlm.llm_backbone.llm.resize_token_embeddings(len(self.tokenlizer), pad_to_multiple_of=64)
@@ -303,7 +303,8 @@ class OpenVLNPolicy(NetPolicy):
             self.prompt_builder.add_turn(role="human", message=f"Which action should the robot take now to {original_prompt}?")
             prompt_text = self.prompt_builder.get_prompt()
             
-            prompt_text += collected_data['labels'][sample]
+            combined = f"{collected_data['labels'][sample][:-1]}_{collected_data['quantities'][sample][1:]}"
+            prompt_text += combined
 
             collected_data['ins_text'][sample] = self.tokenlizer(prompt_text, truncation=False, return_tensors="pt").input_ids[0] # auto added BOS , in shape (T)
             
