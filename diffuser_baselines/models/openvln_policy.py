@@ -72,10 +72,16 @@ class OpenVLNPolicy(NetPolicy):
             self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<SPC>"]})
             # actions <FORWARD> <LEFT> <RIGHT> <STOP>
             # self.tokenlizer.add_tokens(["<FORWARD>","<LEFT>","<RIGHT>","<STOP>"])
-            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD>"]})
-            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT>"]})
-            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<RIGHT>"]})
-            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<STOP>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD_25>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD_50>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD_75>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT_15>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT_30>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT_45>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<RIGHT_15>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<RIGHT_30>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<RIGHT_45>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<STOP_0>"]})
             # self.vlm.llm_backbone.llm.resize_token_embeddings(len(self.tokenlizer), pad_to_multiple_of=64)
             self.vlm.llm_backbone.llm.resize_token_embeddings(len(self.tokenlizer))
 
@@ -290,11 +296,12 @@ class OpenVLNPolicy(NetPolicy):
             prompt_text = self.prompt_builder.get_prompt()
             
             combined = f"{collected_data['labels'][sample][:-1]}_{collected_data['quantities'][sample][1:]}"
-            print(combined)
-            assert 1==2
-
-            prompt_text += collected_data["labels"][sample]
+           
+            prompt_text += combined
             collected_data['ins_text'][sample] = self.tokenlizer(prompt_text, truncation=False, return_tensors="pt").input_ids[0] # auto added BOS , in shape (T)
+
+            print(f"combined {combined} ; tokenlized {collected_data['ins_text'][sample]}")
+            assert 1==2
     
         inputids = collected_data['ins_text']
         inputids = pad_sequence(inputids, batch_first=True, padding_value=self.tokenlizer.pad_token_id).to(observations['instruction'].device)
