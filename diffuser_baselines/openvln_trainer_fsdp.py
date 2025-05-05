@@ -232,7 +232,7 @@ def collate_fn(batch):
         same_cnt = 1
         for offset in range(1, 4):
             next_idx = chosen_idx + offset
-            if next_idx < T and int(gt_seq[next_idx].item()) == chosen_act:
+            if next_idx < T and int(gt_actions_seq[next_idx].item()) == chosen_act:
                 same_cnt += 1
             else:
                 break
