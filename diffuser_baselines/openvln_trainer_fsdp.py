@@ -244,7 +244,7 @@ def collate_fn(batch):
         else:
             amount = 0               # stop
 
-        amount_token = f"<{amount_value}>"
+        amount_token = f"<{amount}>"
 
 
         # rgb_prev
