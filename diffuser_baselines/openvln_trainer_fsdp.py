@@ -1139,7 +1139,7 @@ class OpenVLNTrainerFSDP(BaseVLNCETrainer):
                                     dtype=torch.float32,
                                     non_blocking=True,
                                 )
-                                if k != "ins_text" and k != "labels" else v
+                                if k != "ins_text" and k != "labels" and k != "quantities" else v
                                 )
                                 for k, v in batch.items()
                                 }
