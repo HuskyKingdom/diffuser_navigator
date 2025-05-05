@@ -291,8 +291,10 @@ class OpenVLNPolicy(NetPolicy):
         # == add <SPC> & tokenlization instructions & labels ==
         for sample in range(len(collected_data['ins_text'])):
             # build prompt
+            original_prompt = collected_data['ins_text'][sample]
+
             self.prompt_builder = self.vlm.get_prompt_builder()
-            self.prompt_builder.add_turn(role="human", message=f"Which action should the robot take now to {collected_data['ins_text'][sample]}?")
+            self.prompt_builder.add_turn(role="human", message=f"Which action should the robot take now to {original_prompt}?")
             prompt_text = self.prompt_builder.get_prompt()
             
             combined = f"{collected_data['labels'][sample][:-1]}_{collected_data['quantities'][sample][1:]}"
@@ -300,8 +302,9 @@ class OpenVLNPolicy(NetPolicy):
 
             collected_data['ins_text'][sample] = self.tokenlizer(prompt_text, truncation=False, return_tensors="pt").input_ids[0] # auto added BOS , in shape (T)
             
-            replaced = collected_data['ins_text'][sample].replace("If you deviate from the correct path or do not see the clues above, try to explore and get back on track.", "")
-            print(f"combined {combined} ; tokenlized {collected_data['ins_text'][sample]} ; text {collected_data['ins_text'][sample]}; replaced {replaced}")
+            replaced = original_prompt.replace("If you deviate from the correct path or do not see the clues above, try to explore and get back on track.", "")
+            
+            print(f"combined {combined} ; tokenlized {collected_data['ins_text'][sample]} ; text {original_prompt}; replaced {replaced}")
             assert 1==2
     
         inputids = collected_data['ins_text']
