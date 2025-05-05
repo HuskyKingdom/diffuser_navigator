@@ -302,10 +302,6 @@ class OpenVLNPolicy(NetPolicy):
 
             collected_data['ins_text'][sample] = self.tokenlizer(prompt_text, truncation=False, return_tensors="pt").input_ids[0] # auto added BOS , in shape (T)
             
-            replaced = original_prompt.replace("If you deviate from the correct path or do not see the clues above, try to explore and get back on track.", "")
-            
-            print(f"combined {combined} ; tokenlized {collected_data['ins_text'][sample]} ; text {original_prompt}; replaced {replaced}")
-            assert 1==2
     
         inputids = collected_data['ins_text']
         inputids = pad_sequence(inputids, batch_first=True, padding_value=self.tokenlizer.pad_token_id).to(observations['instruction'].device)
