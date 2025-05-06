@@ -301,7 +301,7 @@ def collate_fn(batch):
     collected_data['weights'] = torch.stack(collected_data['weights'], dim=0)
     collected_data['padding_mask'] = torch.stack(collected_data['padding_mask'], dim=0)
 
-    print(f"Overall gt action {collected_data['gt_actions']}; labels {collected_data['labels']}; quantities {collected_data['quantities']}")
+    # print(f"Overall gt action {collected_data['gt_actions']}; labels {collected_data['labels']}; quantities {collected_data['quantities']}")
     
 
     return collected_data
