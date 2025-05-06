@@ -171,12 +171,6 @@ class OpenVLNPolicySeq(NetPolicy):
         
 
     def act(self,observations, prev_actions, encode_only=False,print_info = False,ins_text=None): 
-
-        if self.action_repeat != 0:
-            self.action_repeat -= 1
-            return self.pre_action, None
-
-
        
         rgb = observations["rgb"]
 
@@ -185,6 +179,10 @@ class OpenVLNPolicySeq(NetPolicy):
 
         if encode_only:
             return None
+
+        if self.action_repeat != 0:
+            self.action_repeat -= 1
+            return self.pre_action, None
 
 
         # action inference
