@@ -666,7 +666,7 @@ class Phase1DataCollector(BaseVLNCETrainer):
                     
                 ins_text = []
                 for i in range(self.envs.num_envs):
-                    ins_text.append(self.envs.current_episodes()[i].instruction.instruction_text + "If you deviate from the correct path or do not see the clues above, try to explore and get back on track.")   
+                    ins_text.append(self.envs.current_episodes()[i].instruction.instruction_text)   
 
           
 
