@@ -359,6 +359,8 @@ class OpenVLNPolicySeq(NetPolicy):
         multi_len = modelout.logits.size(1)
         print(text_len,multi_len)
         assert 1==2
+
+        
         for i in range(len(predicted_token_id_list)):
             decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[i])
             # retrive model prediction for action
