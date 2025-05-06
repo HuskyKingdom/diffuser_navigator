@@ -47,8 +47,9 @@ class OpenVLNPolicySeq(NetPolicy):
         self.config = config
         # self.navigator = OpenVLN(norm_stats=None)
         self.rgb_his = []
-        self.pre_actions = None
+        self.pre_action = None
         self.addti_action_token = None
+        self.action_repeat = 0
 
 
         # == openvln ==
@@ -171,6 +172,11 @@ class OpenVLNPolicySeq(NetPolicy):
 
     def act(self,observations, prev_actions, encode_only=False,print_info = False,ins_text=None): 
 
+        if self.action_repeat != 0:
+            self.action_repeat -= 1
+            return self.pre_action, None
+
+
        
         rgb = observations["rgb"]
 
@@ -235,25 +241,37 @@ class OpenVLNPolicySeq(NetPolicy):
         predicted_token_id = torch.argmax(modelout.logits, dim=-1)
         predicted_token_id_list = predicted_token_id.cpu().tolist()
         decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[0])
-        # decoded_text = self.tokenlizer.decode(predicted_token_id_list[0], skip_special_tokens=False)
-
-        # # retrive last action logits (prob)
-        # last_logits = modelout.logits[:, -1, :]
-        # temperature = 1.0
-        # probs = F.softmax(last_logits / temperature, dim=-1)
-        # sampled_ids = torch.multinomial(probs, num_samples=1)
-        # sampled_id_list = sampled_ids.squeeze(-1).cpu().tolist()
-        # decoded_tokens = self.tokenlizer.convert_ids_to_tokens(sampled_id_list)
     
         action_token = decoded_tokens[-1]
 
-        if action_token == "<LEFT>":
+        if action_token == "<LEFT_15>":
             action = [[2]]
-        elif action_token == "<RIGHT>":
+            self.action_repeat = 0
+        elif action_token == "<LEFT_30>":
+            action = [[2]]
+            self.action_repeat = 1
+        elif action_token == "<LEFT_45>":
+            action = [[2]]
+            self.action_repeat = 2
+        elif action_token == "<RIGHT_15>":
             action = [[3]]
-        elif action_token == "<FORWARD>":
+            self.action_repeat = 0
+        elif action_token == "<RIGHT_30>":
+            action = [[3]]
+            self.action_repeat = 1
+        elif action_token == "<RIGHT_45>":
+            action = [[3]]
+            self.action_repeat = 2
+        elif action_token == "<FORWARD_25>":
             action = [[1]]
-        elif action_token == "<STOP>":
+            self.action_repeat = 0
+        elif action_token == "<FORWARD_50>":
+            action = [[1]]
+            self.action_repeat = 1
+        elif action_token == "<FORWARD_75>":
+            action = [[1]]
+            self.action_repeat = 2
+        elif action_token == "<STOP_0>":
             action = [[0]]
         else:
             action = [[0]]
@@ -261,6 +279,7 @@ class OpenVLNPolicySeq(NetPolicy):
         # past long episodes
         if len(self.rgb_his) >= 220:
             action = [[0]]
+            self.action_repeat = 0
 
         action = torch.tensor(action).to(modelout.logits.device)
 
@@ -270,6 +289,7 @@ class OpenVLNPolicySeq(NetPolicy):
             # print(decoded_tokens)
 
 
+        self.pre_action = action
         return action, modelout.logits # none for inf_weights place holder
         
     
@@ -392,7 +412,7 @@ class OpenVLNPolicySeq(NetPolicy):
     
     def clear_his(self):
         self.rgb_his = []
-        self.pre_actions = None
+        self.pre_action = None
 
 
 
