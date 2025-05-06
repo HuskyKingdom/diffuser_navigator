@@ -269,6 +269,8 @@ def collate_fn(batch):
         collected_data['rgb_prev'].append(rgb_prev)
         collected_data['quantities'].append(amount_token)
 
+        print(f"current seq {gt_actions_seq}; chosen idx {chosen_idx}; amount_token {amount}")
+
     # max padding rgb_prev
     max_his_len = max(rgb_prev_lengths) if rgb_prev_lengths else 0
     padded_rgb_prev = []
@@ -300,6 +302,8 @@ def collate_fn(batch):
     collected_data['weights'] = torch.stack(collected_data['weights'], dim=0)
     collected_data['padding_mask'] = torch.stack(collected_data['padding_mask'], dim=0)
 
+    print(f"Overall gt action {collected_data['gt_actions']}; labels {collected_data['labels']}; quantities {collected_data['quantities']}")
+    assert 1==2
 
     return collected_data
 
