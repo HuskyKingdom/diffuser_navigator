@@ -183,7 +183,7 @@ class OpenVLNPolicySeq(NetPolicy):
         if self.action_repeat != 0:
             self.action_repeat -= 1
             if print_info:
-                print(f"Action inferenced : {self.pre_action[0][0]}, with history length {len(self.rgb_his)}; tokens len {len(decoded_tokens)}")
+                print(f"Action inferenced : {self.pre_action[0][0]}, with history length {len(self.rgb_his)};")
             return self.pre_action, None
 
 
