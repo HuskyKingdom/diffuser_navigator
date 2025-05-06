@@ -6,7 +6,7 @@ NUM_ENVIRONMENTS: 1
 NUM_PROCESSES: 1
 TENSORBOARD_DIR: data/tensorboard_dirs/openvln_fsdp_v3_seqact
 CHECKPOINT_FOLDER: data/checkpoints/openvln_fsdp_v3_seqact
-EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp_v3_seqact/ckpt.24.pth
+EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp_v3_seqact/ckpt.16.pth
 RESULTS_DIR: data/checkpoints/openvln_fsdp_v3_seqact/evals
 VIDEO_OPTION: []
 JobName: openvln_fsdp_v3_seqact
