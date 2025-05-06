@@ -291,8 +291,7 @@ class OpenVLNPolicySeq(NetPolicy):
         'quantities': observations["quantities"],
         }
 
-        print(observations['gt_actions'],observations['gt_actions'].shape)
-        assert 1==2
+        
 
    
         # == build model input (prompt + label) ==
@@ -674,7 +673,9 @@ class OpenVLN(PrismaticVLM):
         #   => We'll ignore the per-token outputs for each of the patch embeddings as well!
         multimodal_embeddings, multimodal_attention_mask, multimodal_labels = self.get_input(input_ids=input_ids,img_features=projected_patch_embeddings, input_mask=attention_mask, labels=labels, valid_len=sample_valid_len)
 
-    
+
+        print(f"embeddings {multimodal_embeddings,multimodal_embeddings.shape}; multimodal_attention_mask {multimodal_attention_mask,multimodal_attention_mask.shape}; multimodal_labels {multimodal_labels,multimodal_labels.shape}")
+        assert 1==2
 
         # ==== Update Memories ====
         # express history tokens by grid pool
