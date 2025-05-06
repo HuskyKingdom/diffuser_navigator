@@ -719,7 +719,8 @@ class OpenVLN(PrismaticVLM):
         compressed_memory = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask)
         
 
-        
+        print(f"embedding {multimodal_embeddings.shape} ; labels {multimodal_labels,multimodal_labels.shape}; multimodal_attention_mask {multimodal_attention_mask,multimodal_attention_mask.shape}; valid {sample_valid_len}")
+        assert 1==2
         
         # Run LLM Forward --> returns CausalLMOutputWithPast!
 
@@ -737,6 +738,8 @@ class OpenVLN(PrismaticVLM):
             return_dict=return_dict,
             compressed_mem=compressed_memory, # ([bs*T, C, d])
         )
+
+        
         
         
         # # calculating loss
