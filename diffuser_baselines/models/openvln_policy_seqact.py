@@ -318,7 +318,7 @@ class OpenVLNPolicySeq(NetPolicy):
    
         # == build model input (prompt + label) ==
 
-        # == add <SPC> & tokenlization instructions & labels ==
+        # == tokenlization instructions & labels ==
         for sample in range(len(collected_data['ins_text'])):
             # build prompt
             original_prompt = collected_data['ins_text'][sample]
@@ -380,8 +380,6 @@ class OpenVLNPolicySeq(NetPolicy):
         text_len = inputids.size(1)  
         multi_len = modelout.logits.size(1)
         P = multi_len - text_len
-
-
         for i in range(len(predicted_token_id_list)):
             decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[i])
             # retrive model prediction for action

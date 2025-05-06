@@ -352,11 +352,16 @@ class OpenVLNPolicy(NetPolicy):
         predicted_token_id_list = pred.cpu().tolist() # (bs,token_len)
 
         bs_result = []
+        # calculate P (patch len)
+        text_len = inputids.size(1)  
+        multi_len = modelout.logits.size(1)
+        P = multi_len - text_len
         for i in range(len(predicted_token_id_list)):
             decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[i])
             # retrive model prediction for action
-            prev_token = last_valid_index - 1
-            bs_result.append(decoded_tokens[prev_token[i]])
+            label_pos = P + last_valid_index[i]
+            pred_pos  = label_pos - 1 
+            bs_result.append(decoded_tokens[pred_pos])
 
         print(collected_data['gt_actions'],bs_result)
 
