@@ -291,6 +291,8 @@ class OpenVLNPolicy(NetPolicy):
         'quantities': observations["quantities"],
         }
 
+        print(observations['gt_actions'],observations['gt_actions'].shape)
+        assert 1==2
    
         # == build model input (prompt + label) ==
 
