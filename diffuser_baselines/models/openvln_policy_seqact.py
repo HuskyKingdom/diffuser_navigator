@@ -273,8 +273,10 @@ class OpenVLNPolicySeq(NetPolicy):
             self.action_repeat = 2
         elif action_token == "<STOP_0>":
             action = [[0]]
+            self.action_repeat = 0
         else:
             action = [[0]]
+            self.action_repeat = 0
 
         # past long episodes
         if len(self.rgb_his) >= 220:
