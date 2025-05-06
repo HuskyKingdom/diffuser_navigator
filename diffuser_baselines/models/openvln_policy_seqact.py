@@ -354,6 +354,11 @@ class OpenVLNPolicySeq(NetPolicy):
         predicted_token_id_list = pred.cpu().tolist() # (bs,token_len)
 
         bs_result = []
+        # calculate P (patch len)
+        text_len = inputids.size(1)  
+        multi_len = modelout.logits.size(1)
+        print(text_len,multi_len)
+        assert 1==2
         for i in range(len(predicted_token_id_list)):
             decoded_tokens = self.tokenlizer.convert_ids_to_tokens(predicted_token_id_list[i])
             # retrive model prediction for action
@@ -673,9 +678,6 @@ class OpenVLN(PrismaticVLM):
         #   => We'll ignore the per-token outputs for each of the patch embeddings as well!
         multimodal_embeddings, multimodal_attention_mask, multimodal_labels = self.get_input(input_ids=input_ids,img_features=projected_patch_embeddings, input_mask=attention_mask, labels=labels, valid_len=sample_valid_len)
 
-        # torch.set_printoptions(threshold=100000, edgeitems=1000)
-        print(f"embeddings {multimodal_embeddings,multimodal_embeddings.shape}; multimodal_attention_mask {multimodal_attention_mask,multimodal_attention_mask.shape}; multimodal_labels {multimodal_labels,multimodal_labels.shape}; valid_len {sample_valid_len}")
-        assert 1==2
 
         # ==== Update Memories ====
         # express history tokens by grid pool
