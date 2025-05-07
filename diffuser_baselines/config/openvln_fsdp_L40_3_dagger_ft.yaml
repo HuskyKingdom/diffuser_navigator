@@ -22,11 +22,11 @@ EVAL:
 
 IL:
   ckpt_to_load: data/checkpoints/openvln_fsdp_nofilm/ckpt.24.pth
-  load_from_ckpt: False 
+  load_from_ckpt: True 
   epochs: 10
   batch_size: 32 # global bs
   is_requeue: False 
-  training: False
+  training: True
 
   
 
