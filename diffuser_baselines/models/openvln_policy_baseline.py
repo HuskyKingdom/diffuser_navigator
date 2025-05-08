@@ -85,10 +85,7 @@ class OpenVLNPolicyBaseline(NetPolicy):
             self.vlm.llm_backbone.llm.resize_token_embeddings(len(self.tokenlizer))
 
 
-        del original_layers
-
-      
-
+     
 
     def formating_input_frame(self,current_frame,device):
 
