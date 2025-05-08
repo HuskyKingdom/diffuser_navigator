@@ -58,7 +58,7 @@ class OpenVLNPolicyBaseline(NetPolicy):
 
         # load backbones
         hf_token = Path(".hf_token").read_text().strip()
-        self.vlm = load(base_vlm, hf_token=hf_token, load_for_training=True, flash_atten = config.OPENVLN.flash_atten)
+        self.vlm = load(base_vlm, hf_token=hf_token, load_for_training=True, flash_atten = config.OPENVLN.flash_atten, load_type="baseline")
         self.tokenlizer = self.vlm.llm_backbone.get_tokenizer()
         self.image_transform = self.vlm.vision_backbone.get_image_transform()
 
@@ -69,7 +69,11 @@ class OpenVLNPolicyBaseline(NetPolicy):
 
         if config.OPENVLN.forward_type == "pre-train":
             # <SPC>
-            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<SPC>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<HIS>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["</HIS>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<OBS>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["</OBS>"]})
+            self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<NAV>"]})
 
             self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<FORWARD>"]})
             self.tokenlizer.add_special_tokens({"additional_special_tokens": ["<LEFT>"]})
@@ -380,17 +384,6 @@ class OpenVLN(PrismaticVLM):
 
         super().__init__(*args, **kwargs)
 
-        hidden_dim = 2560 # 4096
-        
-        # initialize memory bank
-        self.menmory_embedding = nn.Embedding(128,hidden_dim)
-        self.M_init = self.menmory_embedding.weight # referencing copy, this will also be updated while loading pre-trained weights
-
-        
-        self.memory_fuser_attention = FFWRelativeCrossAttentionModule(hidden_dim,8,4)
-        self.pe_layer = PositionalEncoding(hidden_dim,0.2)
-
-
 
 
 
@@ -537,13 +530,10 @@ class OpenVLN(PrismaticVLM):
         return result
 
 
-    def reform_history  (self,projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask): # grid pooled version
+    def reform_history(self,projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask): # add history pos and generate mask
 
         if not projected_cls_embeddings.is_contiguous():
             projected_cls_embeddings = projected_cls_embeddings.contiguous() # (his_len,4,dim)
-        if not self.M_init.is_contiguous():
-            self.M_init = self.M_init.contiguous() 
-
         
 
         token_bs = multimodal_embeddings.shape[0]
@@ -552,13 +542,8 @@ class OpenVLN(PrismaticVLM):
         projected_cls_embeddings = projected_cls_embeddings.view(img_ori_shape[0],img_ori_shape[1],grid_len,hidden_dim)
         projected_cls_embeddings = projected_cls_embeddings.view(img_ori_shape[0],-1,hidden_dim)  # (bs,his_len * 4,dim)
 
-        
+
         his_pos = self.pe_layer(projected_cls_embeddings)
-
-
-        # format init memory
-        # resulting memory in (token_bs,C,d)
-        expanded_memory = self.M_init.unsqueeze(0).expand(token_bs,-1,-1)
 
 
         # repeat 4 times on his_T dimension for grid pooled version
@@ -567,18 +552,13 @@ class OpenVLN(PrismaticVLM):
             pre_mask = pre_mask.bool()
 
         
-
-        # compressing
-        compressed_memory,_ = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
-            value=his_pos.transpose(0, 1),
-            query_pos=None,
-            value_pos=his_pos,
-            diff_ts=None,pad_mask=pre_mask,print_info=False)
-        compressed_memory = compressed_memory[-1].transpose(0,1) # (bs*T,C,d)
+        pre_mask = ~pre_mask # inverse
 
 
-    
-        return compressed_memory
+
+        # in shape (bs,seq,hid) ; (bs,seq)
+
+        return his_pos,pre_mask
     
 
 
@@ -669,10 +649,45 @@ class OpenVLN(PrismaticVLM):
         projected_his_embeddings = self.projector(full_his_patches)
         projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,4,dim)
         
-        compressed_memory = self.reform_history(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask)
+        formed_history,his_mask = self.reform_history(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask)
 
+
+        # concat to original input ________
+        multimodal_embeddings = torch.cat(
+            [
+                multimodal_embeddings[:, :1, :],
+                formed_history,
+                multimodal_embeddings[:, 1:, :],
+            ],
+            dim=1,
+        )
+
+        multimodal_attention_mask = torch.cat(
+                [
+                    multimodal_attention_mask[:, :1],
+                    his_mask,
+                    multimodal_attention_mask[:, 1:]
+                ],
+                dim=1,
+        )
+
+
+        history_labels = torch.full(
+                (formed_history.shape[0], formed_history.shape[1]),
+                IGNORE_INDEX,
+                dtype=labels.dtype,
+                device=labels.device,
+            )
+
+        multimodal_labels = torch.cat(
+                [
+                    multimodal_labels[:,:1],
+                    history_labels,
+                    multimodal_labels[:,1:],
+                ],
+                dim=1,
+        )
     
-        
 
         
         
