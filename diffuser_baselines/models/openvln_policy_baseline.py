@@ -654,7 +654,7 @@ class OpenVLN(PrismaticVLM):
 
         tokenlizer = self.llm_backbone.get_tokenizer() # tokenlize and encode seprator
         sep = "<HIS> </HIS>"
-        tokenlized = self.tokenlizer(sep, truncation=False, return_tensors="pt").input_ids[0]
+        tokenlized = tokenlizer(sep, truncation=False, return_tensors="pt").input_ids[0]
 
         print(tokenlized.shape)
         assert 1==2
