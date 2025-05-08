@@ -4,13 +4,13 @@ SIMULATOR_GPU_IDS: [0]
 TORCH_GPU_ID: 0
 NUM_ENVIRONMENTS: 1
 NUM_PROCESSES: 1
-TENSORBOARD_DIR: data/tensorboard_dirs/openvln_fsdp_nofilmalign_dagger
-CHECKPOINT_FOLDER: data/checkpoints/openvln_fsdp_nofilmalign_dagger
-EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp_nofilmalign_dagger/ckpt.24.pth
-RESULTS_DIR: data/checkpoints/openvln_fsdp_nofilmalign_dagger/evals
+TENSORBOARD_DIR: data/tensorboard_dirs/openvln_fsdp_nofilm
+CHECKPOINT_FOLDER: data/checkpoints/openvln_fsdp_nofilm
+EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp_nofilm/ckpt.16.pth
+RESULTS_DIR: data/checkpoints/openvln_fsdp_nofilm/evals
 VIDEO_OPTION: []
-JobName: openvln_fsdp_nofilmalign_dagger
-lr_Schedule: True
+JobName: openvln_fsdp_nofilm
+lr_Schedule: False
 dagger: True
 
 
@@ -21,13 +21,12 @@ EVAL:
   ACTION_POP: True
 
 IL:
-  ckpt_to_load: data/checkpoints/openvln_fsdp_nofilm/ckpt.24.pth
-  load_from_ckpt: False 
+  ckpt_to_load: data/checkpoints/openvln_fsdp/ckpt.1.pth
+  load_from_ckpt: False # for testing overfitting only 
   epochs: 24
   batch_size: 32 # global bs
-  is_requeue: False 
-  training: False 
-
+  is_requeue: False # continuo training
+  training: True
   
 
   RECOLLECT_TRAINER:
@@ -36,10 +35,10 @@ IL:
     
   DAGGER:
     iterations: 1
-    update_size: 22500 # 15000 + 7500
-    p: 0.10
+    update_size: 15000
+    p: 0.75
     preload_lmdb_features: True
-    lmdb_features_dir: data/trajectories_dirs/nofilmalign_dagger/trajectories.lmdb
+    lmdb_features_dir: data/trajectories_dirs/openvln1/trajectories.lmdb
     lmdb_commit_frequency: 50
     
     
