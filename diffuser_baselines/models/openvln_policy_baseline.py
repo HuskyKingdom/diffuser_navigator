@@ -380,6 +380,7 @@ class OpenVLN(PrismaticVLM):
         **kwargs):
 
         super().__init__(*args, **kwargs)
+        self.pe_layer = PositionalEncoding(hidden_dim,0.2)
 
 
 
