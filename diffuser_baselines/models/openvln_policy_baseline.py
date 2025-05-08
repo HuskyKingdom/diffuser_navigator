@@ -652,7 +652,7 @@ class OpenVLN(PrismaticVLM):
 
         # concat to original input ________
 
-        tokenlizer = self.vlm.llm_backbone.get_tokenizer() # tokenlize and encode seprator
+        tokenlizer = self.llm_backbone.get_tokenizer() # tokenlize and encode seprator
         sep = "<HIS> </HIS>"
         tokenlized = self.tokenlizer(sep, truncation=False, return_tensors="pt").input_ids[0]
 
