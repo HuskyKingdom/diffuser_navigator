@@ -655,28 +655,41 @@ class OpenVLN(PrismaticVLM):
         tokenlizer = self.llm_backbone.get_tokenizer() # tokenlize and encode seprator
         sep = "<HIS> </HIS>"
         tokenlized = tokenlizer(sep, truncation=False, return_tensors="pt").input_ids[0]
+        embeded_sep = self.llm_backbone.embed_input_ids(tokenlized)
+        embeded_sep = embeded_sep.unsqueeze(0).expand(formed_history.shape[0],-1,-1)
 
-        print(tokenlized.shape)
-        assert 1==2
-
+    
 
         multimodal_embeddings = torch.cat(
             [
                 multimodal_embeddings[:, :1, :],
+                embeded_sep[:, 1:2, :],
                 formed_history,
+                embeded_sep[:, 2:3, :],
                 multimodal_embeddings[:, 1:, :],
             ],
             dim=1,
         )
 
+
+        sep_mask = torch.full(
+                    (embeded_sep.shape[0], embeded_sep.shape[1]),
+                    True,
+                    dtype=labels.dtype,
+                    device=labels.device,
+                )
+
         multimodal_attention_mask = torch.cat(
                 [
                     multimodal_attention_mask[:, :1],
+                    sep_mask[:, 1:2],
                     his_mask,
+                    sep_mask[:, 2:3],
                     multimodal_attention_mask[:, 1:]
                 ],
                 dim=1,
         )
+
 
 
         history_labels = torch.full(
@@ -685,11 +698,20 @@ class OpenVLN(PrismaticVLM):
                 dtype=labels.dtype,
                 device=labels.device,
             )
+        
+        sep_labels = torch.full(
+                (embeded_sep.shape[0], embeded_sep.shape[1]),
+                IGNORE_INDEX,
+                dtype=labels.dtype,
+                device=labels.device,
+            )
 
         multimodal_labels = torch.cat(
                 [
                     multimodal_labels[:,:1],
+                    sep_labels[:, 1:2],
                     history_labels,
+                    sep_labels[:, 2:3],
                     multimodal_labels[:,1:],
                 ],
                 dim=1,
