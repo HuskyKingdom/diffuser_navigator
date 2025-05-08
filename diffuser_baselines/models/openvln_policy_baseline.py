@@ -654,7 +654,7 @@ class OpenVLN(PrismaticVLM):
 
         tokenlizer = self.llm_backbone.get_tokenizer() # tokenlize and encode seprator
         sep = "<HIS> </HIS>"
-        tokenlized = tokenlizer(sep, truncation=False, return_tensors="pt").input_ids[0]
+        tokenlized = tokenlizer(sep, truncation=False, return_tensors="pt").input_ids[0].to(multimodal_embeddings.device)
         embeded_sep = self.llm_backbone.embed_input_ids(tokenlized)
         embeded_sep = embeded_sep.unsqueeze(0).expand(formed_history.shape[0],-1,-1)
 
