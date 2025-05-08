@@ -54,7 +54,6 @@ class OpenVLNPolicyBaseline(NetPolicy):
         # == openvln ==
         # init backbone
         base_vlm = "phi-2+3b" # prism-dinosiglip-224px+7b
-        replace_layer = MemoryPhiDecoderLayer
 
         # load backbones
         hf_token = Path(".hf_token").read_text().strip()
@@ -652,6 +651,15 @@ class OpenVLN(PrismaticVLM):
 
 
         # concat to original input ________
+
+        tokenlizer = self.vlm.llm_backbone.get_tokenizer() # tokenlize and encode seprator
+        sep = "<HIS> </HIS>"
+        tokenlized = self.tokenlizer(sep, truncation=False, return_tensors="pt").input_ids[0]
+
+        print(tokenlized.shape)
+        assert 1==2
+
+
         multimodal_embeddings = torch.cat(
             [
                 multimodal_embeddings[:, :1, :],
