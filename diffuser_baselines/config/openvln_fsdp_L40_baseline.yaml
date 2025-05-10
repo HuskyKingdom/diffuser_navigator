@@ -6,7 +6,7 @@ NUM_ENVIRONMENTS: 1
 NUM_PROCESSES: 1
 TENSORBOARD_DIR: data/tensorboard_dirs/openvln_fsdp_nofilm
 CHECKPOINT_FOLDER: data/checkpoints/openvln_fsdp_nofilm
-EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp_nofilm/ckpt.16.pth
+EVAL_CKPT_PATH_DIR: data/checkpoints/openvln_fsdp_nofilm/ckpt.24.pth
 RESULTS_DIR: data/checkpoints/openvln_fsdp_nofilm/evals
 VIDEO_OPTION: []
 JobName: openvln_fsdp_nofilm
@@ -26,7 +26,7 @@ IL:
   epochs: 24
   batch_size: 24 # global bs
   is_requeue: False # continuo training
-  training: True
+  training: False
   
 
   RECOLLECT_TRAINER:
