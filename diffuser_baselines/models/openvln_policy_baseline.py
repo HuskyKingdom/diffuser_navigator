@@ -520,7 +520,6 @@ class OpenVLN(PrismaticVLM):
             past_key_values=None,
             inputs_embeds=multimodal_embeddings, # ([3, 128, 4096])
             labels=None, # inference
-            compressed_mem=compressed_memory,
         )
 
 
