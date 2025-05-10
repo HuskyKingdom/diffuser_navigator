@@ -490,7 +490,27 @@ class OpenVLN(PrismaticVLM):
         projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,4,dim)
         
 
-        compressed_memory = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask = None)
+        formed_history,_ = self.reform_history(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask = None)
+
+        # concat to original input ________
+
+        tokenlizer = self.llm_backbone.get_tokenizer() # tokenlize and encode seprator
+        sep = "<HIS> </HIS>"
+        tokenlized = tokenlizer(sep, truncation=False, return_tensors="pt").input_ids[0].to(multimodal_embeddings.device)
+        embeded_sep = self.llm_backbone.embed_input_ids(tokenlized)
+        embeded_sep = embeded_sep.unsqueeze(0).expand(formed_history.shape[0],-1,-1)
+
+    
+        multimodal_embeddings = torch.cat(
+            [
+                multimodal_embeddings[:, :1, :],
+                embeded_sep[:, 1:2, :],
+                formed_history,
+                embeded_sep[:, 2:3, :],
+                multimodal_embeddings[:, 1:, :],
+            ],
+            dim=1,
+        )
 
 
         inference_result = self.llm_backbone(
@@ -548,9 +568,10 @@ class OpenVLN(PrismaticVLM):
         if pre_mask!=None:
             pre_mask = pre_mask.repeat_interleave(4,dim=1)
             pre_mask = pre_mask.bool()
+            pre_mask = ~pre_mask # inverse
 
         
-        pre_mask = ~pre_mask # inverse
+        
 
 
 
