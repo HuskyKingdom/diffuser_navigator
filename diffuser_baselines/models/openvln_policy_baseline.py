@@ -208,7 +208,7 @@ class OpenVLNPolicyBaseline(NetPolicy):
         with torch.cuda.amp.autocast(dtype=cast_type):
             flop_analyzer = FlopCountAnalysis(
                 self.vlm,
-                (inputids, None, transformed_images_tensor, None, img_ori_shape, collected_data['lengths'], True, transformed_his_tensor)
+                (inputids, inputids, transformed_images_tensor, inputids, img_ori_shape, collected_data['lengths'], True, transformed_his_tensor)
             )
             print(flop_count_str(flop_analyzer))
         assert 1==2
