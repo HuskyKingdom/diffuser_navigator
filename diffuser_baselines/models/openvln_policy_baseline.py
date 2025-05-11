@@ -204,11 +204,33 @@ class OpenVLNPolicyBaseline(NetPolicy):
             cast_type = torch.bfloat16
 
 
+
         from fvcore.nn import FlopCountAnalysis, flop_count_str
+
+        input_seq = (
+        inputids,
+        None,
+        transformed_images_tensor,
+        None, # expect labels during train, expect prev_actions during inference
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        img_ori_shape,
+        collected_data['lengths'],
+        True,
+        transformed_his_tensor,
+        None,
+        None,
+        None,
+        )
         with torch.cuda.amp.autocast(dtype=cast_type):
             flop_analyzer = FlopCountAnalysis(
                 self.vlm,
-                (inputids, inputids, transformed_images_tensor, inputids, img_ori_shape, collected_data['lengths'], True, transformed_his_tensor)
+                input_seq
             )
             print(flop_count_str(flop_analyzer))
         assert 1==2
