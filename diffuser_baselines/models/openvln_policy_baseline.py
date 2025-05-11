@@ -31,7 +31,7 @@ from diffuser_baselines.models.common.layers import FFWRelativeCrossAttentionMod
 from diffuser_baselines.models.common.position_encodings import PositionalEncoding
 from diffuser_baselines.models.utils import MemoryLlamaDecoderLayer, NormalLlamaDecoderLayer, MemoryPhiDecoderLayer
 from transformers.loss.loss_utils import fixed_cross_entropy
-
+import warnings
 
 IGNORE_INDEX = -100
 
@@ -227,6 +227,7 @@ class OpenVLNPolicyBaseline(NetPolicy):
         None,
         None,
         )
+        warnings.filterwarnings("ignore")
         with torch.cuda.amp.autocast(dtype=cast_type):
             flop_analyzer = FlopCountAnalysis(
                 self.vlm,
