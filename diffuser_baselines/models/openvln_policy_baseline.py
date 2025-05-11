@@ -791,7 +791,7 @@ class OpenVLN(PrismaticVLM):
         
         
             
-        return out.logits
+        return out
 
 
 

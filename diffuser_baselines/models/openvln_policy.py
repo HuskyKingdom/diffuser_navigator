@@ -226,6 +226,34 @@ class OpenVLNPolicy(NetPolicy):
             cast_type = torch.bfloat16
 
 
+        from fvcore.nn import FlopCountAnalysis, flop_count_str
+        input_seq = (
+        inputids,
+        None,
+        transformed_images_tensor,
+        None, # expect labels during train, expect prev_actions during inference
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        img_ori_shape,
+        collected_data['lengths'],
+        True,
+        transformed_his_tensor,
+        None,
+        None,
+        None,
+        )
+        with torch.cuda.amp.autocast(dtype=cast_type):
+            flop_analyzer = FlopCountAnalysis(
+                self.vlm,
+                input_seq
+            )
+            print(flop_count_str(flop_analyzer))
+        assert 1==2
         
 
         with torch.cuda.amp.autocast(dtype=cast_type):
@@ -347,34 +375,6 @@ class OpenVLNPolicy(NetPolicy):
             cast_type = torch.bfloat16
 
 
-        from fvcore.nn import FlopCountAnalysis, flop_count_str
-        input_seq = (
-        inputids,
-        None,
-        transformed_images_tensor,
-        None, # expect labels during train, expect prev_actions during inference
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        img_ori_shape,
-        collected_data['lengths'],
-        True,
-        transformed_his_tensor,
-        None,
-        None,
-        None,
-        )
-        with torch.cuda.amp.autocast(dtype=cast_type):
-            flop_analyzer = FlopCountAnalysis(
-                self.vlm,
-                input_seq
-            )
-            print(flop_count_str(flop_analyzer))
-        assert 1==2
 
         with torch.cuda.amp.autocast(dtype=cast_type):
             modelout = self.vlm(input_ids=inputids, attention_mask=attention_mask,pixel_values=transformed_images_tensor, labels = input_labels, img_ori_shape = img_ori_shape, sample_valid_len = last_valid_index, full_his = transformed_his_tensor, pre_mask = collected_data['rgb_prev_mask'], vocab_size=len(self.tokenlizer), inf_weights = collected_data['weights'])
@@ -780,7 +780,7 @@ class OpenVLN(PrismaticVLM):
         
         
             
-        return out.logits
+        return out
 
 
 
