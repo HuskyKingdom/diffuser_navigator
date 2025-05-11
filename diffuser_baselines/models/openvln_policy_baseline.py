@@ -203,6 +203,15 @@ class OpenVLNPolicyBaseline(NetPolicy):
         if self.config.OPENVLN.flash_atten and not self.config.OPENVLN.phase == "phi":
             cast_type = torch.bfloat16
 
+
+        from fvcore.nn import FlopCountAnalysis, flop_count_str
+        flop_analyzer = FlopCountAnalysis(
+            self.vlm,
+            (inputids, None, transformed_images_tensor, None, img_ori_shape, collected_data['lengths'], Ture, transformed_his_tensor)
+        )
+        print(flop_count_str(flop_analyzer))
+        assert 1==2
+
         with torch.cuda.amp.autocast(dtype=cast_type):
             modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor)
         
@@ -759,7 +768,7 @@ class OpenVLN(PrismaticVLM):
         
         
             
-        return out
+        return out.logits
 
 
 
