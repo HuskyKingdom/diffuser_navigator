@@ -252,8 +252,8 @@ class OpenVLNPolicy(NetPolicy):
                 self.vlm,
                 input_seq
             )
-            print(flop_count_str(flop_analyzer))
-        assert 1==2
+            total_flops: int = flop_analyzer.total()
+            print(f"Total FLOPs: {total_flops / 1e12:.2f}T")
         
 
         with torch.cuda.amp.autocast(dtype=cast_type):

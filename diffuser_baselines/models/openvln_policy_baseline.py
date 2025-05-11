@@ -232,8 +232,8 @@ class OpenVLNPolicyBaseline(NetPolicy):
                 self.vlm,
                 input_seq
             )
-            print(flop_count_str(flop_analyzer))
-        assert 1==2
+            total_flops: int = flop_analyzer.total()
+            print(f"Total FLOPs: {total_flops / 1e12:.2f}T")
 
         with torch.cuda.amp.autocast(dtype=cast_type):
             modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor)
