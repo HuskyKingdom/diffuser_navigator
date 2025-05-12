@@ -702,11 +702,11 @@ class BaseVLNCETrainer(BaseILTrainer):
                     continue
 
                 # dones 
+
                 # vis attention weights
-               
                 Lq, Nk = attn_weights.shape
                 attn_avg = attn_weights.reshape(Lq, Nk//4, 4).mean(axis=2)
-                attn_sum = attn_weights_avg.sum(axis=0)
+                attn_sum = attn_avg.sum(axis=0)
                 import matplotlib.pyplot as plt
                 plt.figure(figsize=(10, 4))
                 x = np.arange(attn_sum.shape[0])
