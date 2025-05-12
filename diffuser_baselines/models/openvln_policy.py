@@ -226,14 +226,9 @@ class OpenVLNPolicy(NetPolicy):
             cast_type = torch.bfloat16
 
 
-        import time
-        start = time.perf_counter()
-
         with torch.cuda.amp.autocast(dtype=cast_type):
             modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor)
-        
-        end   = time.perf_counter()
-        print(f"Elapsed: {(end-start):.4f} sec")
+    
 
         # retrive last action logits (greedy)
         predicted_token_id = torch.argmax(modelout.logits, dim=-1)
@@ -596,14 +591,16 @@ class OpenVLN(PrismaticVLM):
         
 
         # compressing
-        compressed_memory,_ = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
+        compressed_memory,atten_weights = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
             value=his_pos.transpose(0, 1),
             query_pos=None,
             value_pos=his_pos,
-            diff_ts=None,pad_mask=pre_mask,print_info=False)
+            diff_ts=None,pad_mask=pre_mask,print_info=False,self_atten=False,vis=True)
         compressed_memory = compressed_memory[-1].transpose(0,1) # (bs*T,C,d)
 
 
+        print(atten_weights.shape)
+        assert 1==2
     
         return compressed_memory
     
