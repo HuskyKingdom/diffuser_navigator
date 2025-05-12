@@ -481,20 +481,26 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=False):
     import numpy as np
 
 
-    # 确保输入是CPU上的numpy数组
-    weights = weights.squeeze(0).detach().cpu().numpy()  # (8, 200, 200)
-    pad_mask = pad_mask.squeeze(0).detach().cpu().numpy()  # (200,)
-    
-    # 获取非padding的索引
-    non_pad_idx = np.where(pad_mask == False)[0]
+    weights = weights.squeeze(0).detach().cpu().numpy()  # e.g. (8, 200, 200)
 
+    # figure out which key positions to keep
+    if pad_mask is None:
+        # no padding at all
+        non_pad_idx = np.arange(weights.shape[-1])
+    else:
+        pad_mask = pad_mask.squeeze(0).detach().cpu().numpy()  # (Lk,)
+        non_pad_idx = np.where(pad_mask == False)[0]
 
-    # 非 Self-Attention：仅 Key 应用 pad_mask，Query 保持完整
-    weights_non_pad = weights[:, :, non_pad_idx]  # (8, 200, N)
+    # if it's self-attention, you might also want to mask the query side, e.g.
+    if self_atten and pad_mask is not None:
+        non_pad_q = non_pad_idx
+        weights = weights[:, non_pad_q][:, :, non_pad_idx]  # (heads, Nq, Nk)
+    else:
+        # only mask the key side
+        weights = weights[:, :, non_pad_idx]  # (heads, Lq, Nk)
 
-
-    # 如果不是 Self-Attention，对所有头取平均
-    avg_weights = weights_non_pad.mean(axis=0)  # (200, N) 或 (N, N)
+    # average across heads
+    avg_weights = weights.mean(axis=0)  # (Lq, Nk) or (Nq, Nk)
 
     return avg_weights
 
