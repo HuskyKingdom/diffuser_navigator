@@ -595,7 +595,7 @@ class OpenVLN(PrismaticVLM):
             value=his_pos.transpose(0, 1),
             query_pos=None,
             value_pos=his_pos,
-            diff_ts=None,pad_mask=pre_mask,print_info=False,self_atten=False,vis=True)
+            diff_ts=None,pad_mask=pre_mask,print_info=False,vis=True)
         compressed_memory = compressed_memory[-1].transpose(0,1) # (bs*T,C,d)
 
 
