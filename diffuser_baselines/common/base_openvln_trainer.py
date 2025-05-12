@@ -703,6 +703,15 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                 # dones 
 
+            
+                ep_id = current_episodes[i].episode_id
+                stats_episodes[ep_id] = infos[i]
+                observations[i] = envs.reset_at(i)[0]
+                # reset
+                prev_actions[i] = torch.zeros(1, dtype=torch.long)
+                self.policy.clear_his()
+
+
                 # vis attention weights
                 Lq, Nk = attn_weights.shape
                 attn_avg = attn_weights.reshape(Lq, Nk//4, 4).mean(axis=2)
@@ -717,13 +726,6 @@ class BaseVLNCETrainer(BaseILTrainer):
                 plt.title('Attention over Timesteps')
                 plt.tight_layout()
                 plt.savefig(f"data/_{ep_id}.pdf", format='pdf')
-
-                ep_id = current_episodes[i].episode_id
-                stats_episodes[ep_id] = infos[i]
-                observations[i] = envs.reset_at(i)[0]
-                # reset
-                prev_actions[i] = torch.zeros(1, dtype=torch.long)
-                self.policy.clear_his()
 
                 if config.use_pbar:
                     pbar.update()
