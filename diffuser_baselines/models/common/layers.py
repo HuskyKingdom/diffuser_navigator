@@ -478,11 +478,7 @@ class FFWRelativeCrossAttentionModule(nn.Module):
 
 def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=False):
   
-    import matplotlib.pyplot as plt
-    import seaborn as sns
     import numpy as np
-    import torch
-    import re
 
 
     # 确保输入是CPU上的numpy数组
@@ -499,7 +495,7 @@ def vis_attention(weights, pad_mask, k=None, ins_text=None,self_atten=False):
 
     # 如果不是 Self-Attention，对所有头取平均
     avg_weights = weights_non_pad.mean(axis=0)  # (200, N) 或 (N, N)
-    
+
     return avg_weights
 
     
