@@ -708,6 +708,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 attn_avg = attn_weights.reshape(Lq, Nk//4, 4).mean(axis=2)
                 attn_sum = attn_avg.sum(axis=0)
                 import matplotlib.pyplot as plt
+                import numpy as np
                 plt.figure(figsize=(10, 4))
                 x = np.arange(attn_sum.shape[0])
                 plt.bar(x, attn_sum)
