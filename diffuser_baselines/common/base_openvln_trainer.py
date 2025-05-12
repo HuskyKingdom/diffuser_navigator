@@ -716,16 +716,34 @@ class BaseVLNCETrainer(BaseILTrainer):
                 Lq, Nk = attn_weights.shape
                 attn_avg = attn_weights.reshape(Lq, Nk//4, 4).mean(axis=2)
                 attn_sum = attn_avg.sum(axis=0)
+
+
                 import matplotlib.pyplot as plt
                 import numpy as np
-                plt.figure(figsize=(10, 4))
-                x = np.arange(attn_sum.shape[0])
-                plt.bar(x, attn_sum)
-                plt.xlabel('Timestep t')
-                plt.ylabel('Attention')
-                plt.title('Attention over Timesteps')
+
+
+                plt.figure(figsize=(8, 6))
+                plt.imshow(attn_weights,
+                        aspect='auto',
+                        interpolation='nearest',
+                        origin='lower')
+                plt.xlabel(f'Timestep Pos (Key) [0 … {Nk-1}]')
+                plt.ylabel(f'Context Compress Vector (Query) (0 … {Lq-1})')
+                plt.title(f"Context Compress Vector Attention Distribution of Episode {ep_id}")
+                plt.colorbar(label='Attention Intensity')
                 plt.tight_layout()
-                plt.savefig(f"data/_{ep_id}.pdf", format='pdf')
+                
+                plt.savefig(f"data/heatmap_{ep_id}", format='pdf', bbox_inches='tight')
+
+
+                # plt.figure(figsize=(10, 4))
+                # x = np.arange(attn_sum.shape[0])
+                # plt.bar(x, attn_sum)
+                # plt.xlabel('Timestep t')
+                # plt.ylabel('Attention')
+                # plt.title('Attention over Timesteps')
+                # plt.tight_layout()
+                # plt.savefig(f"data/_{ep_id}.pdf", format='pdf')
 
                 if config.use_pbar:
                     pbar.update()
