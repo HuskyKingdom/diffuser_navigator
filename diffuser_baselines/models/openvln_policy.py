@@ -227,7 +227,7 @@ class OpenVLNPolicy(NetPolicy):
 
 
         with torch.cuda.amp.autocast(dtype=cast_type):
-            modelout = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor)
+            modelout,atten_weights = self.vlm(input_ids=inputids, attention_mask=None,pixel_values=transformed_images_tensor, labels = None, img_ori_shape = img_ori_shape, sample_valid_len = collected_data['lengths'], inference = True, full_his = transformed_his_tensor)
     
 
         # retrive last action logits (greedy)
@@ -261,6 +261,8 @@ class OpenVLNPolicy(NetPolicy):
         if len(self.rgb_his) >= 220:
             action = [[0]]
 
+        
+
 
         action = torch.tensor(action).to(modelout.logits.device)
 
@@ -270,7 +272,7 @@ class OpenVLNPolicy(NetPolicy):
             # print(decoded_tokens)
 
 
-        return action, modelout.logits # none for inf_weights place holder
+        return action, modelout.logits,atten_weights # none for inf_weights place holder
         
     
 
@@ -521,7 +523,7 @@ class OpenVLN(PrismaticVLM):
         projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,4,dim)
         
 
-        compressed_memory = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask = None)
+        compressed_memory, atten_weights = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask = None)
 
 
         inference_result = self.llm_backbone(
@@ -535,7 +537,7 @@ class OpenVLN(PrismaticVLM):
         )
 
 
-        return inference_result
+        return inference_result, atten_weights
 
 
     def extract_cls(self,projected_patch_embeddings): # grid pooling, following Navid. His_len = bs * max_his_len
@@ -599,10 +601,8 @@ class OpenVLN(PrismaticVLM):
         compressed_memory = compressed_memory[-1].transpose(0,1) # (bs*T,C,d)
 
 
-        print(atten_weights.shape)
-        assert 1==2
     
-        return compressed_memory
+        return compressed_memory,atten_weights
     
 
 
@@ -693,7 +693,7 @@ class OpenVLN(PrismaticVLM):
         projected_his_embeddings = self.projector(full_his_patches)
         projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,4,dim)
         
-        compressed_memory = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask)
+        compressed_memory,_ = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask)
         
 
         

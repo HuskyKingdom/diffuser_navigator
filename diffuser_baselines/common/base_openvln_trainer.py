@@ -661,7 +661,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 gc.collect() 
 
             with torch.no_grad():
-                actions, inf_logits = self.policy.act(batch,prev_actions,print_info=True,ins_text=ins_text)
+                actions, inf_logits, attn_weights = self.policy.act(batch,prev_actions,print_info=True,ins_text=ins_text)
             prev_actions.copy_(actions)
 
             outputs = envs.step([a[0].item() for a in actions])
@@ -700,6 +700,22 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                 if not dones[i]:
                     continue
+
+                # dones 
+                # vis attention weights
+                if action_token == "<STOP>":
+                    Lq, Nk = attn_weights.shape
+                    attn_avg = attn_weights.reshape(Lq, Nk//4, 4).mean(axis=2)
+                    attn_sum = attn_weights_avg.sum(axis=0)
+                    import matplotlib.pyplot as plt
+                    plt.figure(figsize=(10, 4))
+                    x = np.arange(attn_sum.shape[0])
+                    plt.bar(x, attn_sum)
+                    plt.xlabel('Timestep t')
+                    plt.ylabel('Attention')
+                    plt.title('Attention over Timesteps')
+                    plt.tight_layout()
+                    plt.savefig(f"data/_{ep_id}.pdf", format='pdf')
 
                 ep_id = current_episodes[i].episode_id
                 stats_episodes[ep_id] = infos[i]
