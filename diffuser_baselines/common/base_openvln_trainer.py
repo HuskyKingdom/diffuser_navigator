@@ -717,6 +717,11 @@ class BaseVLNCETrainer(BaseILTrainer):
                 attn_avg = attn_weights.reshape(Lq, Nk//4, 4).mean(axis=2)
                 attn_sum = attn_avg.sum(axis=0)
 
+                
+
+                import matplotlib.pyplot as plt
+                import numpy as np
+
                 plt.rcParams.update({
                     'font.size': 14,          # 所有文字（包括标题、axis label、legend、ticks）的默认字号
                     'axes.titlesize': 16,     # 标题字号
@@ -727,9 +732,6 @@ class BaseVLNCETrainer(BaseILTrainer):
                     'figure.titlesize': 16    # figure suptitle
                 })
 
-
-                import matplotlib.pyplot as plt
-                import numpy as np
 
 
                 plt.figure(figsize=(8, 6))
