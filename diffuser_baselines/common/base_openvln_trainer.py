@@ -731,19 +731,23 @@ class BaseVLNCETrainer(BaseILTrainer):
                     'figure.titlesize': 16    # figure suptitle
                 })
 
-
+                data = attn_avg[:, 30:]
+                vmin, vmax = np.percentile(data, (2, 98))
+                norm = Normalize(vmin=vmin, vmax=vmax)
 
                 plt.figure(figsize=(8, 6))
                 plt.imshow(
-                    attn_avg[:, 10:],
+                    data,
                     aspect='auto',
                     interpolation='nearest',
                     origin='lower',
-                    cmap='Reds',   
-                    vmin=attn_weights.min(),
-                    vmax=attn_weights.max()
+                    cmap='Reds',
+                    norm=norm                    # 使用归一化
                 )
-                plt.xlabel(f'Timestep Pos (Key) [10 … {Nk-1}]')
+                plt.clim(vmin, vmax)
+
+                plt.xlim(29, data.shape[1] - 1)
+                plt.xlabel(f'Timestep Pos (Key) [30 … {Nk-1}]')
                 plt.ylabel(f'Context Compress Vector (Query) (0 … {Lq-1})')
                 plt.title(f"Context Compress Vector Attention Distribution of Episode {ep_id}")
                 plt.colorbar(label='Attention Intensity')
