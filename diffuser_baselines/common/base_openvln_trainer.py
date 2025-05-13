@@ -734,7 +734,7 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                 plt.figure(figsize=(8, 6))
                 plt.imshow(
-                    attn_avg[:, 20:],
+                    attn_avg[:, 10:],
                     aspect='auto',
                     interpolation='nearest',
                     origin='lower',
@@ -742,7 +742,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                     vmin=attn_weights.min(),
                     vmax=attn_weights.max()
                 )
-                plt.xlabel(f'Timestep Pos (Key) [20 … {Nk-1}]')
+                plt.xlabel(f'Timestep Pos (Key) [10 … {Nk-1}]')
                 plt.ylabel(f'Context Compress Vector (Query) (0 … {Lq-1})')
                 plt.title(f"Context Compress Vector Attention Distribution of Episode {ep_id}")
                 plt.colorbar(label='Attention Intensity')
