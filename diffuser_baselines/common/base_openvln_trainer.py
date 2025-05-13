@@ -721,6 +721,7 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                 import matplotlib.pyplot as plt
                 import numpy as np
+                from matplotlib.colors import Normalize
 
                 plt.rcParams.update({
                     'font.size': 14,          # 所有文字（包括标题、axis label、legend、ticks）的默认字号
