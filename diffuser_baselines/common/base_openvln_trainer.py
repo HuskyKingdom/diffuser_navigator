@@ -728,7 +728,6 @@ class BaseVLNCETrainer(BaseILTrainer):
                     'axes.labelsize': 14,     # 坐标轴 label 字号
                     'xtick.labelsize': 12,    # x 轴刻度文字字号
                     'ytick.labelsize': 12,    # y 轴刻度文字字号
-                    'colorbar.labelsize': 14, # colorbar label
                     'figure.titlesize': 16    # figure suptitle
                 })
 
@@ -740,7 +739,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                     aspect='auto',
                     interpolation='nearest',
                     origin='lower',
-                    cmap='plasma',   
+                    cmap='Reds',   
                     vmin=attn_weights.min(),
                     vmax=attn_weights.max()
                 )
