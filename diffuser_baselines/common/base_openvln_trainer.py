@@ -717,6 +717,16 @@ class BaseVLNCETrainer(BaseILTrainer):
                 attn_avg = attn_weights.reshape(Lq, Nk//4, 4).mean(axis=2)
                 attn_sum = attn_avg.sum(axis=0)
 
+                plt.rcParams.update({
+                    'font.size': 14,          # 所有文字（包括标题、axis label、legend、ticks）的默认字号
+                    'axes.titlesize': 16,     # 标题字号
+                    'axes.labelsize': 14,     # 坐标轴 label 字号
+                    'xtick.labelsize': 12,    # x 轴刻度文字字号
+                    'ytick.labelsize': 12,    # y 轴刻度文字字号
+                    'colorbar.labelsize': 14, # colorbar label
+                    'figure.titlesize': 16    # figure suptitle
+                })
+
 
                 import matplotlib.pyplot as plt
                 import numpy as np
@@ -724,7 +734,7 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                 plt.figure(figsize=(8, 6))
                 plt.imshow(
-                    attn_weights[:, 20:],
+                    attn_avg[:, 20:],
                     aspect='auto',
                     interpolation='nearest',
                     origin='lower',
