@@ -748,7 +748,7 @@ class BaseVLNCETrainer(BaseILTrainer):
                 plt.colorbar(label='Attention Intensity')
                 plt.tight_layout()
                 
-                plt.savefig(f"data/heatmap_{ep_id}", format='pdf', bbox_inches='tight')
+                plt.savefig(f"data/heatmap_{ep_id}.pdf", format='pdf', bbox_inches='tight')
 
 
                 # plt.figure(figsize=(10, 4))
