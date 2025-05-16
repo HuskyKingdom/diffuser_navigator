@@ -692,7 +692,7 @@ class OpenVLN(PrismaticVLM):
             else:
                 full_his_patches = self.vision_backbone(full_his)
         
-
+        print(full_his_patches.shape)
         projected_his_embeddings = self.projector(full_his_patches) # (bs*T,vit_token_len,dim) 
 
         # projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,4,dim)
