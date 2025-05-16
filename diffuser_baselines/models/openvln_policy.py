@@ -585,6 +585,7 @@ class OpenVLN(PrismaticVLM):
         expanded_memory = self.M_init.unsqueeze(0).expand(token_bs,-1,-1)
 
         # positional encoding
+        print(projected_cls_embeddings.shape,img_ori_shape.shape)
         his_pos = self.pe_layer(projected_cls_embeddings)
         init_mem_pos = self.pe_layer(expanded_memory)
 
