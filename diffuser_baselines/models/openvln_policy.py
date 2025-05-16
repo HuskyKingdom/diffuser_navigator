@@ -568,7 +568,7 @@ class OpenVLN(PrismaticVLM):
         if not self.M_init.is_contiguous():
             self.M_init = self.M_init.contiguous() 
 
-        
+        print(projected_cls_embeddings.shape,img_ori_shape)
 
         token_bs = multimodal_embeddings.shape[0]
         his_T,grid_len,hidden_dim = projected_cls_embeddings.shape
@@ -585,7 +585,6 @@ class OpenVLN(PrismaticVLM):
         expanded_memory = self.M_init.unsqueeze(0).expand(token_bs,-1,-1)
 
         # positional encoding
-        print(projected_cls_embeddings.shape,img_ori_shape,grid_len)
         his_pos = self.pe_layer(projected_cls_embeddings)
         init_mem_pos = self.pe_layer(expanded_memory)
 
