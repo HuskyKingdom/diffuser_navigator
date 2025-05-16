@@ -719,42 +719,42 @@ class BaseVLNCETrainer(BaseILTrainer):
 
                 
 
-                import matplotlib.pyplot as plt
-                import numpy as np
-                from matplotlib.colors import Normalize
+                # import matplotlib.pyplot as plt
+                # import numpy as np
+                # from matplotlib.colors import Normalize
 
-                plt.rcParams.update({
-                    'font.size': 14,          # 所有文字（包括标题、axis label、legend、ticks）的默认字号
-                    'axes.titlesize': 16,     # 标题字号
-                    'axes.labelsize': 14,     # 坐标轴 label 字号
-                    'xtick.labelsize': 12,    # x 轴刻度文字字号
-                    'ytick.labelsize': 12,    # y 轴刻度文字字号
-                    'figure.titlesize': 16    # figure suptitle
-                })
+                # plt.rcParams.update({
+                #     'font.size': 14,         
+                #     'axes.titlesize': 16,    
+                #     'axes.labelsize': 14,     
+                #     'xtick.labelsize': 12,    
+                #     'ytick.labelsize': 12,  
+                #     'figure.titlesize': 16   
+                # })
 
-                data = attn_avg[:, 30:]
-                vmin, vmax = np.percentile(data, (2, 98))
-                norm = Normalize(vmin=vmin, vmax=vmax)
+                # data = attn_avg[:, 30:]
+                # vmin, vmax = np.percentile(data, (2, 98))
+                # norm = Normalize(vmin=vmin, vmax=vmax)
 
-                plt.figure(figsize=(8, 6))
-                plt.imshow(
-                    data,
-                    aspect='auto',
-                    interpolation='nearest',
-                    origin='lower',
-                    cmap='Reds',
-                    norm=norm                    # 使用归一化
-                )
-                plt.clim(vmin, vmax)
+                # plt.figure(figsize=(8, 6))
+                # plt.imshow(
+                #     data,
+                #     aspect='auto',
+                #     interpolation='nearest',
+                #     origin='lower',
+                #     cmap='Reds',
+                #     norm=norm                    # 使用归一化
+                # )
+                # plt.clim(vmin, vmax)
 
-                plt.xlim(29, data.shape[1] - 1)
-                plt.xlabel(f'Timestep Pos (Key) [30 … {Nk-1}]')
-                plt.ylabel(f'Context Compress Vector (Query) (0 … {Lq-1})')
-                plt.title(f"Context Compress Vector Attention Distribution of Episode {ep_id}")
-                plt.colorbar(label='Attention Intensity')
-                plt.tight_layout()
+                # plt.xlim(29, data.shape[1] - 1)
+                # plt.xlabel(f'Timestep Pos (Key) [30 … {Nk-1}]')
+                # plt.ylabel(f'Context Compress Vector (Query) (0 … {Lq-1})')
+                # plt.title(f"Context Compress Vector Attention Distribution of Episode {ep_id}")
+                # plt.colorbar(label='Attention Intensity')
+                # plt.tight_layout()
                 
-                plt.savefig(f"data/heatmap_{ep_id}.pdf", format='pdf', bbox_inches='tight')
+                # plt.savefig(f"data/heatmap_{ep_id}.pdf", format='pdf', bbox_inches='tight')
 
 
                 # plt.figure(figsize=(10, 4))

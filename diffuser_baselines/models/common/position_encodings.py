@@ -23,7 +23,7 @@ class SinusoidalPosEmb(nn.Module):
 import numpy as np
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, num_hiddens, dropout, max_len=1000):
+    def __init__(self, num_hiddens, dropout, max_len=10000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(dropout)
         self.P = torch.zeros((1, max_len, num_hiddens))

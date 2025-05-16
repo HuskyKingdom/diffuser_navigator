@@ -574,26 +574,29 @@ class OpenVLN(PrismaticVLM):
         his_T,grid_len,hidden_dim = projected_cls_embeddings.shape
 
         projected_cls_embeddings = projected_cls_embeddings.view(img_ori_shape[0],img_ori_shape[1],grid_len,hidden_dim)
-        projected_cls_embeddings = projected_cls_embeddings.view(img_ori_shape[0],-1,hidden_dim)  # (bs,his_len * 4,dim)
+        projected_cls_embeddings = projected_cls_embeddings.view(img_ori_shape[0],-1,hidden_dim)  # (bs,his_len * grid_len,dim)
 
      
-        his_pos = self.pe_layer(projected_cls_embeddings)
+        
 
 
         # format init memory
         # resulting memory in (token_bs,C,d)
         expanded_memory = self.M_init.unsqueeze(0).expand(token_bs,-1,-1)
 
+        # positional encoding
+        his_pos = self.pe_layer(projected_cls_embeddings)
+        init_mem_pos = self.pe_layer(expanded_memory)
+
 
         # repeat 4 times on his_T dimension for grid pooled version
         if pre_mask!=None:
-            pre_mask = pre_mask.repeat_interleave(4,dim=1)
+            pre_mask = pre_mask.repeat_interleave(grid_len,dim=1)
             pre_mask = pre_mask.bool()
 
         
-
         # compressing
-        compressed_memory,atten_weights = self.memory_fuser_attention(query=expanded_memory.transpose(0, 1),
+        compressed_memory,atten_weights = self.memory_fuser_attention(query=init_mem_pos.transpose(0, 1),
             value=his_pos.transpose(0, 1),
             query_pos=None,
             value_pos=his_pos,
@@ -690,10 +693,11 @@ class OpenVLN(PrismaticVLM):
                 full_his_patches = self.vision_backbone(full_his)
         
 
-        projected_his_embeddings = self.projector(full_his_patches)
-        projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,4,dim)
+        projected_his_embeddings = self.projector(full_his_patches) # (bs*T,vit_token_len,dim) 
+
+        # projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,4,dim)
         
-        compressed_memory,_ = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask)
+        compressed_memory,_ = self.compress_memories(projected_his_embeddings,img_ori_shape,multimodal_embeddings,pre_mask)
         
 
         
