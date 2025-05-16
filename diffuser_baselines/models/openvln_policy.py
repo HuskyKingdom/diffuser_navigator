@@ -568,16 +568,13 @@ class OpenVLN(PrismaticVLM):
         if not self.M_init.is_contiguous():
             self.M_init = self.M_init.contiguous() 
 
-        print(projected_cls_embeddings.shape,img_ori_shape)
-
+    
         token_bs = multimodal_embeddings.shape[0]
         his_T,grid_len,hidden_dim = projected_cls_embeddings.shape
 
         projected_cls_embeddings = projected_cls_embeddings.view(img_ori_shape[0],img_ori_shape[1],grid_len,hidden_dim)
         projected_cls_embeddings = projected_cls_embeddings.view(img_ori_shape[0],-1,hidden_dim)  # (bs,his_len * grid_len,dim)
 
-     
-        
 
 
         # format init memory
@@ -692,7 +689,8 @@ class OpenVLN(PrismaticVLM):
             else:
                 full_his_patches = self.vision_backbone(full_his)
         
-        print(full_his_patches.shape)
+
+
         projected_his_embeddings = self.projector(full_his_patches) # (bs*T,vit_token_len,dim) 
 
         # projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,4,dim)
