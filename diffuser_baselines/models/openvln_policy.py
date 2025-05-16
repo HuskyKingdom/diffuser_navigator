@@ -574,10 +574,10 @@ class OpenVLN(PrismaticVLM):
             _grid = projected_patch_embeddings.view(His_len,24,24,C)
 
         _grid = _grid.permute(0,3,1,2)
-        pool = nn.AdaptiveAvgPool2d((16,8))
+        pool = nn.AdaptiveAvgPool2d((8,8))
         pooled = pool(_grid)
 
-        result = pooled.permute(0,2,3,1).reshape(His_len,16*8,C)
+        result = pooled.permute(0,2,3,1).reshape(His_len,8*8,C)
 
         return result
 
