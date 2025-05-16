@@ -559,6 +559,27 @@ class OpenVLN(PrismaticVLM):
         result = pooled.permute(0,2,3,1).reshape(His_len,4,C)
 
         return result
+    
+
+    def extract_cls_new(self,projected_patch_embeddings): # grid pooling, following Navid. His_len = bs * max_his_len
+
+        if not projected_patch_embeddings.is_contiguous():
+            projected_patch_embeddings = projected_patch_embeddings.contiguous()
+        
+        His_len,Token_len,C = projected_patch_embeddings.shape
+
+        if Token_len == 256:
+            _grid = projected_patch_embeddings.view(His_len,16,16,C)
+        else:
+            _grid = projected_patch_embeddings.view(His_len,24,24,C)
+
+        _grid = _grid.permute(0,3,1,2)
+        pool = nn.AdaptiveAvgPool2d((16,8))
+        pooled = pool(_grid)
+
+        result = pooled.permute(0,2,3,1).reshape(His_len,16*8,C)
+
+        return result
 
 
     def compress_memories(self,projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask): # grid pooled version
@@ -693,9 +714,9 @@ class OpenVLN(PrismaticVLM):
 
         projected_his_embeddings = self.projector(full_his_patches) # (bs*T,vit_token_len,dim) 
 
-        # projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,4,dim)
+        projected_cls_embeddings = self.extract_cls_new(projected_his_embeddings) # (bs*T,4,dim)
         
-        compressed_memory,_ = self.compress_memories(projected_his_embeddings,img_ori_shape,multimodal_embeddings,pre_mask)
+        compressed_memory,_ = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask)
         
 
         
