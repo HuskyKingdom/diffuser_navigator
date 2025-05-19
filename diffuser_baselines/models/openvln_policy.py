@@ -520,7 +520,7 @@ class OpenVLN(PrismaticVLM):
                 full_his_patches = self.vision_backbone(full_his)
 
         projected_his_embeddings = self.projector(full_his_patches)
-        projected_cls_embeddings = self.extract_cls(projected_his_embeddings) # (bs*T,4,dim)
+        projected_cls_embeddings = self.extract_cls_new(projected_his_embeddings) # (bs*T,4,dim)
         
 
         compressed_memory, atten_weights = self.compress_memories(projected_cls_embeddings,img_ori_shape,multimodal_embeddings,pre_mask = None)
